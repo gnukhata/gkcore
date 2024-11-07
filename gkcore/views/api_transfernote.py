@@ -76,86 +76,60 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                transferdata = dataset["transferdata"]
-                stockdata = dataset["stockdata"]
-                transferdata["orgcode"] = authDetails["orgcode"]
-                stockdata["orgcode"] = authDetails["orgcode"]
-                # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
-                    select([transfernote.c.transfernoteno]).where(
-                        and_(
-                            transfernote.c.orgcode == authDetails["orgcode"],
-                            func.lower(transfernote.c.transfernoteno) == func.lower(transferdata["transfernoteno"]),
-                        )
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            transferdata = dataset["transferdata"]
+            stockdata = dataset["stockdata"]
+            transferdata["orgcode"] = authDetails["orgcode"]
+            stockdata["orgcode"] = authDetails["orgcode"]
+            # Check for duplicate entry before insertion
+            result_duplicate_check = con.execute(
+                select([transfernote.c.transfernoteno]).where(
+                    and_(
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                        func.lower(transfernote.c.transfernoteno) == func.lower(transferdata["transfernoteno"]),
                     )
                 )
-                
-                if result_duplicate_check.rowcount > 0:
-                    # Duplicate entry found, handle accordingly
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
-                result = self.con.execute(transfernote.insert(), [transferdata])
+            )
 
-                if result.rowcount == 1:
-                    transfernoteiddata = self.con.execute(
-                        select(
-                            [
-                                transfernote.c.transfernoteid,
-                                transfernote.c.transfernotedate,
-                            ]
-                        ).where(
-                            and_(
-                                transfernote.c.orgcode == authDetails["orgcode"],
-                                transfernote.c.transfernoteno
-                                == transferdata["transfernoteno"],
-                            )
-                        )
-                    )
-                    transfernoteidrow = transfernoteiddata.fetchone()
-                    stockdata["dcinvtnid"] = transfernoteidrow["transfernoteid"]
-                    stockdata["stockdate"] = transfernoteidrow["transfernotedate"]
-                    stockdata["goid"] = transferdata["fromgodown"]
-                    stockdata["dcinvtnflag"] = 20
-                    stockdata["inout"] = 15
-                    items = stockdata.pop("items")
-                    try:
-                        for key in list(items.keys()):
-                            stockdata["rate"] = 0
-                            stockdata["productcode"] = key
-                            stockdata["qty"] = items[key]
-                            result = self.con.execute(stock.insert(), [stockdata])
-                    except:
-                        result = self.con.execute(
-                            stock.delete().where(
-                                and_(
-                                    stock.c.dcinvtnid
-                                    == transfernoteidrow["transfernoteid"],
-                                    stock.c.dcinvtnflag == 20,
-                                )
-                            )
-                        )
-                        result = self.con.execute(
-                            transfernote.delete().where(
-                                transfernote.c.transfernoteid
-                                == transfernoteidrow["transfernoteid"]
-                            )
-                        )
-                        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-                    return {
-                        "gkstatus": enumdict["Success"],
-                        "gkresult": transfernoteidrow["transfernoteid"],
-                    }
-                else:
-                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            except exc.IntegrityError:
+            if result_duplicate_check.rowcount > 0:
+                # Duplicate entry found, handle accordingly
                 return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
+            result = con.execute(transfernote.insert(), [transferdata])
+
+            if result.rowcount != 1:
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
+            transfernoteiddata = con.execute(
+                select(
+                    [
+                        transfernote.c.transfernoteid,
+                        transfernote.c.transfernotedate,
+                    ]
+                ).where(
+                    and_(
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                        transfernote.c.transfernoteno
+                        == transferdata["transfernoteno"],
+                    )
+                )
+            )
+            transfernoteidrow = transfernoteiddata.fetchone()
+            stockdata["dcinvtnid"] = transfernoteidrow["transfernoteid"]
+            stockdata["stockdate"] = transfernoteidrow["transfernotedate"]
+            stockdata["goid"] = transferdata["fromgodown"]
+            stockdata["dcinvtnflag"] = 20
+            stockdata["inout"] = 15
+            items = stockdata.pop("items")
+            for key in list(items.keys()):
+                stockdata["rate"] = 0
+                stockdata["productcode"] = key
+                stockdata["qty"] = items[key]
+                result = con.execute(stock.insert(), [stockdata])
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": transfernoteidrow["transfernoteid"],
+            }
 
     @view_config(request_method="GET", request_param="tn=all", renderer="json")
     def getAllTransferNote(self):
@@ -167,56 +141,43 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                """
-                Retreiving date, id, number and togodown of all transfernotes.
-                """
-                result = self.con.execute(
-                    select(
-                        [
-                            transfernote.c.transfernotedate,
-                            transfernote.c.transfernoteid,
-                            transfernote.c.transfernoteno,
-                            transfernote.c.togodown,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            transfernote.c.recieved == False,
-                            transfernote.c.orgcode == authDetails["orgcode"],
-                        )
-                    )
-                    .order_by(transfernote.c.transfernotedate)
+        with eng.connect() as con:
+            """
+            Retreiving date, id, number and togodown of all transfernotes.
+            """
+            result = con.execute(
+                select(
+                    [
+                        transfernote.c.transfernotedate,
+                        transfernote.c.transfernoteid,
+                        transfernote.c.transfernoteno,
+                        transfernote.c.togodown,
+                    ]
                 )
-                """
-                A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
-                If user is not a godown keeper this list will be empty.
-                """
-                usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
-                """
-                If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
-                Otherwise all transfernotes that have not been received are returned.
-                """
-                tn = []
-                if usergodowmns:
-                    godowns = []
-                    for godown in usergodowmns:
-                        godowns.append(godown["goid"])
-                    for row in result:
-                        if row["togodown"] in godowns:
-                            tn.append(
-                                {
-                                    "transfernoteno": row["transfernoteno"],
-                                    "transfernoteid": row["transfernoteid"],
-                                    "transfernotedate": datetime.strftime(
-                                        row["transfernotedate"], "%d-%m-%Y"
-                                    ),
-                                }
-                            )
-                else:
-                    for row in result:
+                .where(
+                    and_(
+                        transfernote.c.recieved == False,
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+                .order_by(transfernote.c.transfernotedate)
+            )
+            """
+            A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
+            If user is not a godown keeper this list will be empty.
+            """
+            usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+            """
+            If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
+            Otherwise all transfernotes that have not been received are returned.
+            """
+            tn = []
+            if usergodowmns:
+                godowns = []
+                for godown in usergodowmns:
+                    godowns.append(godown["goid"])
+                for row in result:
+                    if row["togodown"] in godowns:
                         tn.append(
                             {
                                 "transfernoteno": row["transfernoteno"],
@@ -226,13 +187,18 @@ class api_transfernote(object):
                                 ),
                             }
                         )
-                self.con.close()
-                return {"gkstatus": enumdict["Success"], "gkresult": tn}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            else:
+                for row in result:
+                    tn.append(
+                        {
+                            "transfernoteno": row["transfernoteno"],
+                            "transfernoteid": row["transfernoteid"],
+                            "transfernotedate": datetime.strftime(
+                                row["transfernotedate"], "%d-%m-%Y"
+                            ),
+                        }
+                    )
+            return {"gkstatus": enumdict["Success"], "gkresult": tn}
 
     @view_config(request_method="GET", request_param="type=all", renderer="json")
     def getAllTransferNotes(self):
@@ -244,38 +210,30 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
-                    select(
-                        [
-                            transfernote.c.transfernotedate,
-                            transfernote.c.transfernoteid,
-                            transfernote.c.transfernoteno,
-                        ]
-                    )
-                    .where(transfernote.c.orgcode == authDetails["orgcode"])
-                    .order_by(transfernote.c.transfernotedate)
+        with eng.connect() as con:
+            result = con.execute(
+                select(
+                    [
+                        transfernote.c.transfernotedate,
+                        transfernote.c.transfernoteid,
+                        transfernote.c.transfernoteno,
+                    ]
                 )
-                tn = []
-                for row in result:
-                    tn.append(
-                        {
-                            "transfernoteno": row["transfernoteno"],
-                            "transfernoteid": row["transfernoteid"],
-                            "transfernotedate": datetime.strftime(
-                                row["transfernotedate"], "%d-%m-%Y"
-                            ),
-                        }
-                    )
-                self.con.close()
-                return {"gkstatus": enumdict["Success"], "gkresult": tn}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                .where(transfernote.c.orgcode == authDetails["orgcode"])
+                .order_by(transfernote.c.transfernotedate)
+            )
+            tn = []
+            for row in result:
+                tn.append(
+                    {
+                        "transfernoteno": row["transfernoteno"],
+                        "transfernoteid": row["transfernoteid"],
+                        "transfernotedate": datetime.strftime(
+                            row["transfernotedate"], "%d-%m-%Y"
+                        ),
+                    }
+                )
+            return {"gkstatus": enumdict["Success"], "gkresult": tn}
 
     @view_config(request_method="GET", request_param="tn=single", renderer="json")
     def getTn(self):
@@ -287,112 +245,105 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
-                    select([transfernote]).where(
+        with eng.connect() as con:
+            self.con = eng.connect()
+            result = con.execute(
+                select([transfernote]).where(
+                    and_(
+                        transfernote.c.transfernoteid
+                        == self.request.params["transfernoteid"],
+                        transfernote.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+            )
+            row = result.fetchone()
+
+            togo = con.execute(
+                select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
+                    godown.c.goid == row["togodown"]
+                )
+            )
+            togodata = togo.fetchone()
+            fromgo = con.execute(
+                select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
+                    godown.c.goid == row["fromgodown"]
+                )
+            )
+            fromgodata = fromgo.fetchone()
+
+            items = {}
+
+            stockdata = con.execute(
+                select([stock.c.productcode, stock.c.qty]).where(
+                    and_(
+                        stock.c.dcinvtnflag == 20,
+                        stock.c.dcinvtnid == self.request.params["transfernoteid"],
+                    )
+                )
+            )
+            for stockrow in stockdata:
+                productdata = con.execute(
+                    select([product.c.productcode, product.c.productdesc, product.c.uomid, product.c.gsflag]).where(
+                        product.c.productcode == stockrow["productcode"]
+                    )
+                )
+                productdesc = productdata.fetchone()
+                uomresult = con.execute(
+                    select([unitofmeasurement.c.unitname]).where(
+                        unitofmeasurement.c.uomid == productdesc["uomid"]
+                    )
+                )
+                unitnamrrow = uomresult.fetchone()
+                goid_result = con.execute(
+                    select([stock.c.goid]).where(
                         and_(
-                            transfernote.c.transfernoteid
-                            == self.request.params["transfernoteid"],
-                            transfernote.c.orgcode == authDetails["orgcode"],
+                            stock.c.productcode == stockrow["productcode"],
+                            stock.c.orgcode == authDetails["orgcode"],
                         )
                     )
                 )
-                row = result.fetchone()
-
-                togo = self.con.execute(
-                    select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
-                        godown.c.goid == row["togodown"]
-                    )
-                )
-                togodata = togo.fetchone()
-                fromgo = self.con.execute(
-                    select([godown.c.goname, godown.c.goaddr, godown.c.state]).where(
-                        godown.c.goid == row["fromgodown"]
-                    )
-                )
-                fromgodata = fromgo.fetchone()
-
-                items = {}
-
-                stockdata = self.con.execute(
-                    select([stock.c.productcode, stock.c.qty]).where(
-                        and_(
-                            stock.c.dcinvtnflag == 20,
-                            stock.c.dcinvtnid == self.request.params["transfernoteid"],
-                        )
-                    )
-                )
-                for stockrow in stockdata:
-                    productdata = self.con.execute(
-                        select([product.c.productcode, product.c.productdesc, product.c.uomid, product.c.gsflag]).where(
-                            product.c.productcode == stockrow["productcode"]
-                        )
-                    )
-                    productdesc = productdata.fetchone()
-                    uomresult = self.con.execute(
-                        select([unitofmeasurement.c.unitname]).where(
-                            unitofmeasurement.c.uomid == productdesc["uomid"]
-                        )
-                    )
-                    unitnamrrow = uomresult.fetchone()
-                    goid_result = self.con.execute(
-                        select([stock.c.goid]).where(
-                            and_(
-                                stock.c.productcode == stockrow["productcode"],
-                                stock.c.orgcode == authDetails["orgcode"],
-                            )
-                        )
-                    )
-                    goid = goid_result.scalar()
-                    items[stockrow["productcode"]] = {
-                        "qty": "%.2f" % float(stockrow["qty"]),
-                        "productdesc": productdesc["productdesc"],
-                        "unitname": unitnamrrow["unitname"],
-                        "goid": goid,
-                        "gsflag": productdesc["gsflag"],
-                        "productcode": productdesc["productcode"],
-                    }
-
-                tn = {}
-                tn = {
-                    "transfernoteno": row["transfernoteno"],
-                    "transfernotedate": datetime.strftime(
-                        row["transfernotedate"], "%d-%m-%Y"
-                    ),
-                    "transportationmode": row["transportationmode"],
-                    "productdetails": items,
-                    "nopkt": row["nopkt"],
-                    "togodown": togodata["goname"],
-                    "togodownstate": togodata["state"],
-                    "togodownaddr": togodata["goaddr"],
-                    "togodownid": row["togodown"],
-                    "fromgodownid": row["fromgodown"],
-                    "fromgodown": fromgodata["goname"],
-                    "fromgodownstate": fromgodata["state"],
-                    "fromgodownaddr": fromgodata["goaddr"],
-                    "issuername": row["issuername"],
-                    "designation": row["designation"],
-                    "orgcode": row["orgcode"],
+                goid = goid_result.scalar()
+                items[stockrow["productcode"]] = {
+                    "qty": "%.2f" % float(stockrow["qty"]),
+                    "productdesc": productdesc["productdesc"],
+                    "unitname": unitnamrrow["unitname"],
+                    "goid": goid,
+                    "gsflag": productdesc["gsflag"],
+                    "productcode": productdesc["productcode"],
                 }
-                if row["duedate"] != None:
-                    tn["duedate"] = datetime.strftime(row["duedate"], "%d-%m-%Y")
-                    tn["grace"] = row["grace"]
-                if row["recieved"]:
-                    tn["recieved"] = (row["recieved"],)
-                    tn["receiveddate"] = datetime.strftime(
-                        row["recieveddate"], "%d-%m-%Y"
-                    )
-                else:
-                    tn["recieved"] = row["recieved"]
 
-                return {"gkstatus": enumdict["Success"], "gkresult": tn}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            tn = {
+                "transfernoteno": row["transfernoteno"],
+                "transfernotedate": datetime.strftime(
+                    row["transfernotedate"], "%d-%m-%Y"
+                ),
+                "transportationmode": row["transportationmode"],
+                "productdetails": items,
+                "nopkt": row["nopkt"],
+                "togodown": togodata["goname"],
+                "togodownstate": togodata["state"],
+                "togodownaddr": togodata["goaddr"],
+                "togodownid": row["togodown"],
+                "fromgodownid": row["fromgodown"],
+                "fromgodown": fromgodata["goname"],
+                "fromgodownstate": fromgodata["state"],
+                "fromgodownaddr": fromgodata["goaddr"],
+                "issuername": row["issuername"],
+                "designation": row["designation"],
+                "orgcode": row["orgcode"],
+            }
+            if row["duedate"] != None:
+                tn["duedate"] = datetime.strftime(row["duedate"], "%d-%m-%Y")
+                tn["grace"] = row["grace"]
+            if row["recieved"]:
+                tn["recieved"] = (row["recieved"],)
+                tn["receiveddate"] = datetime.strftime(
+                    row["recieveddate"], "%d-%m-%Y"
+                )
+            else:
+                tn["recieved"] = row["recieved"]
+
+            return {"gkstatus": enumdict["Success"], "gkresult": tn}
 
     @view_config(request_method="GET", request_param="type=list", renderer="json")
     def listofTransferNotes(self):
@@ -411,159 +362,151 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                startDate = datetime.strptime(
-                    str(self.request.params["startdate"]), "%d-%m-%Y"
-                ).strftime("%Y-%m-%d")
-                endDate = datetime.strptime(
-                    str(self.request.params["enddate"]), "%d-%m-%Y"
-                ).strftime("%Y-%m-%d")
-                if "goid" in self.request.params:
-                    tngodown = int(self.request.params["goid"])
-                    if "orderflag" in self.request.params:
-                        result = self.con.execute(
-                            select([transfernote])
-                            .where(
-                                and_(
-                                    transfernote.c.orgcode == authDetails["orgcode"],
-                                    transfernote.c.transfernotedate >= startDate,
-                                    transfernote.c.transfernotedate <= endDate,
-                                    or_(
-                                        transfernote.c.fromgodown == tngodown,
-                                        transfernote.c.togodown == tngodown,
-                                    ),
-                                )
-                            )
-                            .order_by(desc(transfernote.c.transfernotedate))
-                        )
-                    else:
-                        result = self.con.execute(
-                            select([transfernote])
-                            .where(
-                                and_(
-                                    transfernote.c.orgcode == authDetails["orgcode"],
-                                    transfernote.c.transfernotedate >= startDate,
-                                    transfernote.c.transfernotedate <= endDate,
-                                    or_(
-                                        transfernote.c.fromgodown == tngodown,
-                                        transfernote.c.togodown == tngodown,
-                                    ),
-                                )
-                            )
-                            .order_by(transfernote.c.transfernotedate)
-                        )
-                else:
-                    if "orderflag" in self.request.params:
-                        result = self.con.execute(
-                            select([transfernote])
-                            .where(
-                                and_(
-                                    transfernote.c.orgcode == authDetails["orgcode"],
-                                    transfernote.c.transfernotedate >= startDate,
-                                    transfernote.c.transfernotedate <= endDate,
-                                )
-                            )
-                            .order_by(desc(transfernote.c.transfernotedate))
-                        )
-                    else:
-                        result = self.con.execute(
-                            select([transfernote])
-                            .where(
-                                and_(
-                                    transfernote.c.orgcode == authDetails["orgcode"],
-                                    transfernote.c.transfernotedate >= startDate,
-                                    transfernote.c.transfernotedate <= endDate,
-                                )
-                            )
-                            .order_by(transfernote.c.transfernotedate)
-                        )
-                tn = []
-                srno = 1
-                for row in result:
-                    stockdata = self.con.execute(
-                        select([stock.c.productcode, stock.c.qty])
+        with eng.connect() as con:
+            startDate = datetime.strptime(
+                str(self.request.params["startdate"]), "%d-%m-%Y"
+            ).strftime("%Y-%m-%d")
+            endDate = datetime.strptime(
+                str(self.request.params["enddate"]), "%d-%m-%Y"
+            ).strftime("%Y-%m-%d")
+            if "goid" in self.request.params:
+                tngodown = int(self.request.params["goid"])
+                if "orderflag" in self.request.params:
+                    result = con.execute(
+                        select([transfernote])
                         .where(
                             and_(
-                                stock.c.orgcode == authDetails["orgcode"],
-                                stock.c.dcinvtnid == row["transfernoteid"],
-                                stock.c.dcinvtnflag == 20,
+                                transfernote.c.orgcode == authDetails["orgcode"],
+                                transfernote.c.transfernotedate >= startDate,
+                                transfernote.c.transfernotedate <= endDate,
+                                or_(
+                                    transfernote.c.fromgodown == tngodown,
+                                    transfernote.c.togodown == tngodown,
+                                ),
                             )
                         )
-                        .distinct()
+                        .order_by(desc(transfernote.c.transfernotedate))
                     )
-                    productqty = []
-                    for data in stockdata:
-                        productdata = self.con.execute(
-                            select([product.c.productdesc, product.c.uomid]).where(
-                                and_(
-                                    product.c.productcode == data["productcode"],
-                                    product.c.orgcode == authDetails["orgcode"],
-                                )
-                            )
-                        )
-                        productdetails = productdata.fetchone()
-                        uomdata = self.con.execute(
-                            select([unitofmeasurement.c.unitname]).where(
-                                unitofmeasurement.c.uomid == productdetails["uomid"]
-                            )
-                        )
-                        uomdetails = uomdata.fetchone()
-                        productqty.append(
-                            {
-                                "productdesc": productdetails["productdesc"],
-                                "quantity": "%.2f" % float(data["qty"]),
-                                "uom": uomdetails["unitname"],
-                            }
-                        )
-                    fromgodown = self.con.execute(
-                        select([godown.c.goname, godown.c.goaddr]).where(
+                else:
+                    result = con.execute(
+                        select([transfernote])
+                        .where(
                             and_(
-                                godown.c.goid == row["fromgodown"],
-                                godown.c.orgcode == authDetails["orgcode"],
+                                transfernote.c.orgcode == authDetails["orgcode"],
+                                transfernote.c.transfernotedate >= startDate,
+                                transfernote.c.transfernotedate <= endDate,
+                                or_(
+                                    transfernote.c.fromgodown == tngodown,
+                                    transfernote.c.togodown == tngodown,
+                                ),
                             )
                         )
+                        .order_by(transfernote.c.transfernotedate)
                     )
-                    fromgodowndata = fromgodown.fetchone()
-                    fromgodowndesc = (
-                        fromgodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
-                    )
-                    togodown = self.con.execute(
-                        select([godown.c.goname, godown.c.goaddr]).where(
+            else:
+                if "orderflag" in self.request.params:
+                    result = con.execute(
+                        select([transfernote])
+                        .where(
                             and_(
-                                godown.c.goid == row["togodown"],
-                                godown.c.orgcode == authDetails["orgcode"],
+                                transfernote.c.orgcode == authDetails["orgcode"],
+                                transfernote.c.transfernotedate >= startDate,
+                                transfernote.c.transfernotedate <= endDate,
+                            )
+                        )
+                        .order_by(desc(transfernote.c.transfernotedate))
+                    )
+                else:
+                    result = con.execute(
+                        select([transfernote])
+                        .where(
+                            and_(
+                                transfernote.c.orgcode == authDetails["orgcode"],
+                                transfernote.c.transfernotedate >= startDate,
+                                transfernote.c.transfernotedate <= endDate,
+                            )
+                        )
+                        .order_by(transfernote.c.transfernotedate)
+                    )
+            tn = []
+            srno = 1
+            for row in result:
+                stockdata = con.execute(
+                    select([stock.c.productcode, stock.c.qty])
+                    .where(
+                        and_(
+                            stock.c.orgcode == authDetails["orgcode"],
+                            stock.c.dcinvtnid == row["transfernoteid"],
+                            stock.c.dcinvtnflag == 20,
+                        )
+                    )
+                    .distinct()
+                )
+                productqty = []
+                for data in stockdata:
+                    productdata = con.execute(
+                        select([product.c.productdesc, product.c.uomid]).where(
+                            and_(
+                                product.c.productcode == data["productcode"],
+                                product.c.orgcode == authDetails["orgcode"],
                             )
                         )
                     )
-                    togodowndata = togodown.fetchone()
-                    togodowndesc = (
-                        togodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
+                    productdetails = productdata.fetchone()
+                    uomdata = con.execute(
+                        select([unitofmeasurement.c.unitname]).where(
+                            unitofmeasurement.c.uomid == productdetails["uomid"]
+                        )
                     )
-                    tn.append(
+                    uomdetails = uomdata.fetchone()
+                    productqty.append(
                         {
-                            "transfernoteno": row["transfernoteno"],
-                            "transfernoteid": row["transfernoteid"],
-                            "transfernotedate": datetime.strftime(
-                                row["transfernotedate"], "%d-%m-%Y"
-                            ),
-                            "fromgodown": fromgodowndesc,
-                            "togodown": togodowndesc,
-                            "productqty": productqty,
-                            "numberofproducts": len(productqty),
-                            "receivedflag": row["recieved"],
-                            "srno": srno,
+                            "productdesc": productdetails["productdesc"],
+                            "quantity": "%.2f" % float(data["qty"]),
+                            "uom": uomdetails["unitname"],
                         }
                     )
-                    srno = srno + 1
-                self.con.close()
-                return {"gkstatus": enumdict["Success"], "gkresult": tn}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                fromgodown = con.execute(
+                    select([godown.c.goname, godown.c.goaddr]).where(
+                        and_(
+                            godown.c.goid == row["fromgodown"],
+                            godown.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
+                )
+                fromgodowndata = fromgodown.fetchone()
+                fromgodowndesc = (
+                    fromgodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
+                )
+                togodown = con.execute(
+                    select([godown.c.goname, godown.c.goaddr]).where(
+                        and_(
+                            godown.c.goid == row["togodown"],
+                            godown.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
+                )
+                togodowndata = togodown.fetchone()
+                togodowndesc = (
+                    togodowndata["goname"] + " (" + fromgodowndata["goaddr"] + ")"
+                )
+                tn.append(
+                    {
+                        "transfernoteno": row["transfernoteno"],
+                        "transfernoteid": row["transfernoteid"],
+                        "transfernotedate": datetime.strftime(
+                            row["transfernotedate"], "%d-%m-%Y"
+                        ),
+                        "fromgodown": fromgodowndesc,
+                        "togodown": togodowndesc,
+                        "productqty": productqty,
+                        "numberofproducts": len(productqty),
+                        "receivedflag": row["recieved"],
+                        "srno": srno,
+                    }
+                )
+                srno = srno + 1
+            return {"gkstatus": enumdict["Success"], "gkresult": tn}
 
     @view_config(request_param="received=true", request_method="PUT", renderer="json")
     def editransfernote(self):
@@ -575,78 +518,72 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                transferdata = self.request.json_body
-                stockdata = {}
-                stockdata["orgcode"] = authDetails["orgcode"]
-                result = self.con.execute(
-                    select(
-                        [
-                            transfernote.c.togodown,
-                            transfernote.c.recieved,
-                            transfernote.c.togodown,
-                        ]
-                    ).where(
-                        transfernote.c.transfernoteid == transferdata["transfernoteid"]
+        with eng.begin() as con:
+            transferdata = self.request.json_body
+            stockdata = {}
+            stockdata["orgcode"] = authDetails["orgcode"]
+            result = con.execute(
+                select(
+                    [
+                        transfernote.c.togodown,
+                        transfernote.c.recieved,
+                        transfernote.c.togodown,
+                    ]
+                ).where(
+                    transfernote.c.transfernoteid == transferdata["transfernoteid"]
+                )
+            )
+            row = result.fetchone()
+            if row["recieved"]:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+            else:
+                stockdata["dcinvtnid"] = transferdata["transfernoteid"]
+                stockdata["stockdate"] = transferdata["recieveddate"]
+                stockdata["dcinvtnflag"] = 20
+                stockdata["inout"] = 9
+                stockdata["goid"] = row["togodown"]
+                stockresult = con.execute(
+                    select([stock.c.productcode, stock.c.qty]).where(
+                        and_(
+                            stock.c.dcinvtnid == transferdata["transfernoteid"],
+                            stock.c.dcinvtnflag == 20,
+                        )
                     )
                 )
-                row = result.fetchone()
-                if row["recieved"]:
-                    return {"gkstatus": enumdict["ActionDisallowed"]}
-                else:
-                    stockdata["dcinvtnid"] = transferdata["transfernoteid"]
-                    stockdata["stockdate"] = transferdata["recieveddate"]
-                    stockdata["dcinvtnflag"] = 20
-                    stockdata["inout"] = 9
-                    stockdata["goid"] = row["togodown"]
-                    stockresult = self.con.execute(
-                        select([stock.c.productcode, stock.c.qty]).where(
+                for key in stockresult:
+                    resultgoprod = con.execute(
+                        select([goprod]).where(
                             and_(
-                                stock.c.dcinvtnid == transferdata["transfernoteid"],
-                                stock.c.dcinvtnflag == 20,
+                                goprod.c.goid == row["togodown"],
+                                goprod.c.productcode == key["productcode"],
                             )
                         )
                     )
-                    for key in stockresult:
-                        resultgoprod = self.con.execute(
-                            select([goprod]).where(
-                                and_(
-                                    goprod.c.goid == row["togodown"],
-                                    goprod.c.productcode == key["productcode"],
-                                )
-                            )
+                    if resultgoprod.rowcount == 0:
+                        result = con.execute(
+                            goprod.insert(),
+                            [
+                                {
+                                    "goid": row["togodown"],
+                                    "productcode": key["productcode"],
+                                    "goopeningstock": 0,
+                                    "orgcode": authDetails["orgcode"],
+                                }
+                            ],
                         )
-                        if resultgoprod.rowcount == 0:
-                            result = self.con.execute(
-                                goprod.insert(),
-                                [
-                                    {
-                                        "goid": row["togodown"],
-                                        "productcode": key["productcode"],
-                                        "goopeningstock": 0,
-                                        "orgcode": authDetails["orgcode"],
-                                    }
-                                ],
-                            )
-                        stockdata["productcode"] = key["productcode"]
-                        stockdata["qty"] = key["qty"]
-                        stockdata["rate"] = 0
-                        result = self.con.execute(stock.insert(), [stockdata])
+                    stockdata["productcode"] = key["productcode"]
+                    stockdata["qty"] = key["qty"]
+                    stockdata["rate"] = 0
+                    result = con.execute(stock.insert(), [stockdata])
 
-                    result = self.con.execute(
-                        transfernote.update()
-                        .where(
-                            transfernote.c.transfernoteid
-                            == transferdata["transfernoteid"]
-                        )
-                        .values(
-                            recieved=True, recieveddate=transferdata["recieveddate"]
-                        )
+                result = con.execute(
+                    transfernote.update()
+                    .where(
+                        transfernote.c.transfernoteid
+                        == transferdata["transfernoteid"]
                     )
-                return {"gkstatus": enumdict["Success"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                    .values(
+                        recieved=True, recieveddate=transferdata["recieveddate"]
+                    )
+                )
+            return {"gkstatus": enumdict["Success"]}
