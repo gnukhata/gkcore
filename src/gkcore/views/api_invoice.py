@@ -1268,6 +1268,11 @@ def getInvoiceData(con, orgcode, params):
     return inv
 
 def getInvoiceList(con, orgcode, reqParams):
+    invoices = []
+    # flag 0=all, 1=sales, 2=purchase, others are invalid
+    if (int(reqParams["flag"]) not in [0, 1, 2]):
+        return invoices
+
     query = select([invoice]).where(and_(
         invoice.c.orgcode == orgcode,
         invoice.c.icflag == 9,
@@ -1281,10 +1286,17 @@ def getInvoiceList(con, orgcode, reqParams):
         query = query.order_by(invoice.c.invoicedate)
 
     result = con.execute(query)
-    invoices = []
     srno = 1
     # for each invoice
     for row in result:
+        # when flag is 1, inoutflag should be 15 to return only sales invoices
+        if reqParams["flag"] == "1" and row["inoutflag"] != 15:
+            continue
+
+        # when flag is 2, inoutflag should be 9 to return only purchase invoices
+        if reqParams["flag"] == "2" and row["inoutflag"] != 9:
+            continue
+
         if row["sourcestate"]:
             sourceStateCode = getStateCode(row["sourcestate"], con)["statecode"]
         if row["taxstate"]:
@@ -1463,81 +1475,27 @@ def getInvoiceList(con, orgcode, reqParams):
         if existDrcr["invcount"] > 0:
             cancelinv = 0
 
-        # flag=0, all invoices.
-        if reqParams["flag"] == "0":
-            invoices.append(
-                {
-                    "srno": srno,
-                    "invoiceno": row["invoiceno"],
-                    "invid": row["invid"],
-                    "dcno": dcno,
-                    "dcdate": dcdate,
-                    "netamt": "%.2f" % netamt,
-                    "taxamt": "%.2f" % taxamt,
-                    "godown": godowns,
-                    "custname": customerdetails["custname"],
-                    "csflag": customerdetails["csflag"],
-                    "custtin": custtin,
-                    "invoicedate": datetime.strftime(
-                        row["invoicedate"], "%d-%m-%Y"
-                    ),
-                    "grossamt": "%.2f" % float(row["invoicetotal"]),
-                    "cancelflag": cancelinv,
-                    "billentryflag": billentryflag,
-                    "inoutflag": row["inoutflag"],
-                }
-            )
-            srno += 1
-        # flag=1, sales invoices
-        elif reqParams["flag"] == "1" and row["inoutflag"] == 15:
-            invoices.append(
-                {
-                    "srno": srno,
-                    "invoiceno": row["invoiceno"],
-                    "invid": row["invid"],
-                    "dcno": dcno,
-                    "dcdate": dcdate,
-                    "netamt": "%.2f" % netamt,
-                    "taxamt": "%.2f" % taxamt,
-                    "godown": godowns,
-                    "custname": customerdetails["custname"],
-                    "csflag": customerdetails["csflag"],
-                    "custtin": custtin,
-                    "invoicedate": datetime.strftime(
-                        row["invoicedate"], "%d-%m-%Y"
-                    ),
-                    "grossamt": "%.2f" % float(row["invoicetotal"]),
-                    "cancelflag": cancelinv,
-                    "billentryflag": billentryflag,
-                    "inoutflag": row["inoutflag"],
-                }
-            )
-            srno += 1
-        # flag=2, purchase invoices.
-        elif reqParams["flag"] == "2" and row["inoutflag"] == 9:
-            invoices.append(
-                {
-                    "srno": srno,
-                    "invoiceno": row["invoiceno"],
-                    "invid": row["invid"],
-                    "dcno": dcno,
-                    "dcdate": dcdate,
-                    "netamt": "%.2f" % netamt,
-                    "taxamt": "%.2f" % taxamt,
-                    "godown": godowns,
-                    "custname": customerdetails["custname"],
-                    "csflag": customerdetails["csflag"],
-                    "custtin": custtin,
-                    "invoicedate": datetime.strftime(
-                        row["invoicedate"], "%d-%m-%Y"
-                    ),
-                    "grossamt": "%.2f" % float(row["invoicetotal"]),
-                    "cancelflag": cancelinv,
-                    "billentryflag": billentryflag,
-                    "inoutflag": row["inoutflag"],
-                }
-            )
-            srno += 1
+        invoices.append({
+            "srno": srno,
+            "invoiceno": row["invoiceno"],
+            "invid": row["invid"],
+            "dcno": dcno,
+            "dcdate": dcdate,
+            "netamt": "%.2f" % netamt,
+            "taxamt": "%.2f" % taxamt,
+            "godown": godowns,
+            "custname": customerdetails["custname"],
+            "csflag": customerdetails["csflag"],
+            "custtin": custtin,
+            "invoicedate": datetime.strftime(
+                row["invoicedate"], "%d-%m-%Y"
+            ),
+            "grossamt": "%.2f" % float(row["invoicetotal"]),
+            "cancelflag": cancelinv,
+            "billentryflag": billentryflag,
+            "inoutflag": row["inoutflag"],
+        })
+        srno += 1
     return invoices
 
 """
