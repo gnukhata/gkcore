@@ -1475,6 +1475,11 @@ def getInvoiceList(con, orgcode, reqParams):
         if existDrcr["invcount"] > 0:
             cancelinv = 0
 
+        immutable_data = con.execute(
+            select([transaction.c.transaction_details])
+            .where(transaction.c.transaction_id == row["immutable_data_id"])
+        ).scalar()
+
         invoices.append({
             "srno": srno,
             "invoiceno": row["invoiceno"],
@@ -1494,6 +1499,7 @@ def getInvoiceList(con, orgcode, reqParams):
             "cancelflag": cancelinv,
             "billentryflag": billentryflag,
             "inoutflag": row["inoutflag"],
+            "immutable_data": immutable_data,
         })
         srno += 1
     return invoices
