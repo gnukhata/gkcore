@@ -142,6 +142,7 @@ organisation = Table(
     UniqueConstraint("orgname", "orgtype", "yearstart"),
     UniqueConstraint("orgname", "orgtype", "yearend"),
     Index("orgindex", "orgname", "yearstart", "yearend"),
+    info={"key_related_json_fields": {"users": "gkusers"}},
 )
 
 """ the table for groups and subgroups.
@@ -444,6 +445,7 @@ vouchers = Table(
     Index("voucher_entrydate", "entrydate"),
     Index("voucher_vno", "vouchernumber"),
     Index("voucher_vdate", "voucherdate"),
+    info={"key_related_json_fields": {"drs": "accounts", "crs": "accounts"}},
 )
 
 
@@ -521,6 +523,15 @@ invoice = Table(
     UniqueConstraint("orgcode", "invoiceno", name="invoice_orgcode_invoiceno_key"),
     Index("invoice_orgcodeindex", "orgcode"),
     Index("invoice_invoicenoindex", "invoiceno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 billwise = Table(
     "billwise",
@@ -589,6 +600,15 @@ invoicebin = Table(
     Column("dcinfo", JSONB),
     Index("invoicebin_orgcodeindex", "orgcode"),
     Index("invoicebin_invoicenoindex", "invoiceno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 
 """
@@ -653,6 +673,15 @@ delchal = Table(
     UniqueConstraint("orgcode", "dcno", "custid"),
     Index("delchal_orgcodeindex", "orgcode"),
     Index("delchal_dcnoindex", "dcno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 """
 This is the table which acts as a bin for cancelled delivery notes.
@@ -701,6 +730,15 @@ delchalbin = Table(
     Column("totalinword", UnicodeText),
     Index("delchalbin_orgcodeindex", "orgcode"),
     Index("delchalbin_dcnoindex", "dcno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 """
 The join table which has keys from both inv and dc table.
@@ -723,6 +761,7 @@ dcinv = Table(
     Index("deinv_orgcodeindex", "orgcode"),
     Index("deinv_dcidindex", "dcid"),
     Index("deinv_invidindex", "invid"),
+    info={"key_related_json_fields": {"invprods": "product"}},
 )
 """
 Table for stock.
@@ -953,6 +992,15 @@ purchaseorder = Table(
     Index("purchaseorder_orgcodeindex", "orgcode"),
     Index("purchaseorder_date", "orderdate"),
     Index("purchaseorder_togodown", "togodown"),
+    info={
+        "key_related_json_fields": {
+            "schedule": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 
 
@@ -1005,6 +1053,7 @@ budget = Table(
     Column("budtype", Integer, nullable=False),
     Column("projectcode", Integer, ForeignKey("projects.projectcode")),
     Column("gaflag", Integer, nullable=False),
+    info={"key_related_json_fields": {"contents": "accounts"}},
 )
 
 """
@@ -1173,6 +1222,7 @@ rejectionnote = Table(
     ),
     UniqueConstraint("rnno", "inout", "orgcode"),
     Index("rejection_note", "orgcode"),
+    info={"key_related_json_fields": {"rejprods": "product"}},
 )
 
 """
@@ -1216,4 +1266,5 @@ drcr = Table(
     UniqueConstraint("orgcode", "drcrno", "dctypeflag"),
     UniqueConstraint("orgcode", "invid", "dctypeflag"),
     UniqueConstraint("orgcode", "rnid", "dctypeflag"),
+    info={"key_related_json_fields": {"reductionval": "product"}},
 )
