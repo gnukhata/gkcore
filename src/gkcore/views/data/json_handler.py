@@ -1,13 +1,10 @@
 import json, io, logging
 from gkcore import eng
-from pyramid.response import Response
-from gkcore.utils import authCheck
-from gkcore import eng, enumdict
-from gkcore.views.api_gkuser import getUserRole
 from sqlalchemy import MetaData, select, func
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql.schema import Table
 from gkcore.models import gkdb
+
 log = logging.getLogger(__name__)
 metadata = MetaData()
 
