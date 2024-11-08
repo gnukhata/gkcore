@@ -365,7 +365,11 @@ class api_transfernote(object):
                     "productcode": productdesc["productcode"],
                 }
 
-            tn = {
+                immutable_data = con.execute(
+                    select([transaction.c.transaction_details])
+                    .where(transaction.c.transaction_id == row["immutable_data_id"])
+                ).scalar()
+                tn = {
                 "transfernoteno": row["transfernoteno"],
                 "transfernotedate": datetime.strftime(
                     row["transfernotedate"], "%d-%m-%Y"
@@ -384,6 +388,7 @@ class api_transfernote(object):
                 "issuername": row["issuername"],
                 "designation": row["designation"],
                 "orgcode": row["orgcode"],
+                "immutable_data": immutable_data,
             }
             if row["duedate"] != None:
                 tn["duedate"] = datetime.strftime(row["duedate"], "%d-%m-%Y")
