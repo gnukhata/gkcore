@@ -33,6 +33,7 @@ from Crypto.PublicKey import RSA
 from gkcore.models.meta import (
     does_foreignkey_exist,
     does_unique_constraint_exist,
+    does_primarykey_exist,
     inventoryMigration,
     addFields,
     columnExists,
@@ -2092,5 +2093,14 @@ def migrate():
                 conn.execute(
                     "alter table customerandsupplier add constraint customerandsupplier_orgcode_tin_key unique (orgcode, tin)"
                 )
+            if not does_primarykey_exist(
+                    eng,
+                    "state",
+                    "state_pkey"
+            ):
+                    conn.execute(
+                        "alter table state add primary key (statecode)"
+                    )
+
 
         print("Database migration successful")

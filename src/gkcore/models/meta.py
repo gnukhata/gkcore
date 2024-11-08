@@ -55,6 +55,14 @@ def does_unique_constraint_exist(eng, table_name, constraint_name):
     return any(constraint['name'] == constraint_name for constraint in constraints)
 
 
+def does_primarykey_exist(eng, table_name, constraint_name):
+    # Inspect the database to check for the constraint
+    inspector = inspect(eng)
+    constraint = inspector.get_pk_constraint(table_name)
+    # return true if the constraint already exists
+    return constraint['name'] == constraint_name
+
+
 def inventoryMigration(con, eng):
     metadata.create_all(eng)
     con.execute(

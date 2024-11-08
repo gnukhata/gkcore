@@ -67,7 +67,7 @@ A state will have its corresponding code with name.
 state = Table(
     "state",
     metadata,
-    Column("statecode", Integer),
+    Column("statecode", Integer, primary_key=True),
     Column("statename", UnicodeText),
     Column("abbreviation", UnicodeText),
 )
