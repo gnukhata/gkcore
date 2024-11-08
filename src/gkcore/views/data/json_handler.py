@@ -275,6 +275,31 @@ def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
                             }
                         )
                     )
+
+def update_user_conf(con: Connection, userid: int, orgcode: int) -> None:
+    """Updates user conf with new orgcode.
+
+    :param con: SQL Alchemy engine connection
+    :param userid: User ID of the updating user
+    :param orgcode: `orgcode` of the new organisation
+    :return: None
+    """
+
+    # User config for an organisation for admin role
+    org_conf = {
+        "userconf": {},
+        "userrole": -1,
+        "invitestatus": True
+    }
+    con.execute(
+        gkdb.gkusers
+        .update()
+        .where(gkdb.gkusers.c.userid == userid)
+        .values(
+            orgs = func.jsonb_set(
+                gkdb.gkusers.c.orgs, '{'+str(orgcode)+'}', json.dumps(org_conf)
+            )
+        )
     )
 
 
