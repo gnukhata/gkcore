@@ -28,8 +28,16 @@ Contributors:
 """
 
 from pyramid.request import Request
+import json
+
+from pyramid.response import Response
+
+from gkcore.views.data.json_handler import (
+    delete_organisation, export_org_data, import_org_data, update_user_conf
+)
 from pyramid.view import view_config
 from sqlalchemy.engine.base import Connection
+from gkcore import eng
 
 import gkcore.views.data as data
 
@@ -51,10 +59,25 @@ class api_data(object):
     @view_config(
         route_name="export-json",
         request_method="GET",
-        renderer="json",
+        renderer="json_extended",
+        permission="admin",
     )
     def export_json(self):
-        return data.json_handler.export_json(self)
+        """Exports organisation data as JSON"""
+        orgcode = self.request.identity.get("orgcode")
+        with eng.connect() as con:
+            export_file = export_org_data(con, orgcode)
+            headerList = {
+                "Content-Type": "application/json; charset=utf-8",
+                "Content-Length": len(export_file),
+                "Content-Disposition": "attachment; filename=report.json",
+                "X-Content-Type-Options": "nosniff",
+                "Set-Cookie": "fileDownload=true; path=/ ;HttpOnly",
+            }
+            return Response(
+                export_file,
+                headerlist=list(headerList.items()),
+            )
 
     @view_config(
         route_name="import-xlsx",
