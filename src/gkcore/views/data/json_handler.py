@@ -5,37 +5,37 @@ from gkcore.utils import authCheck
 from gkcore import eng, enumdict
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.models.gkdb import customerandsupplier, godown, accounts
-
+from sqlalchemy import MetaData, select, func
+from sqlalchemy.engine.base import Connection
 log = logging.getLogger(__name__)
 
 
-def get_table_array(name: str, orgcode: int):
+
+def get_table_array(con: Connection, table_name: str, orgcode: int) -> list:
     """Return given sql table contents as an array of dicts
 
-    *params*
-
-    `name`: db table name
-
-    `orgcode`: integer
-
+    :param con: SQL Alchemy engine connection
+    :param table_name: Database table name
+    :param orgcode: `orgcode` of the new organisation
+    :return: List of rows of the table
     """
-    c = eng.connect()
-    # handle case for gkusers table as it does not have orgcode column
-    if name == "gkusers":
-        table = c.execute(f"select * from {name}")
-    else:
-        table = c.execute(f"select * from {name} where orgcode = {orgcode}")
-    a = []
-    for row in table:
-        d = {}
-        for i in row.keys():
-            d[i] = row[i]
-            # delete orgcode column as it's not required during import, except for gkusers table
-            # as it does not have such
-            if name != "gkusers":
-                d.pop("orgcode", None)
-        a.append(d)
-    return a
+    with eng.connect() as con:
+
+        table = getattr(gkdb, table_name)
+
+        # handle case for gkusers table as it does not have orgcode column
+        if table_name == "gkusers":
+            statement = table.select().where(
+                func.jsonb_extract_path_text(
+                    table.c.orgs, str(orgcode)
+                ) != None
+            )
+        else:
+            statement = table.select().where(table.c.orgcode == orgcode)
+
+        table_org = con.execute(statement).fetchall()
+
+        return [dict(row) for row in table_org]
 
 
 def type_cast(key):
