@@ -27,7 +27,6 @@ Contributors:
 "Sai Karthik" <kskarthik@disroot.org>
 """
 
-from pyramid.request import Request
 import json
 
 from pyramid.response import Response
@@ -36,7 +35,6 @@ from gkcore.views.data.json_handler import (
     delete_organisation, export_org_data, import_org_data, update_user_conf
 )
 from pyramid.view import view_config
-from sqlalchemy.engine.base import Connection
 from gkcore import eng
 
 import gkcore.views.data as data
@@ -44,9 +42,7 @@ import gkcore.views.data as data
 
 class api_data(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.conn = Connection
 
     @view_config(
         route_name="export-xlsx",
