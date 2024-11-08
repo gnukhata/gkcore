@@ -207,6 +207,21 @@ def update_pk(
 def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
     """ Updates JSONB fields with updated primary key.
 
+    JSONB fields are handled by using info attribute of SQL Alchemy tables. Following
+    entries shall be added to database table for recognising JSONB fields with related
+    tables here.
+
+    `key_related_json_fields`: If the table has a jsonb field and if the stored data
+    has key fields related to another table, their relation can be stored as a
+    dictionary of structure ``{"field_name: related_table_name"}`` here.
+
+    eg, `info={"key_related_json_fields": {"drs": "accounts", "crs": "accounts"}}`
+
+    `key_related_json_fields`: If the table has a jsonb field and if the stored data
+    has value fields related to another table, their relation can be stored as a
+    dictionary of structure `{"field_name: related_table_name"}` here.
+    eg, `info={"value_related_json_fields": {"drs": "accounts", "crs": "accounts"}}`
+
     :param con: SQL Alchemy engine connection
     :param table: SQL Alchemy table object
     :param pk_map: Mapping between old `pk`s and newly created `pk`s
