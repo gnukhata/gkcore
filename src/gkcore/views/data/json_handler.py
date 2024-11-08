@@ -57,23 +57,13 @@ def type_cast(key):
         return str(key)
 
 
-def export_json(self):
-    """Export all database tables to a json file"""
+def export_org_data(con: Connection, orgcode: int) -> str:
+    """Export all database tables to a json file
 
-    org_code = None
-
-    # Check & validate user access
-    try:
-        token = self.request.headers["gktoken"]
-        user = authCheck(token)
-        org_code = user["orgcode"]
-        user_role = getUserRole(user["userid"], org_code)["gkresult"]["userrole"]
-
-        # only admin can export data
-        if user_role != -1:
-            return {"gkstatus": enumdict["BadPrivilege"]}
-    except:
-        return {"gkstatus": enumdict["UnauthorisedAccess"]}
+    :param con: SQL Alchemy engine connection
+    :param orgcode: `orgcode` of the old organisation
+    :return: Organisation data exported as JSON
+    """
 
     # get tables list from the db
     db_tables = eng.table_names()
@@ -85,14 +75,14 @@ def export_json(self):
     # These tables are excluded during the export
     ignored_tables: list[str] = [
         "state",
-        "organisation",
         "signature",
         "unitofmeasurement",
     ]
+
     # loop through the tables and assign table data to their respective keys
     for table in db_tables:
         if table not in ignored_tables:
-            data[table] = get_table_array(name=table, orgcode=org_code)
+            data[table] = get_table_array(con, table, orgcode)
 
     # create a file object
     file_obj = io.StringIO()
@@ -101,17 +91,8 @@ def export_json(self):
     json.dump(data, file_obj, default=type_cast)
     export_file = file_obj.getvalue()
     file_obj.close()
-    headerList = {
-        "Content-Type": "application/json; charset=utf-8",
-        "Content-Length": len(data),
-        "Content-Disposition": "attachment; filename=report.json",
-        "X-Content-Type-Options": "nosniff",
-        "Set-Cookie": "fileDownload=true; path=/ ;HttpOnly",
+    return export_file
     }
-    log.info("exporting json file")
-    return Response(
-        export_file,
-        headerlist=list(headerList.items()),
     )
 
 
