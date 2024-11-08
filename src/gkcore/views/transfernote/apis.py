@@ -35,6 +35,7 @@ from gkcore import eng, enumdict
 from pyramid.request import Request
 from gkcore.models.gkdb import (
     transfernote,
+    transaction,
     stock,
     godown,
     product,
@@ -85,6 +86,7 @@ class api_transfernote(object):
             dataset = self.request.json_body
             transferdata = dataset["transferdata"]
             stockdata = dataset["stockdata"]
+            items = stockdata.pop("items")
             transferdata["orgcode"] = authDetails["orgcode"]
             stockdata["orgcode"] = authDetails["orgcode"]
             # Check for duplicate entry before insertion
@@ -100,6 +102,37 @@ class api_transfernote(object):
             if result_duplicate_check.rowcount > 0:
                 # Duplicate entry found, handle accordingly
                 return {"gkstatus": enumdict["DuplicateEntry"]}
+
+            from_godown = transferdata["fromgodown"]
+            to_godown = transferdata["togodown"]
+            godowns = con.execute(
+                select([godown])
+                .where(godown.c.goid.in_([from_godown, to_godown]))
+            ).fetchall()
+            godowns = [dict(row) for row in godowns]
+            godowns = {gd["goid"]: gd for gd in godowns}
+            product_id_values = list(items.keys())
+            products = con.execute(
+                select([product.c.productcode, product.c.productdesc, product.c.gscode])
+                .where(product.c.productcode.in_(product_id_values))
+            ).fetchall()
+            product_details = {
+                id: {
+                    "productcode": id,
+                    "productdesc": name,
+                    "gscode": hsn,
+                }
+                for id, name, hsn in products
+            }
+            transaction_details = {
+                "godowns": godowns,
+                "products": product_details,
+            }
+            transaction_id = con.execute(
+                transaction.insert()
+                .values(transaction_details=transaction_details)
+            ).inserted_primary_key
+            transferdata["immutable_data_id"] = transaction_id[0]
             result = con.execute(transfernote.insert(), [transferdata])
 
             if result.rowcount != 1:
@@ -125,7 +158,6 @@ class api_transfernote(object):
             stockdata["goid"] = transferdata["fromgodown"]
             stockdata["dcinvtnflag"] = 20
             stockdata["inout"] = 15
-            items = stockdata.pop("items")
             for key in list(items.keys()):
                 stockdata["rate"] = 0
                 stockdata["productcode"] = key
