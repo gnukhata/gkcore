@@ -303,3 +303,33 @@ def update_user_conf(con: Connection, userid: int, orgcode: int) -> None:
     )
 
 
+def delete_organisation(con: Connection, orgcode: int) -> None:
+    """Deletes the organisation and org config from user table.
+
+    :param con: SQL Alchemy engine connection
+    :param orgcode: `orgcode` of the old organisation
+    :return: None
+    """
+
+    # Delete the org
+    con.execute(
+        gkdb.organisation.delete().where(
+            gkdb.organisation.c.orgcode == orgcode
+        )
+    )
+
+    # Update the user config
+    con.execute(
+        gkdb.gkusers
+        .update()
+        .where(
+            func.jsonb_extract_path_text(
+                gkdb.gkusers.c.orgs, str(orgcode)
+            ) != None,
+        )
+        .values(
+            {
+                "orgs": gkdb.gkusers.c.orgs.op('-')(str(orgcode))
+            }
+        )
+    )
