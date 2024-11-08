@@ -57,6 +57,14 @@ class api_data(object):
         return data.spreadsheet_handler.export_ledger(self)
 
     @view_config(
+        route_name="import-xlsx",
+        request_method="POST",
+        renderer="json",
+    )
+    def import_tally_spreadsheet(self):
+        return data.spreadsheet_handler.import_tally(self)
+
+    @view_config(
         route_name="export-json",
         request_method="GET",
         renderer="json_extended",
@@ -80,17 +88,34 @@ class api_data(object):
             )
 
     @view_config(
-        route_name="import-xlsx",
+        route_name="import-organisation",
         request_method="POST",
         renderer="json",
+        is_authenticated=True,
     )
-    def import_tally_spreadsheet(self):
-        return data.spreadsheet_handler.import_tally(self)
+    def import_organisation(self):
+        """Imports organisation as new organisation"""
+        data = self.request.POST["gkfile"].file
+        user_id = self.request.authenticated_userid
+        with eng.begin() as con:
+            new_orgcode = import_org_data(con, json.load(data))
+            update_user_conf(con, user_id, new_orgcode)
+        return {"gkstatus": 0}
+
 
     @view_config(
-        route_name="import-json",
+        route_name="overwrite-organisation",
         request_method="POST",
         renderer="json",
+        permission="admin",
     )
-    def import_json(self):
-        return data.json_handler.import_json(self)
+    def overwrite_organisation(self):
+        """Imports organisation replacing an existing organisation"""
+        data = self.request.POST["gkfile"].file
+        user_id = self.request.authenticated_userid
+        with eng.begin() as con:
+            orgcode = self.request.identity.get("orgcode")
+            delete_organisation(con, orgcode)
+            new_orgcode = import_org_data(con, json.load(data))
+            update_user_conf(con, user_id, new_orgcode)
+        return {"gkstatus": 0}
