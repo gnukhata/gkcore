@@ -49,7 +49,7 @@ class SecurityPolicy:
         allowed = ["read"]
         # admin: -1, manager: 0, operator: 1, auditor: 2, godown incharge: 3
         if user_org_role == -1:
-            allowed = ["read", "write", "update", "delete", "delete"]
+            allowed = ["read", "write", "update", "delete", "delete", "admin"]
         if permission in allowed:
             return Allowed(
                 "Access granted for user %s.",
