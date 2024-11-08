@@ -4,11 +4,14 @@ from pyramid.response import Response
 from gkcore.utils import authCheck
 from gkcore import eng, enumdict
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.models.gkdb import customerandsupplier, godown, accounts
 from sqlalchemy import MetaData, select, func
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.sql.schema import Table
+from gkcore.models import gkdb
 log = logging.getLogger(__name__)
+metadata = MetaData()
 
+metadata.reflect(bind=eng)
 
 
 def get_table_array(con: Connection, table_name: str, orgcode: int) -> list:
@@ -92,93 +95,171 @@ def export_org_data(con: Connection, orgcode: int) -> str:
     export_file = file_obj.getvalue()
     file_obj.close()
     return export_file
+
+
+def import_org_data(con: Connection, data: dict) -> int:
+    """ Imports organisation data.
+
+    This function will loop through table list twice.
+
+    In first iteration, it will insert table data. The order at which table data will
+    depend on foreignkey dependance of the table. This is to make sure foreignkey
+    references are already inserted before they get referred. SQL Alchemy's
+    `sorted_tables` is used to sort tables wrt foreignkey dependancy.
+
+    Old and new `pk`s of the inserted tables will be saved in a dictionary `pk_map`.
+    This will be used to update the foreignkey constraints of tables that referring
+    them.
+
+    In Second iteration, `pk`s stored in JSONB fields are updated.
+
+    :param con: SQL Alchemy engine connection
+    :param data: Organisation data to be imported
+    :return: `orgcode` of the new organisation
+    """
+    table_list = metadata.sorted_tables
+    excluded_tables = ["unitofmeasurement", "state", "signature", "gkusers"]
+
+    pk_map = {}
+    for table in table_list:
+        table_data = data.get(table.name, [])
+
+        if table.name in ["signature", "state"]:
+            continue
+        is_excluded = table.name in excluded_tables
+        table_pk_map = update_pk(con, table, table_data, pk_map, is_excluded)
+        pk_map.update({table.name: table_pk_map})
+    for table in table_list:
+        if table.name in ["signature", "state"]:
+            continue
+        update_json_fields(con, table, pk_map)
+    new_org_code = list(pk_map["organisation"].values())[0]
+    return new_org_code
+
+
+def get_pk_field_name(table: Table) -> str:
+    """Imports organisation data.
+
+    :param table: SQL Alchemy table object
+    :return: Field name of `pk`
+    :raises ValueError: If table does not have primary key
+    """
+    for column in table.columns.values():
+        if column.primary_key:
+            return column.name
+    raise ValueError(f"Table {table} does not have primary key.")
+
+
+def update_pk(
+        con: Connection,
+        table: Table,
+        table_data: list,
+        pk_map: dict,
+        is_excluded: bool
+) -> dict:
+    """ Imports organisation data.
+
+    :param con: SQL Alchemy engine connection
+    :param table: SQL Alchemy table object
+    :param table_data: Table data to be imported
+    :param pk_map: Mapping between old `pk`s and newly created `pk`s
+    :param is_excluded: Is table to be excluded from inserting
+    :return: Map between old `pk`s and newly created `pk`s of the table
+    """
+
+    pk_field = get_pk_field_name(table)
+
+    table_pk_map = {}
+
+    # If in excluded list, append pk_map with existing primary keys
+    if is_excluded:
+        table_column = con.execute(select([getattr(table.c, pk_field)]))
+        for item in table_column.fetchall():
+            table_pk_map.update({item[pk_field]: item[pk_field]})
+        return table_pk_map
+
+    # Make a dictionary of foreignkeys with with name as key
+    foreign_keys = {
+        foreign_key.column.name: foreign_key for foreign_key in list(
+            table.foreign_keys
+        )
     }
+    for row in table_data:
+        pk_value = row.pop(pk_field)
+
+        for field_name in row.keys():
+            if (field_name in foreign_keys) and row.get(field_name):
+                fk_table_name = foreign_keys[field_name].constraint.referred_table.name
+                row[field_name] = pk_map[fk_table_name][row[field_name]]
+
+        statement = table.insert().values(row).returning(
+            getattr(table.c, pk_field)
+        )
+        # Insert row to database
+        row_insert = con.execute(statement).scalar()
+
+        # Update pk_map with newly created primary key and the old one
+        table_pk_map.update({pk_value: row_insert})
+
+    return table_pk_map
+
+
+def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
+    """ Updates JSONB fields with updated primary key.
+
+    :param con: SQL Alchemy engine connection
+    :param table: SQL Alchemy table object
+    :param pk_map: Mapping between old `pk`s and newly created `pk`s
+    :return: None
+    """
+    # Table is being required to imported again, otherwise old data is being shown
+    table = getattr(gkdb, table.name)
+    pk_field = get_pk_field_name(table)
+    key_related_json_fields = table.info.get("key_related_json_fields")
+    value_related_json_fields = table.info.get("value_related_json_fields")
+    if not (key_related_json_fields or value_related_json_fields):
+        return
+
+    orgcode = list(pk_map["organisation"].values()).pop()
+    table_rows = con.execute(table.select().where(table.c.orgcode == orgcode)).fetchall()
+    for row in table_rows:
+        for field_name in row.keys():
+            field = getattr(table.c, field_name)
+            value = row[field_name]
+            # Update if the key is a related field
+            if key_related_json_fields and (field_name in key_related_json_fields):
+                related_table_name = key_related_json_fields[field_name]
+                for item in value.keys():
+                    related_value = pk_map[related_table_name][int(item)]
+                    con.execute(
+                        table
+                        .update()
+                        .where(getattr(table.c, pk_field) == row[pk_field])
+                        .values(
+                            {
+                                field_name: func.jsonb_set(
+                                    field, '{'+str(related_value)+'}', field[item]
+                                ).op('-')(item)
+                            }
+                        )
+                    )
+            # Update if the value is a related field
+            if value_related_json_fields and field_name in value_related_json_fields:
+                related_table_name = value_related_json_fields[field_name]
+                for item in value.keys():
+                    related_value = pk_map[related_table_name][int(item)]
+                    con.execute(
+                        table
+                        .update()
+                        .where(getattr(table.c, pk_field) == row[pk_field])
+                        .values(
+                            {
+                                field_name: func.jsonb_set(
+                                    field, '{'+str(item)+'}', str(related_value)
+                                )
+                            }
+                        )
+                    )
     )
 
 
-def import_json(self):
-    """Import org data from GNUKhata's json export file"""
-
-    # Check & validate user access
-    try:
-        token = self.request.headers["gktoken"]
-        user = authCheck(token)
-        user_role = getUserRole(user["userid"], user["orgcode"])["gkresult"]["userrole"]
-
-        # only admin can import data
-        if user_role != -1:
-            return {"gkstatus": enumdict["BadPrivilege"]}
-    except:
-        return {"gkstatus": enumdict["UnauthorisedAccess"]}
-
-    # Proceed to importing
-    try:
-        f = self.request.POST["gkfile"].file
-        org = json.load(f)
-
-        # check if it's a valid gnukhata json file
-        # else return err response
-        if "gnukhata" not in org:
-            log.info("Not a valid gnukhata export format")
-            return {"gkstatus": 3}
-
-        # imported entries info
-        import_info: dict = {
-            "success": 0,
-            "duplicate": {"contacts": [], "godowns": [], "accounts": []},
-        }
-        success_entries = 0
-
-        # customers / suppliers
-        log.info("\n 🤝 importing customers/suppliers ...")
-        for i in org["customerandsupplier"]:
-            # remove foreign key
-            i.pop("custid")
-            # add current orgcode as key
-            i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
-            # insert user entries to respective table
-            try:
-                eng.connect().execute(customerandsupplier.insert(), i)
-                success_entries += 1
-            except Exception as e:
-                # add failed entry name to import log
-                import_info["duplicate"]["contacts"].append(i["custname"])
-                log.warning(e)
-
-        # Godowns
-        log.info("\n 📦 Importing Godowns ...")
-        for i in org["godown"]:
-            # remove foreign key
-            i.pop("goid")
-            # add current orgcode as key
-            i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
-            # insert contact entries to respective table
-            try:
-                eng.connect().execute(godown.insert(), i)
-                success_entries += 1
-            except Exception as e:
-                # add failed entry name to import log
-                import_info["duplicate"]["godowns"].append(i["goname"])
-                log.warning(e)
-
-        # Accounts
-        log.info("\n Importing Accounts ...")
-        for i in org["accounts"]:
-            # remove foreign key
-            i.pop("accountcode")
-            # add current orgcode as key
-            i["orgcode"] = authCheck(self.request.headers["gktoken"])["orgcode"]
-            # insert user entries to respective table
-            try:
-                eng.connect().execute(accounts.insert(), i)
-                success_entries += 1
-            except Exception as e:
-                # add failed entry name to import log
-                import_info["duplicate"]["accounts"].append(i["accountname"])
-                log.warning(e)
-        # append successful import count to the response
-        import_info["success"] = success_entries
-    except Exception as e:
-        log.warn(e)
-        return {"gkstatus": 3}
-    return {"gkstatus": 0, "gkresult": import_info}
