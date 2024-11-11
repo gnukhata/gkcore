@@ -28,6 +28,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     invoice,
+    transaction,
     tax,
     state,
     drcr,
@@ -493,6 +494,11 @@ class api_drcr(object):
                 drcrdata["badquality"] = 0
             else:
                 drcrdata["badquality"] = 1
+            immutable_data = con.execute(
+                select([transaction.c.transaction_details])
+                .where(transaction.c.transaction_id == invrow["immutable_data_id"])
+            ).scalar()
+            drcrdata["immutable_data"] = immutable_data
             return {"gkstatus": gkcore.enumdict["Success"], "gkresult": drcrdata}
 
     @view_config(request_method="GET", request_param="drcr=all", renderer="json")
