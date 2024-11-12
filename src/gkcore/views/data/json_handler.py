@@ -124,7 +124,7 @@ def import_org_data(con: Connection, data: dict) -> int:
         if table.name in ["signature", "state"]:
             continue
         is_excluded = table.name in excluded_tables
-        table_pk_map = update_pk(con, table, table_data, pk_map, is_excluded)
+        table_pk_map = insert_org_data(con, table, table_data, pk_map, is_excluded)
         pk_map.update({table.name: table_pk_map})
     for table in table_list:
         if table.name in ["signature", "state"]:
@@ -147,7 +147,7 @@ def get_pk_field_name(table: Table) -> str:
     raise ValueError(f"Table {table} does not have primary key.")
 
 
-def update_pk(
+def insert_org_data(
         con: Connection,
         table: Table,
         table_data: list,
