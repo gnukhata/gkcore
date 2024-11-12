@@ -184,6 +184,10 @@ def update_pk(
     for row in table_data:
         pk_value = row.pop(pk_field)
 
+        for field, value in dict(row).items():
+            if value == None:
+                row.pop(field)
+
         for field_name in row.keys():
             if (field_name in foreign_keys) and row.get(field_name):
                 fk_table_name = foreign_keys[field_name].constraint.referred_table.name
