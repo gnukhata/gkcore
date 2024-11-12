@@ -242,6 +242,8 @@ def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
             if key_related_json_fields and (field_name in key_related_json_fields):
                 related_table_name = key_related_json_fields[field_name]
                 for item in value.keys():
+                    if not type(item) == int:
+                        continue
                     related_value = pk_map[related_table_name][int(item)]
                     con.execute(
                         table
