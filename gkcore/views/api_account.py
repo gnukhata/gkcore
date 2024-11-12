@@ -36,6 +36,7 @@ from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, alias, or_, func
+from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
@@ -548,8 +549,9 @@ defaultflag '16' or '19' set to the '0'.
                     custdataset = {}
                     custdataset["orgcode"] = authDetails["orgcode"]
                     custnamelist = con.execute(
-                        "select exists(select 1 from customerandsupplier where orgcode =%d and custname='%s')"
-                        % (authDetails["orgcode"], newdataset["oldcustname"])
+                        text("select exists(select 1 from customerandsupplier where orgcode = :orgcode and custname = :custname)"),
+                        orgcode = authDetails["orgcode"],
+                        custname = newdataset["oldcustname"],
                     )
                     listcust = custnamelist.fetchone()
                     # this condition is true when account name is match with custsup name.
