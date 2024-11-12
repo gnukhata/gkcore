@@ -1,6 +1,6 @@
 import json, io, logging
 from gkcore import eng
-from sqlalchemy import MetaData, select, func
+from sqlalchemy import MetaData, select, func, and_
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql.schema import Table
 from gkcore.models import gkdb
@@ -330,3 +330,41 @@ def delete_organisation(con: Connection, orgcode: int) -> None:
             }
         )
     )
+
+
+def update_organisation_rocode(con: Connection, orgcode: int) -> None:
+    """Updates rocode of an organisation. If an organisation doesn't have rocode 0, this
+    function checks for an organisation with ro code 0 and financial period above the
+    current one, if its not found it update the rocode of current org to 1. This would
+    enable it to rollover to create a new org after it.
+
+    :param con: SQL Alchemy engine connection
+    :param orgcode: `orgcode` of the old organisation
+    :return: None
+    """
+
+    # Fetch org details
+    organisation = con.execute(
+        gkdb.organisation.select().where(
+            gkdb.organisation.c.orgcode == orgcode
+        )
+    ).fetchone()
+
+    if organisation["roflag"] != 0:
+        related_organisations = con.execute(
+            gkdb.organisation.select().where(
+                and_(
+                    gkdb.organisation.c.orgname == organisation["orgname"],
+                    gkdb.organisation.c.orgtype == organisation["orgtype"],
+                    gkdb.organisation.c.roflag == 0,
+                    gkdb.organisation.c.yearstart >= organisation["yearend"],
+                )
+            )
+        )
+        if related_organisations.rowcount == 0:
+            # Update the user config
+            con.execute(
+                gkdb.organisation.update()
+                .where(gkdb.organisation.c.orgcode == orgcode)
+                .values(roflag = 0)
+            )
