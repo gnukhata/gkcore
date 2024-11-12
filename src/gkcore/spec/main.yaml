@@ -245,7 +245,9 @@ paths:
   # import / export
   /export/json:
     $ref: "./data/export-json.yaml"
-  /import/json:
+  /import/organisation:
+    $ref: "./data/import-json.yaml"
+  /import/overwrite-organisation:
     $ref: "./data/import-json.yaml"
   /export/xlsx:
     $ref: "./data/export-xlsx.yaml"
