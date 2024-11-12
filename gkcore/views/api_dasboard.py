@@ -632,25 +632,21 @@ class api_dashboard(object):
                 startenddateprint = startenddate.fetchone()
                 # this is to fetch in transfer note count month wise
                 monthlysortindata = self.con.execute(
-                    "select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and dcinvtnflag=20 and inout=9 group by month order by month"
-                    % (
-                        datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
-                        datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
-                        authDetails["orgcode"],
-                        goid,
-                    )
+                    text("select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN ':yearstart' AND ':yearend' and orgcode=:orgcode and goid=:goid and dcinvtnflag=20 and inout=9 group by month order by month"),
+                    yearstart = datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
+                    yearend = datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
+                    orgcode = authDetails["orgcode"],
+                    goid = goid,
                 )
                 monthlysortindataset = monthlysortindata.fetchall()
 
                 # this is to fetch out transfer note count month wise
                 monthlysortoutdata = self.con.execute(
-                    "select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and dcinvtnflag=20 and inout=15 group by month order by month"
-                    % (
-                        datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
-                        datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
-                        authDetails["orgcode"],
-                        goid,
-                    )
+                    text("select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN ':yearstart' AND ':yearend' and orgcode=:orgcode and goid=:goid and dcinvtnflag=20 and inout=15 group by month order by month"),
+                    yearstart = datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
+                    yearend = datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
+                    orgcode = authDetails["orgcode"],
+                    goid = goid,
                 )
                 monthlysortoutdataset = monthlysortoutdata.fetchall()
                 # this is use to send 0 if month have 0 invoice count
