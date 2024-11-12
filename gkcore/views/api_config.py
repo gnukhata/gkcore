@@ -36,6 +36,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
+from sqlalchemy.sql.expression import text
 import gkcore
 from jsonschema import RefResolver, Draft202012Validator, validate
 from gkcore.config_schema import (
@@ -129,26 +130,14 @@ class api_config(object):
                 config = dataset["config"]
                 confType = self.request.params["conftype"]
                 if confType == "user":
-                    # self.con.execute(
-                    #     gkdb.users.update()
-                    #     .where(
-                    #         and_(
-                    #             gkdb.users.c.orgcode == authDetails["orgcode"],
-                    #             gkdb.users.c.userid == authDetails["userid"],
-                    #         )
-                    #     )
-                    #     .values(userconf=config)
-                    # )
                     targetPath = [authDetails["orgcode"], "userconf"]
                     payload = "'" + json.dumps(config) + "'"
                     path = "'{" + ",".join(targetPath) + "}'"
                     self.con.execute(
-                        "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
-                        % (
-                            str(path),
-                            str(payload),
-                            authDetails["userid"],
-                        )
+                        text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                        path = str(path),
+                        payload = str(payload),
+                        userid = authDetails["userid"],
                     )
                 else:
                     self.con.execute(
