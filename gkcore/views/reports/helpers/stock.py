@@ -42,6 +42,8 @@ def stockonhandfun(orgcode, productCode, endDate):
                 )
             )
             osRow = openingStockResult.fetchone()
+            if not osRow:
+                raise ValueError(f"Productcode: {productCode} is not a product.")
             openingStock = osRow["openingstock"]
             prodName = osRow["productdesc"]
             prodCode = osRow["productcode"]
