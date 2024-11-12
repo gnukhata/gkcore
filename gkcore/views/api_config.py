@@ -290,51 +290,29 @@ class api_config(object):
             self.con = eng.connect()
             config = {}
             if confType == "user":
+                orgconf = [orgcode, "userconf"]
+
                 if pageid:
+                    orgconf.append(pageid)
                     if confid:
-                        # configRow = self.con.execute(
-                        #     "select u.userconf#>'{%s,%s}' as userconf from users u where orgcode = %d and userid = %d;"
-                        #     % (str(pageid), str(confid), orgcode, userid)
-                        # ).fetchone()
-                        configRow = self.con.execute(
-                            "select u.orgs#>'{%s,userconf,%s,%s}' as userconf from gkusers u where userid = %d;"
-                            % (str(orgcode), str(pageid), str(confid), userid)
-                        ).fetchone()
-                    else:
-                        # configRow = self.con.execute(
-                        #     "select u.userconf#>'{%s}' as userconf from users u where orgcode = %d and userid = %d;"
-                        #     % (str(pageid), orgcode, userid)
-                        # ).fetchone()
-                        configRow = self.con.execute(
-                            "select u.orgs#>'{%s,userconf,%s}' as userconf from gkusers u where userid = %d;"
-                            % (str(orgcode), str(pageid), userid)
-                        ).fetchone()
-                else:
-                    # configRow = self.con.execute(
-                    #     select([gkdb.gkusers.c.userconf]).where(
-                    #         and_(
-                    #             gkdb.gkusers.c.orgcode == orgcode,
-                    #             gkdb.gkusers.c.userid == userid,
-                    #         )
-                    #     )
-                    # ).fetchone()
-                    configRow = self.con.execute(
-                        "select u.orgs#>'{%s,userconf}' as userconf from gkusers u where userid = %d;"
-                        % (str(orgcode), userid)
-                    ).fetchone()
+                        orgconf.append(confid)
+                configRow = self.con.execute(
+                    text("select u.orgs#>:orgconf as userconf from gkusers u where userid = :userid;"),
+                    orgconf = "{"+",".join(orgconf)+"}",
+                    userid = userid,
+                ).fetchone()
                 config = configRow["userconf"]
             elif confType == "org":
                 if pageid:
                     if confid:
-                        configRow = self.con.execute(
-                            "select org.orgconf#>'{%s,%s}' as orgconf from organisation org where orgcode = %d;"
-                            % (str(pageid), str(confid), orgcode)
-                        ).fetchone()
+                        orgconf = "{"+pageid+","+confid+"}"
                     else:
-                        configRow = self.con.execute(
-                            "select org.orgconf#>'{%s}' as orgconf from organisation org where orgcode = %d;"
-                            % (str(pageid), orgcode)
-                        ).fetchone()
+                        orgconf = "{"+pageid+"}"
+                    configRow = self.con.execute(
+                        text("select org.orgconf#>:orgconf as orgconf from organisation org where orgcode = :orgcode;"),
+                        orgconf = orgconf,
+                        orgcode = orgcode,
+                    ).fetchone()
                 else:
                     configRow = self.con.execute(
                         select([gkdb.organisation.c.orgconf]).where(
