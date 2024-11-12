@@ -246,18 +246,16 @@ class api_config(object):
                 if not len(targetPath):
                     if self.request.params["conftype"] == "user":
                         targetPath = [str(authDetails["orgcode"]), "userconf"]
-                        payload = "'" + json.dumps(payload) + "'"
-                        path = "'{" + ",".join(targetPath) + "}'"
-
+                        payload = json.dumps(payload)
+                        path = "{" + ",".join(targetPath) + "}"
 
                         conn.execute(
-                            "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
-                            % (
-                                str(path),
-                                str(payload),
-                                authDetails["userid"],
-                            )
+                            text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                            path = path,
+                            payload = payload,
+                            userid = authDetails["userid"],
                         )
+
                     elif self.request.params["conftype"] == "org":
                         conn.execute(
                             gkdb.organisation.update()
@@ -268,21 +266,21 @@ class api_config(object):
                         )
                 else:
                     targetPath = [str(authDetails["orgcode"]), "userconf", *targetPath]
-                    payload = "'" + json.dumps(payload) + "'"
-                    path = "'{" + ",".join(targetPath) + "}'"
+                    payload = json.dumps(payload)
+                    path = "{" + ",".join(targetPath) + "}"
                     if self.request.params["conftype"] == "user":
                         conn.execute(
-                            "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
-                            % (
-                                str(path),
-                                str(payload),
-                                authDetails["userid"],
-                            )
+                            text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                            path = path,
+                            payload = payload,
+                            userid = authDetails["userid"],
                         )
                     elif self.request.params["conftype"] == "org":
                         conn.execute(
-                            "update organisation set orgconf = jsonb_set(orgconf, %s, %s) where orgcode = %d;"
-                            % (path, payload, authDetails["orgcode"])
+                            text("update organisation set orgconf = jsonb_set(orgs, :path, :payload) where orgcode = :orgcode;"),
+                            path = path,
+                            payload = payload,
+                            orgcode = authDetails["orgcode"],
                         )
                 return {"gkstatus": enumdict["Success"]}
 
