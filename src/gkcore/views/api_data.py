@@ -32,7 +32,7 @@ import json
 from pyramid.response import Response
 
 from gkcore.views.data.json_handler import (
-    delete_organisation, export_org_data, import_org_data, update_user_conf
+    delete_organisation, export_org_data, import_org_data, update_organisation_rocode, update_user_conf
 )
 from pyramid.view import view_config
 from gkcore import eng
@@ -96,6 +96,7 @@ class api_data(object):
         with eng.begin() as con:
             new_orgcode = import_org_data(con, json.load(data))
             update_user_conf(con, user_id, new_orgcode)
+            update_organisation_rocode(con, new_orgcode)
         return {"gkstatus": 0}
 
 
@@ -114,4 +115,5 @@ class api_data(object):
             delete_organisation(con, orgcode)
             new_orgcode = import_org_data(con, json.load(data))
             update_user_conf(con, user_id, new_orgcode)
+            update_organisation_rocode(con, new_orgcode)
         return {"gkstatus": 0}
