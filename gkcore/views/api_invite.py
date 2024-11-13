@@ -205,13 +205,15 @@ class api_invite(object):
 
                 # check if the user has a valid invite in the requested org
                 userData = self.con.execute(
-                    "select orgs->'%s' from gkusers where userid = %d;"
-                    % (str(dataset["orgcode"]), authDetails["userid"])
+                    text("select orgs->':orgcode' from gkusers where userid = :userid;"),
+                    orgcode = dataset["orgcode"],
+                    userid = authDetails["userid"],
                 ).fetchone()
 
                 orgData = self.con.execute(
-                    "select users->'%s' from organisation where orgcode = %d;"
-                    % (str(authDetails["userid"]), dataset["orgcode"])
+                    text("select users->':userid' from organisation where orgcode = :orgcode;"),
+                    userid = authDetails["userid"],
+                    orgcode = dataset["orgcode"],
                 ).fetchone()
 
                 if userData[0]["invitestatus"] == False and orgData[0] == False:
@@ -220,8 +222,9 @@ class api_invite(object):
                     # userData = userQuery.fetchone()
                     # if not userData["invitestatus"]:
                     self.con.execute(
-                        "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
-                        % (str(dataset["orgcode"]), authDetails["userid"])
+                        text("update gkusers set orgs = orgs - ':orgcode' WHERE userid = :userid;"),
+                        orgcode = dataset["orgcode"],
+                        userid = authDetails["userid"],
                     )
                     return {"gkstatus": enumdict["Success"]}
                 return {
@@ -229,10 +232,6 @@ class api_invite(object):
                         "ActionDisallowed"
                     ],  # disallowed because invitation has been accepted
                 }
-                # return {
-                #     "gkstatus": enumdict["UnauthorisedAccess"],
-                #     "gkmessage": "Invalid invite, please contact admin",
-                # }
             except:
                 print(traceback.format_exc())
                 return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
