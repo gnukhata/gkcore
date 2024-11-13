@@ -3,6 +3,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import gkcore
@@ -39,8 +40,9 @@ class api_invite(object):
                 header = {"gktoken": self.request.headers["gktoken"]}
                 # check if the user adding the invite is part of the requested org
                 userOrgQuery = self.con.execute(
-                    "select orgs->'%s' from gkusers where userid = %d;"
-                    % (str(authDetails["orgcode"]), authDetails["userid"])
+                    text("select orgs->':orgcode' from gkusers where userid = :userid;"),
+                    orgcode = authDetails["orgcode"],
+                    userid = authDetails["userid"],
                 )
                 if userOrgQuery.rowcount < 1:
                     return {"gkstatus": enumdict["ActionDisallowed"]}
@@ -64,8 +66,9 @@ class api_invite(object):
                     ).fetchone()
                     # Check and proceed if user is not part of the org yet
                     userInOrgQuery = self.con.execute(
-                        "select orgs->'%s' from gkusers where userid = %d;"
-                        % (str(authDetails["orgcode"]), userid["userid"])
+                        text("select orgs->':orgcode' from gkusers where userid = :userid;"),
+                        orgcode = authDetails["orgcode"],
+                        userid = userid["userid"],
                     )
 
                     # print(userInOrgQuery.rowcount)
@@ -87,20 +90,16 @@ class api_invite(object):
                         userOrgPayload["golist"] = dataset["golist"]
                     # data in the gkusers table will be used by the user to determine invite status
                     self.con.execute(
-                        "update gkusers set orgs = jsonb_set(orgs, '{%s}', '%s') where userid = %d;"
-                        % (
-                            str(authDetails["orgcode"]),
-                            json.dumps(userOrgPayload),
-                            userid["userid"],
-                        )
+                        text("update gkusers set orgs = jsonb_set(orgs, '{:orgcode}', :user_org_payload) where userid = :userid;"),
+                            orgcode = authDetails["orgcode"],
+                            user_org_payload = json.dumps(userOrgPayload),
+                            userid = userid["userid"],
                     )
                     # data in the organisation table will be used by the organisation to determine invited users
                     self.con.execute(
-                        "update organisation set users = jsonb_set(users, '{%s}', 'false') where orgcode = %d;"
-                        % (
-                            str(userid["userid"]),
-                            authDetails["orgcode"],
-                        )
+                        text("update organisation set users = jsonb_set(users, '{:userid}', 'false') where orgcode = :orgcode;"),
+                        userid = userid["userid"],
+                        orgcode = authDetails["orgcode"],
                     )
                     return {"gkstatus": enumdict["Success"]}
                 return {"gkstatus": enumdict["ActionDisallowed"]}
