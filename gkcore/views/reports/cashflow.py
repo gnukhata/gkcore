@@ -1,6 +1,7 @@
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from datetime import datetime
@@ -50,8 +51,8 @@ class api_cashflow(object):
                 calculateTo = self.request.params["calculateto"]
                 financialStart = self.request.params["financialstart"]
                 cbAccountsData = self.con.execute(
-                    "select accountcode, openingbal, accountname from accounts where orgcode = %d and groupcode in (select groupcode from groupsubgroups where orgcode = %d and groupname in ('Bank','Cash')) order by accountname"
-                    % (authDetails["orgcode"], authDetails["orgcode"])
+                    text("select accountcode, openingbal, accountname from accounts where orgcode = :orgcode and groupcode in (select groupcode from groupsubgroups where orgcode = :orgcode and groupname in ('Bank','Cash')) order by accountname"),
+                    orgcode = authDetails["orgcode"],
                 )
                 cbAccounts = cbAccountsData.fetchall()
                 receiptcf = []
@@ -153,13 +154,11 @@ class api_cashflow(object):
                             )
                             pytotal -= float(opacc["curbal"])
                     transactionsRecords = self.con.execute(
-                        "select crs,drs from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ? '%s' or crs ? '%s');"
-                        % (
-                            calculateFrom,
-                            calculateTo,
-                            cbAccount["accountcode"],
-                            cbAccount["accountcode"],
-                        )
+                        text("select crs,drs from vouchers where voucherdate >= :voucherdate_from  and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (drs ? :drs or crs ? :crs);"),
+                        voucherdate_from = calculateFrom,
+                        voucherdate_to = calculateTo,
+                        drs = str(cbAccount["accountcode"]),
+                        crs = str(cbAccount["accountcode"]),
                     )
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
@@ -169,13 +168,11 @@ class api_cashflow(object):
                             ):
                                 rcaccountcodes.append(cr)
                                 crresult = self.con.execute(
-                                    "select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (drs ?| array%s);"
-                                    % (
-                                        int(cr),
-                                        financialStart,
-                                        calculateTo,
-                                        str(bankcodes),
-                                    )
+                                    text("select sum(cast(crs->>:cr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (drs ?| :bankcodes);"),
+                                    cr = cr,
+                                    voucherdate_from = financialStart,
+                                    voucherdate_to = calculateTo,
+                                    bankcodes = bankcodes,
                                 )
                                 crresultRow = crresult.fetchone()
                                 rcaccountname = self.con.execute(
@@ -202,13 +199,11 @@ class api_cashflow(object):
                             ):
                                 pyaccountcodes.append(dr)
                                 drresult = self.con.execute(
-                                    "select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and vouchertype not in ('contra','journal') and (crs ?| array%s)"
-                                    % (
-                                        int(dr),
-                                        financialStart,
-                                        calculateTo,
-                                        str(bankcodes),
-                                    )
+                                    text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (drs ?| :bankcodes);"),
+                                    dr = dr,
+                                    voucherdate_from = financialStart,
+                                    voucherdate_to = calculateTo,
+                                    bankcodes = bankcodes,
                                 )
                                 drresultRow = drresult.fetchone()
                                 pyaccountname = self.con.execute(
