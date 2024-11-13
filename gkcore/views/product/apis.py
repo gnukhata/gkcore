@@ -36,6 +36,7 @@ from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from sqlalchemy import and_, func, or_
+from sqlalchemy.sql.expression import text
 from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
@@ -286,8 +287,8 @@ class api_product(object):
 
             # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
             sp = con.execute(
-                "select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"
-                % ("Sales", "Purchase", productDetails["orgcode"])
+                text("select groupcode from groupsubgroups where groupname in ('Sales','Purchase') and orgcode = :orgcode"),
+                orgcode = productDetails["orgcode"],
             )
             s = sp.fetchall()
             prodName = productDetails["productdesc"]
