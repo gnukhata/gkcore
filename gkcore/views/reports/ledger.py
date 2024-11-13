@@ -6,6 +6,7 @@ from gkcore.models.gkdb import (
     organisation,
 )
 from sqlalchemy.sql import select
+from sqlalchemy.sql.expression import text
 from pyramid.view import view_defaults, view_config
 from gkcore.views.api_gkuser import getUserRole
 from datetime import datetime, date
@@ -82,35 +83,35 @@ class api_ledger(object):
                 monthlyBal = []
                 while endMonthDate <= financialEnd:
                     count = con.execute(
-                        "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s' or crs ? '%s') "
-                        % (
-                            endMonthDate,
-                            startMonthDate,
-                            orgcode,
-                            accountCode,
-                            accountCode,
-                        )
+                        text("select count(vouchercode) as vcount from vouchers where voucherdate<=:end_month_date and voucherdate>=:start_month_date and orgcode=orgcode and (drs ? :accountcode or crs ? :accountcode) "),
+                            end_month_date = endMonthDate,
+                            start_month_date = startMonthDate,
+                            orgcode = orgcode,
+                            accountcode = accountCode,
                     )
                     count = count.fetchone()
                     countDr = con.execute(
-                        "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (drs ? '%s') "
-                        % (endMonthDate, startMonthDate, orgcode, accountCode)
+                        text("select count(vouchercode) as vcount from vouchers where voucherdate<=:end_month_date and  voucherdate>=:start_month_date and orgcode=:orgcode and (drs ? :accountcode) "),
+                        end_month_date = endMonthDate,
+                        start_month_date = startMonthDate,
+                        orgcode = orgcode,
+                        accountcode = accountCode,
                     )
                     countDr = countDr.fetchone()
                     countCr = con.execute(
-                        "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and (crs ? '%s') "
-                        % (endMonthDate, startMonthDate, orgcode, accountCode)
+                        text("select count(vouchercode) as vcount from vouchers where voucherdate<=:end_month_date and voucherdate>=:start_month_date and orgcode=:orgcode and (crs ? :accountcode) "),
+                        end_month_date = endMonthDate,
+                        start_month_date = startMonthDate,
+                        orgcode = orgcode,
+                        accountcode = accountCode,
                     )
                     countCr = countCr.fetchone()
                     countLock = con.execute(
-                        "select count(vouchercode) as vcount from vouchers where voucherdate<='%s' and voucherdate>='%s' and orgcode='%d' and lockflag='t' and (drs ? '%s' or crs ? '%s') "
-                        % (
-                            endMonthDate,
-                            startMonthDate,
-                            orgcode,
-                            accountCode,
-                            accountCode,
-                        )
+                        text("select count(vouchercode) as vcount from vouchers where voucherdate<=:end_month_date and voucherdate>=:start_month_date and orgcode=:orgcode and lockflag='t' and (drs ? :accountcode or crs ? :accountcode) "),
+                        end_month_date = endMonthDate,
+                        start_month_date = startMonthDate,
+                        orgcode = orgcode,
+                        accountcode = accountCode,
                     )
                     countLock = countLock.fetchone()
                     adverseflag = 0
