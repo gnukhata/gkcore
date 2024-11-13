@@ -254,18 +254,21 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
 
     # Calculate grouptotal for group Capital/Corpus
     accountcodeData = con.execute(
-        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = '%s') order by accountname;"
-        % (orgcode, orgcode, capital_Corpus)
+        text("select accountcode, accountname from accounts where orgcode = :orgcode and groupcode = (select groupcode from groupsubgroups where orgcode = :orgcode and groupname = :groupname) order by accountname;"),
+        orgcode = orgcode,
+        groupname = capital_Corpus,
     )
     accountCodes = accountcodeData.fetchall()
     subgroupDataRow = con.execute(
-        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='%s');"
-        % (orgcode, orgcode, capital_Corpus)
+        text("select groupcode, groupname from groupsubgroups where orgcode = :orgcode and subgroupof = (select groupcode from groupsubgroups where orgcode = :orgcode and subgroupof is null and groupname = :groupname);"),
+        orgcode = orgcode,
+        groupname = capital_Corpus,
     )
     subgroupData = subgroupDataRow.fetchall()
     groupCode = con.execute(
-        "select groupcode from groupsubgroups where (orgcode=%d and groupname='%s');"
-        % (orgcode, capital_Corpus)
+        text("select groupcode from groupsubgroups where (orgcode=orgcode and groupname=groupname);"),
+        orgcode = orgcode,
+        groupname = capital_Corpus,
     )
     groupcode = groupCode.fetchone()["groupcode"]
     groupAccSubgroup = []
