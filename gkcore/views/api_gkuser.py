@@ -148,8 +148,9 @@ class api_gkuser(object):
                 dataset = self.request.json_body
 
                 roleQuery = self.con.execute(
-                    "select u.orgs#>'{%s,userrole}' as userrole from gkusers u where userid = %d;"
-                    % (str(authDetails["orgcode"]), dataset["userid"])
+                    text("select u.orgs#>'{:orgcode,userrole}' as userrole from gkusers u where userid = :userid;"),
+                    orgcode = authDetails["orgcode"],
+                    userid = dataset["userid"],
                 )
 
                 if roleQuery.rowcount == 1:
