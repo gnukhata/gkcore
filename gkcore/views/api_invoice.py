@@ -66,6 +66,7 @@ from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, desc, func
+from sqlalchemy.sql.expression import text
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
@@ -752,8 +753,9 @@ def getDefaultAcc(con, queryParams, orgcode):
             if vch["vouchertype"] == "journal":
                 initialType = "jr"
             vchCountResult = con.execute(
-                "select count(vouchercode) as vcount from vouchers where orgcode = %d and vouchertype = '%s'"
-                % (int(orgcode), str(vch["vouchertype"]))
+                text("select count(vouchercode) as vcount from vouchers where orgcode = :orgcode and vouchertype = :vouchertype"),
+                orgcode = orgcode,
+                vouchertype = vch["vouchertype"],
             )
             vchCount = vchCountResult.fetchone()
             initialType = initialType + str(vchCount["vcount"] + 1)
