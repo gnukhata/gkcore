@@ -3,6 +3,7 @@ from gkcore.models import gkdb
 from gkcore.utils import authCheck
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.sql.expression import text
 from sqlalchemy import and_, or_
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
@@ -92,23 +93,19 @@ class api_project(object):
                     groupRow = group.fetchone()
 
                     drresult = self.con.execute(
-                        "select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"
-                        % (
-                            int(accountRow["accountcode"]),
-                            financialStart,
-                            calculateTo,
-                            int(projectCode),
-                        )
+                        text("select sum(cast(drs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= from_date and voucherdate <= :to_date and projectcode=:projectcode"),
+                        accountcode = accountRow["accountcode"],
+                        from_date = financialStart,
+                        to_date = calculateTo,
+                        projectcode = projectCode,
                     )
                     drresultRow = drresult.fetchone()
                     crresult = self.con.execute(
-                        "select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s' and projectcode=%d"
-                        % (
-                            int(accountRow["accountcode"]),
-                            financialStart,
-                            calculateTo,
-                            int(projectCode),
-                        )
+                        text("select sum(cast(crs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= from_date and voucherdate <= :to_date and projectcode=:projectcode"),
+                        accountcode = accountRow["accountcode"],
+                        from_date = financialStart,
+                        to_date = calculateTo,
+                        projectcode = projectCode,
                     )
                     crresultRow = crresult.fetchone()
                     if groupRow["groupname"] == groupRow["subgroupname"]:
