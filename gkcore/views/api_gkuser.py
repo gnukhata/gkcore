@@ -376,8 +376,8 @@ class api_gkuser(object):
                 # Fetches the data of the users that are part of a particular organisation
                 # TODO: optimize the below query if possible
                 allUserData = self.con.execute(
-                    "select gkusers.userid, orgs->'%s' as userconf, username from gkusers inner join (select jsonb_object_keys(users) as userid from organisation where orgcode = %d) orgs on cast(orgs.userid as integer) = gkusers.userid;"
-                    % (str(authDetails["orgcode"]), authDetails["orgcode"])
+                    text("select gkusers.userid, orgs->':orgcode' as userconf, username from gkusers inner join (select jsonb_object_keys(users) as userid from organisation where orgcode = :orgcode) orgs on cast(orgs.userid as integer) = gkusers.userid;"),
+                    orgcode = authDetails["orgcode"],
                 ).fetchall()
 
                 checkFlag = self.con.execute(
