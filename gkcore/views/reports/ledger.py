@@ -644,34 +644,34 @@ class api_ledger(object):
                     if projectCode == "":
                         if "orderflag" in self.request.params:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate DESC;"
-                                % (calculateFrom, calculateTo, accountCode)
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and (drs ? :accountcode) order by voucherdate DESC;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
                             )
                         else:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s') order by voucherdate;"
-                                % (calculateFrom, calculateTo, accountCode)
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and (drs ? :accountcode) order by voucherdate;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
                             )
                     else:
                         if "orderflag" in self.request.params:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate DESC;"
-                                % (
-                                    calculateFrom,
-                                    calculateTo,
-                                    int(projectCode),
-                                    accountCode,
-                                )
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date  and projectcode = :projectcode and (drs ? :accountcode) order by voucherdate DESC;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
+                                productcode = projectCode,
                             )
                         else:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s') order by voucherdate;"
-                                % (
-                                    calculateFrom,
-                                    calculateTo,
-                                    int(projectCode),
-                                    accountCode,
-                                )
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date  and projectcode = :projectcode and (drs ? :accountcode) order by voucherdate;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
+                                productcode = projectCode,
                             )
 
                     transactions = transactionsRecords.fetchall()
@@ -732,35 +732,36 @@ class api_ledger(object):
                     if projectCode == "":
                         if "orderflag" in self.request.params:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,invid,drcrid,,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate DESC;"
-                                % (calculateFrom, calculateTo, accountCode)
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and (crs ? :accountcode) order by voucherdate DESC;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
                             )
                         else:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,invid,drcrid,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (crs ? '%s') order by voucherdate;"
-                                % (calculateFrom, calculateTo, accountCode)
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and (crs ? :accountcode) order by voucherdate;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
                             )
                     else:
                         if "orderflag" in self.request.params:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,invid,drcrid,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate DESC;"
-                                % (
-                                    calculateFrom,
-                                    calculateTo,
-                                    int(projectCode),
-                                    accountCode,
-                                )
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date  and projectcode = :projectcode and (crs ? :accountcode) order by voucherdate DESC;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
+                                productcode = projectCode,
                             )
                         else:
                             transactionsRecords = con.execute(
-                                "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,invid,drcrid,projectcode,orgcode from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (crs ? '%s') order by voucherdate;"
-                                % (
-                                    calculateFrom,
-                                    calculateTo,
-                                    int(projectCode),
-                                    accountCode,
-                                )
+                                text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date  and projectcode = :projectcode and (crs ? :accountcode) order by voucherdate;"),
+                                from_date = calculateFrom,
+                                to_date = calculateTo,
+                                accountcode = accountCode,
+                                productcode = projectCode,
                             )
+
                     transactions = transactionsRecords.fetchall()
                     for transaction in transactions:
                         ledgerRecord = {
