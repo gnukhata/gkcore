@@ -249,8 +249,9 @@ class api_invite(object):
             try:
                 self.con = eng.connect()
                 userOrgs = self.con.execute(
-                    "select orgs->'%s' from gkusers where userid = %d;"
-                    % (str(authDetails["orgcode"]), authDetails["userid"])
+                    text("select orgs->':orgcode' from gkusers where userid = :userid;"),
+                    orgcode = authDetails["orgcode"],
+                    userid = authDetails["userid"],
                 ).fetchone()
                 if not (len(userOrgs) and type(userOrgs[0]) == dict):
                     return {"gkstatus": enumdict["ActionDisallowed"]}
@@ -261,13 +262,15 @@ class api_invite(object):
                     dataset = self.request.json_body
                     # check if the user has a valid invite in the requested org
                     userData = self.con.execute(
-                        "select orgs->'%s' from gkusers where userid = %d;"
-                        % (str(authDetails["orgcode"]), dataset["userid"])
+                        text("select orgs->':orgcode' from gkusers where userid = :userid;"),
+                        orgcode = authDetails["orgcode"],
+                        userid = dataset["userid"],
                     ).fetchone()
 
                     orgData = self.con.execute(
-                        "select users->'%s' from organisation where orgcode = %d;"
-                        % (str(dataset["userid"]), authDetails["orgcode"])
+                        text("select users->':userid' from organisation where orgcode = :orgcode;"),
+                        userid = dataset["userid"],
+                        orgcode = authDetails["orgcode"],
                     ).fetchone()
 
                     if type(userData[0]) == dict and type(orgData[0]) == bool:
@@ -275,12 +278,14 @@ class api_invite(object):
                             # delete the invites
                             # remove the entry from gkusers and organisation table
                             self.con.execute(
-                                "update gkusers set orgs = orgs - '%s' WHERE userid = %d;"
-                                % (str(authDetails["orgcode"]), dataset["userid"])
+                                text("update gkusers set orgs = orgs - ':orgcode' WHERE userid = :userid;"),
+                                orgcode = authDetails["orgcode"],
+                                userid = dataset["userid"],
                             )
                             self.con.execute(
-                                "update organisation set users = users - '%s' WHERE orgcode = %d;"
-                                % (str(dataset["userid"]), authDetails["orgcode"])
+                                text("update organisation set users = users - ':userid' WHERE orgcode = :orgcode;"),
+                                userid = dataset["userid"],
+                                orgcode = authDetails["orgcode"],
                             )
                             return {"gkstatus": enumdict["Success"]}
                         return {
@@ -290,8 +295,9 @@ class api_invite(object):
                         }
                     elif type(orgData[0]) == bool:
                         self.con.execute(
-                            "update organisation set users = users - '%s' WHERE orgcode = %d;"
-                            % (str(dataset["userid"]), authDetails["orgcode"])
+                            text("update organisation set users = users - ':userid' WHERE orgcode = :orgcode;"),
+                            userid = dataset["userid"],
+                            orgcode = authDetails["orgcode"],
                         )
                         return {"gkstatus": enumdict["Success"]}
 
