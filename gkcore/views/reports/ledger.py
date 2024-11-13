@@ -347,36 +347,34 @@ class api_ledger(object):
                 if projectCode == "":
                     if "orderflag" in self.request.params:
                         transactionsRecords = con.execute(
-                            "select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate DESC,vouchercode ;"
-                            % (calculateFrom, calculateTo, accountCode, accountCode)
+                            text("select * from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and (drs ? :accountcode or crs ? :accountcode) order by voucherdate DESC,vouchercode ;"),
+                            from_date = calculateFrom,
+                            to_date = calculateTo,
+                            accountcode = accountCode,
                         )
                     else:
                         transactionsRecords = con.execute(
-                            "select * from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and (drs ? '%s' or crs ? '%s') order by voucherdate,vouchercode ;"
-                            % (calculateFrom, calculateTo, accountCode, accountCode)
+                            text("select * from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and (drs ? :accountcode or crs ? :accountcode) order by voucherdate,vouchercode ;"),
+                            from_date = calculateFrom,
+                            to_date = calculateTo,
+                            accountcode = accountCode,
                         )
                 else:
                     if "orderflag" in self.request.params:
                         transactionsRecords = con.execute(
-                            "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate DESC, vouchercode;"
-                            % (
-                                calculateFrom,
-                                calculateTo,
-                                int(projectCode),
-                                accountCode,
-                                accountCode,
-                            )
+                            text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and projectcode=:projectcode and (drs ? :accountcode or crs ? :accountcode) order by voucherdate DESC, vouchercode;"),
+                            from_date = calculateFrom,
+                            to_date = calculateTo,
+                            accountcode = accountCode,
+                            projectcode = projectCode,
                         )
                     else:
                         transactionsRecords = con.execute(
-                            "select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= '%s'  and voucherdate <= '%s' and projectcode=%d and (drs ? '%s' or crs ? '%s') order by voucherdate, vouchercode;"
-                            % (
-                                calculateFrom,
-                                calculateTo,
-                                int(projectCode),
-                                accountCode,
-                                accountCode,
-                            )
+                            text("select vouchercode,vouchernumber,voucherdate,narration,drs,crs,prjcrs,prjdrs,vouchertype,lockflag,delflag,projectcode,orgcode,invid,drcrid  from vouchers where voucherdate >= :from_date  and voucherdate <= :to_date and projectcode=:projectcode and (drs ? :accountcode or crs ? :accountcode) order by voucherdate, vouchercode;"),
+                            from_date = calculateFrom,
+                            to_date = calculateTo,
+                            accountcode = accountCode,
+                            projectcode = projectCode,
                         )
 
                 transactions = transactionsRecords.fetchall()
