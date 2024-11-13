@@ -125,13 +125,15 @@ class api_invite(object):
 
                 # check if the user has a valid invite in the requested org
                 userData = self.con.execute(
-                    "select orgs->'%s' from gkusers where userid = %d;"
-                    % (str(dataset["orgcode"]), authDetails["userid"])
+                    text("select orgs->':orgcode' from gkusers where userid = :userid;"),
+                    orgcode = dataset["orgcode"],
+                    userid = authDetails["userid"],
                 ).fetchone()
 
                 orgData = self.con.execute(
-                    "select users->'%s' from organisation where orgcode = %d;"
-                    % (str(authDetails["userid"]), dataset["orgcode"])
+                    text("select users->':userid' from organisation where orgcode = :orgcode;"),
+                    userid = authDetails["userid"],
+                    orgcode = dataset["orgcode"],
                 ).fetchone()
 
                 if (
@@ -143,18 +145,14 @@ class api_invite(object):
 
                     # update invite status to true
                     self.con.execute(
-                        "update gkusers set orgs = jsonb_set(orgs, '{%s,invitestatus}', 'true') where userid = %d;"
-                        % (
-                            str(dataset["orgcode"]),
-                            authDetails["userid"],
-                        )
+                        text("update gkusers set orgs = jsonb_set(orgs, '{:orgcode,invitestatus}', 'true') where userid = :userid;"),
+                        orgcode = dataset["orgcode"],
+                        userid = authDetails["userid"],
                     )
                     self.con.execute(
-                        "update organisation set users = jsonb_set(users, '{%s}', 'true') where orgcode = %d;"
-                        % (
-                            str(authDetails["userid"]),
-                            dataset["orgcode"],
-                        )
+                        text("update organisation set users = jsonb_set(users, '{:userid}', 'true') where orgcode = :orgcode;"),
+                        userid = authDetails["userid"],
+                        orgcode = dataset["orgcode"],
                     )
                     # TODO: unit test the below code
                     # add the godown permissions if any present
@@ -171,8 +169,9 @@ class api_invite(object):
                                 )
                             # remove the golist from gkusers
                             self.con.execute(
-                                "update gkusers set orgs = orgs #- '{%s,golist}' WHERE userid = %d;"
-                                % (str(dataset["orgcode"]), authDetails["userid"])
+                                text("update gkusers set orgs = orgs #- '{:orgcode,golist}' WHERE userid = :userid;"),
+                                orgcode = dataset["orgcode"],
+                                userid = authDetails["userid"],
                             )
                         except:
                             return {
