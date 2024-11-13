@@ -1652,13 +1652,11 @@ class api_invoice(object):
                             int(invdataset["icflag"]) if "icflag" in invdataset else 9
                         )
                         result = con.execute(
-                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = %d"
-                            % (
-                                int(invdataset["custid"]),
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                                icflag,
-                            )
+                            text("select max(invid) as invid from invoice where custid = :custid and invoiceno = :invoiceno and orgcode = :orgcode and icflag = :icflag"),
+                            custid = invdataset["custid"],
+                            invoiceno = invdataset["invoiceno"],
+                            orgcode = invdataset["orgcode"],
+                            icflag = icflag,
                         )
                         invoiceid = result.fetchone()
                         dcinvdataset["dcid"] = invdataset["dcid"]
@@ -1750,11 +1748,9 @@ class api_invoice(object):
                     # if it is cash memo
                     if "icflag" in invdataset:
                         result = con.execute(
-                            "select max(invid) as invid from invoice where invoiceno = '%s' and orgcode = %d and icflag = 3"
-                            % (
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                            )
+                            text("select max(invid) as invid from invoice where invoiceno = :invoiceno and orgcode = :orgcode and icflag = 3"),
+                            invoiceno = invdataset["invoiceno"],
+                            orgcode = invdataset["orgcode"],
                         )
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
@@ -1843,12 +1839,10 @@ class api_invoice(object):
                         }
                     else:
                         result = con.execute(
-                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"
-                            % (
-                                int(invdataset["custid"]),
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                            )
+                            text("select max(invid) as invid from invoice where custid = :custid and invoiceno = :invoiceno and orgcode = :orgcode and icflag = 9"),
+                            custid = invdataset["custid"],
+                            invoiceno = invdataset["invoiceno"],
+                            orgcode = invdataset["orgcode"],
                         )
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
