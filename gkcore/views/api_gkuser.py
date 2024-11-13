@@ -3,6 +3,7 @@ from gkcore.models import gkdb
 from sqlalchemy.sql import select, delete
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
+from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import gkcore
@@ -44,8 +45,9 @@ def getUserRole(userid, orgcode):
     con = eng.connect()
     try:
         roleQuery = con.execute(
-            "select u.orgs#>'{%s,userrole}' as userrole from gkusers u where userid = %d;"
-            % (str(orgcode), userid)
+            text("select u.orgs#>'{:orgcode,userrole}' as userrole from gkusers u where userid = :userid;"),
+            orgcode = orgcode,
+            userid = userid,
         )
 
         # print(row)
