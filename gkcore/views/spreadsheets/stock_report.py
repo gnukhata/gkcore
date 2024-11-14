@@ -70,7 +70,6 @@ def print_stock_report(self):
         header = {"gktoken": self.request.headers["gktoken"]}
         godownflag = int(self.request.params["godownflag"])
         if godownflag == 1:
-            goaddr = self.request.params["goaddr"]
             goid = int(self.request.params["goid"])
             goname = self.request.params["goname"]
         productcode = int(self.request.params["productcode"])
@@ -141,7 +140,7 @@ def print_stock_report(self):
             sheet.merge_cells("A5:J5")
             sheet["A5"].font = Font(name="Liberation Serif", size="14", bold=True)
             sheet["A5"] = (
-                "Name of the Godown : " + goname + ", Godown Address: " + goaddr
+                "Name of the Godown : " + goname
             )
             sheet["A6"] = "Date"
             sheet["B6"] = "Particulars"
