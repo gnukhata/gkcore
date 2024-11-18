@@ -372,7 +372,7 @@ accounts = Table(
     Column(
         "groupcode", Integer, ForeignKey("groupsubgroups.groupcode"), nullable=False
     ),
-    Column("openingbal", Numeric(13, 2), default=0.00),
+    Column("openingbal", Numeric(13, 2), default=0.00, server_default="0.00"),
     Column("vouchercount", Integer, default=0),
     Column("sysaccount", Integer, default=0),
     Column("defaultflag", Integer, default=0),

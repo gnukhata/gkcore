@@ -2103,6 +2103,8 @@ class Migrate:
                     )
 
 
+            with eng.begin() as conn:
+                conn.execute("alter table accounts alter column openingbal set default 0.00")
 
             print("Database migration successful")
 
