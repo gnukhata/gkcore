@@ -168,6 +168,7 @@ class api_groups_subgroups(object):
                 .where(
                     groupsubgroups.c.orgcode == authDetails["orgcode"]
                 )
+                .order_by(groupsubgroups.c.groupcode)
             )
             if group_type == "group":
                 statement = statement.where(groupsubgroups.c.subgroupof == None)
