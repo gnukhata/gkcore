@@ -1379,13 +1379,10 @@ class api_rollclose(object):
                     ):
                         categoryCode = oldToNewCatCodes[prodRow["categorycode"]]
 
-                    stockData = stockonhandfun(orgCode, prodRow["productcode"], endDate)
                     openingStock = float(0)
-                    if stockData["gkstatus"] == 0:
-                        openingStock = stockData["gkresult"][0]["balance"]
-                        if openingStock == "nan":
-                            openingStock = 0
-                        openingStock = float(openingStock)
+                    if prodRow["gscode"] == "19":
+                        stockData = stockonhandfun(orgCode, prodRow["productcode"], endDate)
+                        openingStock = float(stockData["gkresult"][0]["balance"])
 
                     con.execute(
                         product.insert(),
