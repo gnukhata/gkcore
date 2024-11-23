@@ -44,6 +44,7 @@ from gkcore.models import eng
 # Load environment variables from the .env file
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)
