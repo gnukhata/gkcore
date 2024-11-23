@@ -37,7 +37,7 @@ This module also scanns for the secret from the database which is then used for 
 import os
 from pyramid.config import Configurator
 from wsgicors import CORS
-from gkcore.enum import STATUS_CODES as enumdict
+from gkcore.utils import STATUS_CODES as enumdict
 from dotenv import load_dotenv
 from gkcore.models import eng
 

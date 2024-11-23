@@ -25,8 +25,7 @@ Contributors:
 """
 
 
-from gkcore.fin_utils import hsn_codes
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, hsn_codes
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import re

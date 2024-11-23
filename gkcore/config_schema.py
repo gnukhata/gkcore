@@ -1,4 +1,4 @@
-from gkcore.enum import CONFIG_ENUM
+from gkcore.utils import CONFIG_ENUM
 
 payloadSchema1 = {
     "$schema": "https://json-schema.org/draft/2020-12/schema",

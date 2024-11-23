@@ -6,9 +6,7 @@
 import pathlib
 import csv
 import json
-
-from gkcore.utils import gk_log
-
+from .utils import gk_log
 
 _hsn: list = []
 _ifsc: list = []
