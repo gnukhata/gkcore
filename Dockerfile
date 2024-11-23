@@ -12,15 +12,18 @@ ENV PYRAMID_CONFIG_FILE production.ini
 # install the required dependencies
 RUN apt-get update && apt-get upgrade -y \
 		&& apt-get install -y \
-		build-essential libpq-dev curl
+		build-essential libpq-dev curl python3-poetry
 # copy the contents of the repo to the image
 COPY . /gkcore/
 #switch to workdir gkcore
 WORKDIR /gkcore
 # create a non-root user to run gkcore
 RUN adduser --no-create-home --disabled-password gk && \
-		# install gkcore dependencies & run setup
-		pip install -r requirements.txt && python3 setup.py develop &&\
+        # build the python package
+        ls &&\
+        poetry build &&\
+        # installing the wheel
+        pip install dist/*.whl &&\
 		# clean the build environment
 		apt purge build-essential wget -y &&\
 		apt-get autoremove -y &&\
