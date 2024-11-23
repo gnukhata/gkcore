@@ -40,3 +40,4 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
 gkserve = "gkcore.scripts.serve:main"
+gkdb = "gkcore.scripts.gkdb:main"
