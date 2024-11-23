@@ -33,7 +33,7 @@ RUN adduser --no-create-home --disabled-password gk && \
 USER gk
 
 # initialize db & start gkcore
-ENTRYPOINT python3 initdb.py && python3 db_migrate.py && pserve ${PYRAMID_CONFIG_FILE}
+ENTRYPOINT gkdb --init && gkdb --migrate && gkserve
 # expose the gkcore port
 EXPOSE 6543
 # check the health of the container at regular intervals
