@@ -3,6 +3,7 @@ from gkcore.views.helpers.voucher import generate_consolidated_voucher_data, get
 from gkcore.models.gkdb import accounts, groupsubgroups
 from sqlalchemy.sql import select
 from sqlalchemy import and_, or_
+from sqlalchemy.sql.expression import text
 from datetime import datetime
 from gkcore.views.reports.helpers.stock import (
     calculateOpeningStockValue,
@@ -113,16 +114,16 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
             balType = "Cr"
     else:
         tdrfrm = con.execute(
-            "select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"
-            % (
-                int(accountCode),
-                financialStart,
-                calculateFrom,
-            )
+            text("select sum(cast(drs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
+            accountcode = int(accountCode),
+            from_date = financialStart,
+            to_date = calculateFrom,
         )
         tcrfrm = con.execute(
-            "select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate < '%s'"
-            % (int(accountCode), financialStart, calculateFrom)
+            text("select sum(cast(crs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
+            accountcode = int(accountCode),
+            from_date = financialStart,
+            to_date = calculateFrom,
         )
         tdrRow = tdrfrm.fetchone()
         tcrRow = tcrfrm.fetchone()
@@ -175,16 +176,21 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
             balanceBrought = ttlCrUptoFrom - ttlDrUptoFrom
             balType = "Cr"
             openingBalanceType = "Cr"
+
     tdrfrm = con.execute(
-        "select sum(cast(drs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"
-        % (int(accountCode), calculateFrom, calculateTo)
+            text("select sum(cast(drs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
+        accountcode = int(accountCode),
+        from_date = calculateFrom,
+        to_date = calculateTo,
     )
-    tdrRow = tdrfrm.fetchone()
     tcrfrm = con.execute(
-        "select sum(cast(crs->>'%d' as float)) as total from vouchers where delflag = false and voucherdate >='%s' and voucherdate <= '%s'"
-        % (int(accountCode), calculateFrom, calculateTo)
+        text("select sum(cast(crs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
+        accountcode = int(accountCode),
+        from_date = calculateFrom,
+        to_date = calculateTo,
     )
     tcrRow = tcrfrm.fetchone()
+    tdrRow = tdrfrm.fetchone()
     ttlDrBalance = tdrRow["total"]
     ttlCrBalance = tcrRow["total"]
     if ttlCrBalance == None:
@@ -248,18 +254,21 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
 
     # Calculate grouptotal for group Capital/Corpus
     accountcodeData = con.execute(
-        "select accountcode, accountname from accounts where orgcode = %d and groupcode = (select groupcode from groupsubgroups where orgcode =%d and groupname = '%s') order by accountname;"
-        % (orgcode, orgcode, capital_Corpus)
+        text("select accountcode, accountname from accounts where orgcode = :orgcode and groupcode = (select groupcode from groupsubgroups where orgcode = :orgcode and groupname = :groupname) order by accountname;"),
+        orgcode = orgcode,
+        groupname = capital_Corpus,
     )
     accountCodes = accountcodeData.fetchall()
     subgroupDataRow = con.execute(
-        "select groupcode, groupname  from groupsubgroups where orgcode = %d and subgroupof = (select groupcode from groupsubgroups where orgcode = %d and subgroupof is null and groupname ='%s');"
-        % (orgcode, orgcode, capital_Corpus)
+        text("select groupcode, groupname from groupsubgroups where orgcode = :orgcode and subgroupof = (select groupcode from groupsubgroups where orgcode = :orgcode and subgroupof is null and groupname = :groupname);"),
+        orgcode = orgcode,
+        groupname = capital_Corpus,
     )
     subgroupData = subgroupDataRow.fetchall()
     groupCode = con.execute(
-        "select groupcode from groupsubgroups where (orgcode=%d and groupname='%s');"
-        % (orgcode, capital_Corpus)
+        text("select groupcode from groupsubgroups where (orgcode=orgcode and groupname=groupname);"),
+        orgcode = orgcode,
+        groupname = capital_Corpus,
     )
     groupcode = groupCode.fetchone()["groupcode"]
     groupAccSubgroup = []

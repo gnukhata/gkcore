@@ -36,6 +36,7 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
+from sqlalchemy.sql.expression import text
 import gkcore
 from jsonschema import RefResolver, Draft202012Validator, validate
 from gkcore.config_schema import (
@@ -129,26 +130,14 @@ class api_config(object):
                 config = dataset["config"]
                 confType = self.request.params["conftype"]
                 if confType == "user":
-                    # self.con.execute(
-                    #     gkdb.users.update()
-                    #     .where(
-                    #         and_(
-                    #             gkdb.users.c.orgcode == authDetails["orgcode"],
-                    #             gkdb.users.c.userid == authDetails["userid"],
-                    #         )
-                    #     )
-                    #     .values(userconf=config)
-                    # )
                     targetPath = [authDetails["orgcode"], "userconf"]
                     payload = "'" + json.dumps(config) + "'"
                     path = "'{" + ",".join(targetPath) + "}'"
                     self.con.execute(
-                        "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
-                        % (
-                            str(path),
-                            str(payload),
-                            authDetails["userid"],
-                        )
+                        text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                        path = str(path),
+                        payload = str(payload),
+                        userid = authDetails["userid"],
                     )
                 else:
                     self.con.execute(
@@ -257,18 +246,16 @@ class api_config(object):
                 if not len(targetPath):
                     if self.request.params["conftype"] == "user":
                         targetPath = [str(authDetails["orgcode"]), "userconf"]
-                        payload = "'" + json.dumps(payload) + "'"
-                        path = "'{" + ",".join(targetPath) + "}'"
-
+                        payload = json.dumps(payload)
+                        path = "{" + ",".join(targetPath) + "}"
 
                         conn.execute(
-                            "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
-                            % (
-                                str(path),
-                                str(payload),
-                                authDetails["userid"],
-                            )
+                            text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                            path = path,
+                            payload = payload,
+                            userid = authDetails["userid"],
                         )
+
                     elif self.request.params["conftype"] == "org":
                         conn.execute(
                             gkdb.organisation.update()
@@ -279,21 +266,21 @@ class api_config(object):
                         )
                 else:
                     targetPath = [str(authDetails["orgcode"]), "userconf", *targetPath]
-                    payload = "'" + json.dumps(payload) + "'"
-                    path = "'{" + ",".join(targetPath) + "}'"
+                    payload = json.dumps(payload)
+                    path = "{" + ",".join(targetPath) + "}"
                     if self.request.params["conftype"] == "user":
                         conn.execute(
-                            "update gkusers set orgs = jsonb_set(orgs, %s, %s) where userid = %d;"
-                            % (
-                                str(path),
-                                str(payload),
-                                authDetails["userid"],
-                            )
+                            text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                            path = path,
+                            payload = payload,
+                            userid = authDetails["userid"],
                         )
                     elif self.request.params["conftype"] == "org":
                         conn.execute(
-                            "update organisation set orgconf = jsonb_set(orgconf, %s, %s) where orgcode = %d;"
-                            % (path, payload, authDetails["orgcode"])
+                            text("update organisation set orgconf = jsonb_set(orgs, :path, :payload) where orgcode = :orgcode;"),
+                            path = path,
+                            payload = payload,
+                            orgcode = authDetails["orgcode"],
                         )
                 return {"gkstatus": enumdict["Success"]}
 
@@ -303,51 +290,29 @@ class api_config(object):
             self.con = eng.connect()
             config = {}
             if confType == "user":
+                orgconf = [orgcode, "userconf"]
+
                 if pageid:
+                    orgconf.append(pageid)
                     if confid:
-                        # configRow = self.con.execute(
-                        #     "select u.userconf#>'{%s,%s}' as userconf from users u where orgcode = %d and userid = %d;"
-                        #     % (str(pageid), str(confid), orgcode, userid)
-                        # ).fetchone()
-                        configRow = self.con.execute(
-                            "select u.orgs#>'{%s,userconf,%s,%s}' as userconf from gkusers u where userid = %d;"
-                            % (str(orgcode), str(pageid), str(confid), userid)
-                        ).fetchone()
-                    else:
-                        # configRow = self.con.execute(
-                        #     "select u.userconf#>'{%s}' as userconf from users u where orgcode = %d and userid = %d;"
-                        #     % (str(pageid), orgcode, userid)
-                        # ).fetchone()
-                        configRow = self.con.execute(
-                            "select u.orgs#>'{%s,userconf,%s}' as userconf from gkusers u where userid = %d;"
-                            % (str(orgcode), str(pageid), userid)
-                        ).fetchone()
-                else:
-                    # configRow = self.con.execute(
-                    #     select([gkdb.gkusers.c.userconf]).where(
-                    #         and_(
-                    #             gkdb.gkusers.c.orgcode == orgcode,
-                    #             gkdb.gkusers.c.userid == userid,
-                    #         )
-                    #     )
-                    # ).fetchone()
-                    configRow = self.con.execute(
-                        "select u.orgs#>'{%s,userconf}' as userconf from gkusers u where userid = %d;"
-                        % (str(orgcode), userid)
-                    ).fetchone()
+                        orgconf.append(confid)
+                configRow = self.con.execute(
+                    text("select u.orgs#>:orgconf as userconf from gkusers u where userid = :userid;"),
+                    orgconf = "{"+",".join(orgconf)+"}",
+                    userid = userid,
+                ).fetchone()
                 config = configRow["userconf"]
             elif confType == "org":
                 if pageid:
                     if confid:
-                        configRow = self.con.execute(
-                            "select org.orgconf#>'{%s,%s}' as orgconf from organisation org where orgcode = %d;"
-                            % (str(pageid), str(confid), orgcode)
-                        ).fetchone()
+                        orgconf = "{"+pageid+","+confid+"}"
                     else:
-                        configRow = self.con.execute(
-                            "select org.orgconf#>'{%s}' as orgconf from organisation org where orgcode = %d;"
-                            % (str(pageid), orgcode)
-                        ).fetchone()
+                        orgconf = "{"+pageid+"}"
+                    configRow = self.con.execute(
+                        text("select org.orgconf#>:orgconf as orgconf from organisation org where orgcode = :orgcode;"),
+                        orgconf = orgconf,
+                        orgcode = orgcode,
+                    ).fetchone()
                 else:
                     configRow = self.con.execute(
                         select([gkdb.organisation.c.orgconf]).where(

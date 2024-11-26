@@ -31,6 +31,7 @@ from copy import deepcopy
 from sqlalchemy.engine.base import Connection
 from collections import defaultdict
 from sqlalchemy.sql import select, and_
+from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
@@ -748,20 +749,14 @@ def hsn_r1(orgcode, start, end, con):
                 "prodctname": products["productdesc"],
             }
             invData = con.execute(
-                "select contents ->> '%s' as content ,sourcestate,taxstate,discount ->>'%s' as disc,cess ->> '%s' as cess,tax ->> '%s' as tax from invoice where contents ? '%s' and orgcode = '%d' and inoutflag = '%d'and taxflag = '%d' and icflag = '%d' and invoicedate >= '%s' and invoicedate <= '%s'"
-                % (
-                    products["productcode"],
-                    products["productcode"],
-                    products["productcode"],
-                    products["productcode"],
-                    products["productcode"],
-                    int(orgcode),
-                    15,
-                    7,
-                    9,
-                    str(start),
-                    str(end),
-                )
+                text("select contents ->> ':productcode' as content ,sourcestate,taxstate,discount ->>':productcode' as disc,cess ->> ':productcode' as cess,tax ->> ':productcode' as tax from invoice where contents ? ':productcode' and orgcode = ':orgcode' and inoutflag = ':inoutflag' and taxflag = ':taxflag' and icflag = ':icflag' and invoicedate >= :start and invoicedate <= :end"),
+                    productcode = products["productcode"],
+                    orgcode = orgcode,
+                    inoutflag = 15,
+                    taxflag = 7,
+                    icflag = 9,
+                    start = start,
+                    end = end,
             )
             invoice_Data = invData.fetchall()
 
@@ -850,7 +845,7 @@ def hsn_r1(orgcode, start, end, con):
 
         return {"status": 0, "data": Final, "json": hsn_json}
     except:
-        # print(traceback.format_exc())
+        print(traceback.format_exc())
         return {"status": 3}
 
 

@@ -66,6 +66,7 @@ from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, desc, func
+from sqlalchemy.sql.expression import text
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
@@ -752,8 +753,9 @@ def getDefaultAcc(con, queryParams, orgcode):
             if vch["vouchertype"] == "journal":
                 initialType = "jr"
             vchCountResult = con.execute(
-                "select count(vouchercode) as vcount from vouchers where orgcode = %d and vouchertype = '%s'"
-                % (int(orgcode), str(vch["vouchertype"]))
+                text("select count(vouchercode) as vcount from vouchers where orgcode = :orgcode and vouchertype = :vouchertype"),
+                orgcode = orgcode,
+                vouchertype = vch["vouchertype"],
             )
             vchCount = vchCountResult.fetchone()
             initialType = initialType + str(vchCount["vcount"] + 1)
@@ -1650,13 +1652,11 @@ class api_invoice(object):
                             int(invdataset["icflag"]) if "icflag" in invdataset else 9
                         )
                         result = con.execute(
-                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = %d"
-                            % (
-                                int(invdataset["custid"]),
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                                icflag,
-                            )
+                            text("select max(invid) as invid from invoice where custid = :custid and invoiceno = :invoiceno and orgcode = :orgcode and icflag = :icflag"),
+                            custid = invdataset["custid"],
+                            invoiceno = invdataset["invoiceno"],
+                            orgcode = invdataset["orgcode"],
+                            icflag = icflag,
                         )
                         invoiceid = result.fetchone()
                         dcinvdataset["dcid"] = invdataset["dcid"]
@@ -1748,11 +1748,9 @@ class api_invoice(object):
                     # if it is cash memo
                     if "icflag" in invdataset:
                         result = con.execute(
-                            "select max(invid) as invid from invoice where invoiceno = '%s' and orgcode = %d and icflag = 3"
-                            % (
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                            )
+                            text("select max(invid) as invid from invoice where invoiceno = :invoiceno and orgcode = :orgcode and icflag = 3"),
+                            invoiceno = invdataset["invoiceno"],
+                            orgcode = invdataset["orgcode"],
                         )
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
@@ -1841,12 +1839,10 @@ class api_invoice(object):
                         }
                     else:
                         result = con.execute(
-                            "select max(invid) as invid from invoice where custid = %d and invoiceno = '%s' and orgcode = %d and icflag = 9"
-                            % (
-                                int(invdataset["custid"]),
-                                str(invdataset["invoiceno"]),
-                                int(invdataset["orgcode"]),
-                            )
+                            text("select max(invid) as invid from invoice where custid = :custid and invoiceno = :invoiceno and orgcode = :orgcode and icflag = 9"),
+                            custid = invdataset["custid"],
+                            invoiceno = invdataset["invoiceno"],
+                            orgcode = invdataset["orgcode"],
                         )
                         invoiceid = result.fetchone()
                         stockdataset["dcinvtnid"] = invoiceid["invid"]
@@ -4068,8 +4064,9 @@ class api_invoice(object):
                 orgcode = authDetails["orgcode"]
                 userId = authDetails["userid"]
                 userDetails = self.con.execute(
-                    "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
-                    % (str(orgcode), int(userId))
+                    text("select username, orgs->':orgcode'->'userrole' as userrole from gkusers where userid = :userid"),
+                    orgcode = orgcode,
+                    userid = userId,
                 ).fetchone()
                 temp = self.con.execute(
                     select([invoice]).where(

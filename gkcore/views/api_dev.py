@@ -31,6 +31,7 @@ from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc
+from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
@@ -522,27 +523,10 @@ class api_dev(object):
             self.con = eng.connect()
             orgcode = self.request.params["orgcode"]
             userid = self.request.params["userid"]
-            # oldUsers = self.con.execute(
-            #     select([gkdb.organisation.c.users]).where(
-            #         gkdb.organisation.c.orgcode == orgcode
-            #     )
-            # ).fetchone()
-
-            # for oldUser in oldUsers["users"]:
-            #     orgDataQuery = self.con.execute(
-            #         "select u.orgs#>'{%s}' as data from gkusers u where userid = %d;"
-            #         % (str(orgcode), int(oldUser))
-            #     )
-            #     orgData = (
-            #         orgDataQuery.fetchone()
-            #         if orgDataQuery.rowcount > 0
-            #         else {"data": {}}
-            #     )
-            #     print("======%d======"%(int(oldUser)))
-            #     print(orgData["data"])
             userOrgQuery = self.con.execute(
-                "select orgs->'%s' as data from gkusers where userid = %d;"
-                % (str(orgcode), int(userid))
+                text("select orgs->':orgcode' as data from gkusers where userid = :userid;"),
+                orgcode = orgcode,
+                userid = userid,
             )
             if userOrgQuery.rowcount < 1:
                 return {"gkstatus": enumdict["ActionDisallowed"]}

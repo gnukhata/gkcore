@@ -36,6 +36,7 @@ from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from sqlalchemy import and_, func, or_
+from sqlalchemy.sql.expression import text
 from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
@@ -286,8 +287,8 @@ class api_product(object):
 
             # We need to create sale and purchase accounts for product under sales and purchase groups respectively.
             sp = con.execute(
-                "select groupcode from groupsubgroups where groupname in ('%s','%s') and orgcode = %d"
-                % ("Sales", "Purchase", productDetails["orgcode"])
+                text("select groupcode from groupsubgroups where groupname in ('Sales','Purchase') and orgcode = :orgcode"),
+                orgcode = productDetails["orgcode"],
             )
             s = sp.fetchall()
             prodName = productDetails["productdesc"]
@@ -495,21 +496,17 @@ class api_product(object):
                 # if count is grater than 0 it send 1 else it send 0 as value of deletable key
                 if int(row["gsflag"]) == 19:
                     prod_countinv = con.execute(
-                        "SELECT (contents ::json)->'%s' is NULL FROM invoice where orgcode ='%d'"
-                        % (
-                            (str(productCode)),
-                            (int(authDetails["orgcode"])),
-                        )
+                        text("SELECT (contents ::json)->:productcode is NULL FROM invoice where orgcode = ':orgcode'"),
+                        productcode = productCode,
+                        orgcode = authDetails["orgcode"],
                     ).fetchall()
                     if (False,) in prod_countinv:
                         productDetails["deletable"] = 1
                     else:
                         prod_purch = con.execute(
-                            "SELECT (schedule ::json)->'%s' is NULL FROM purchaseorder where orgcode ='%d'"
-                            % (
-                                (str(productCode)),
-                                (int(authDetails["orgcode"])),
-                            )
+                            text("SELECT (schedule ::json)->:productcode is NULL FROM purchaseorder where orgcode = ':orgcode'"),
+                            productcode = productCode,
+                            orgcode = authDetails["orgcode"],
                         ).fetchall()
                         if (False,) in prod_purch:
                             productDetails["deletable"] = 1
@@ -524,11 +521,9 @@ class api_product(object):
                     productDetails["prodmrp"] = "%.2f" % 0.00
                 if int(row["gsflag"]) == 7:
                     prod_countinstock = con.execute(
-                        "select count(productcode) as pccount from stock where productcode='%s' and orgcode='%d'"
-                        % (
-                            (str(productCode)),
-                            (int(authDetails["orgcode"])),
-                        )
+                        text("select count(productcode) as pccount from stock where productcode=:productcode and orgcode=':orgcode'"),
+                        productcode = productCode,
+                        orgcode = authDetails["orgcode"],
                     )
                     pc_countinstock = prod_countinstock.fetchone()
 
@@ -537,11 +532,9 @@ class api_product(object):
 
                     else:
                         prod_countinpuchaseorder = con.execute(
-                            "select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?'%s'and orgcode='%d'"
-                            % (
-                                (str(productCode)),
-                                (int(authDetails["orgcode"])),
-                            )
+                            text("select count(purchaseorder.schedule) as pccount from purchaseorder where purchaseorder.schedule?:productcode and orgcode=':orgcode'"),
+                            productcode = productCode,
+                            orgcode = authDetails["orgcode"],
                         )
                         pc_countinpuchaseorder = prod_countinpuchaseorder.fetchone()
                         if pc_countinpuchaseorder["pccount"] > 0:

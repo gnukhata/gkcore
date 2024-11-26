@@ -42,6 +42,7 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy import and_, exc, func
+from sqlalchemy.sql.expression import text
 from pyramid.view import view_defaults, view_config
 from datetime import datetime
 import gkcore
@@ -306,8 +307,9 @@ class api_drcr(object):
                 # if inoutflag=9 then issuername and designation is taken from login details.
                 # user deatils
                 userrow = con.execute(
-                    "select username, orgs->'%s'->'userrole' as userrole from gkusers where userid = %d"
-                    % (str(authDetails["orgcode"]), int(drcrrow["userid"]))
+                    text("select username, orgs->':orgcode'->'userrole' as userrole from gkusers where userid = :userid"),
+                    orgcode = authDetails["orgcode"],
+                    userid = drcrrow["userid"],
                 ).fetchone()
                 userdata = {
                     "userid": drcrrow["userid"],

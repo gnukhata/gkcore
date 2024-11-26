@@ -31,6 +31,7 @@ from gkcore.views.helpers.invoice import get_business_item_invoice_data, get_inv
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, desc
+from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from gkcore.models.meta import gk_api
@@ -325,13 +326,11 @@ def delchalcountbymonth(inoutflag, orgcode):
 
         # this is to fetch delchal count month wise
         monthlysortdata = con.execute(
-            "select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN '%s' AND '%s' and inout=%d and orgcode= %d and dcinvtnflag=4 group by month order by month"
-            % (
-                datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
-                datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
-                inoutflag,
-                orgcode,
-            )
+            text("select extract(month from stockdate) as month, sum(qty) as total_qty from stock where stockdate BETWEEN ':yearstart' AND ':yearend' and inout=:inoutflag and orgcode=:orgcode and dcinvtnflag=4 group by month order by month"),
+            yearstart = datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
+            yearend = datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
+            inoutflag = inoutflag,
+            orgcode = orgcode,
         )
         monthlysortdataset = monthlysortdata.fetchall()
         # this is use to send 0 if month have 0 delchal count
@@ -633,25 +632,21 @@ class api_dashboard(object):
                 startenddateprint = startenddate.fetchone()
                 # this is to fetch in transfer note count month wise
                 monthlysortindata = self.con.execute(
-                    "select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and dcinvtnflag=20 and inout=9 group by month order by month"
-                    % (
-                        datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
-                        datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
-                        authDetails["orgcode"],
-                        goid,
-                    )
+                    text("select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN ':yearstart' AND ':yearend' and orgcode=:orgcode and goid=:goid and dcinvtnflag=20 and inout=9 group by month order by month"),
+                    yearstart = datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
+                    yearend = datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
+                    orgcode = authDetails["orgcode"],
+                    goid = goid,
                 )
                 monthlysortindataset = monthlysortindata.fetchall()
 
                 # this is to fetch out transfer note count month wise
                 monthlysortoutdata = self.con.execute(
-                    "select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN '%s' AND '%s' and orgcode= %d and goid=%s and dcinvtnflag=20 and inout=15 group by month order by month"
-                    % (
-                        datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
-                        datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
-                        authDetails["orgcode"],
-                        goid,
-                    )
+                    text("select extract(month from stockdate) as month, sum(qty) as count from stock where stockdate BETWEEN ':yearstart' AND ':yearend' and orgcode=:orgcode and goid=:goid and dcinvtnflag=20 and inout=15 group by month order by month"),
+                    yearstart = datetime.strftime(startenddateprint["yearstart"], "%Y-%m-%d"),
+                    yearend = datetime.strftime(startenddateprint["yearend"], "%Y-%m-%d"),
+                    orgcode = authDetails["orgcode"],
+                    goid = goid,
                 )
                 monthlysortoutdataset = monthlysortoutdata.fetchall()
                 # this is use to send 0 if month have 0 invoice count
