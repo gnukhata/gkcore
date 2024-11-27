@@ -63,10 +63,11 @@ def generate_db_url():
                 f"postgresql+psycopg2://{db_user}:{db_password}@/{db_name}?host={unix_sock_path}"
             )
         else:
-            db_host = os.environ.get("GKCORE_DB_HOST", '')
-            db_port = os.environ.get("GKCORE_DB_PORT")
-            custom_host = db_host + f":{db_port}" if db_port else ''
-            db_url = f"postgresql+psycopg2://{db_user}:{db_password}@{custom_host}/{db_name}"
+            db_host = os.environ.get("GKCORE_DB_HOST", "localhost")
+            db_port = os.environ.get("GKCORE_DB_PORT", 5432)
+            db_url = (
+                f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+            )
 
     return db_url
 
