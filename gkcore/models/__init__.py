@@ -54,6 +54,10 @@ def generate_db_url():
     db_url = os.environ.get("GKCORE_DB_URL")
 
     if not db_url:
+        # Setting default value using `get` method's `default` param won't work
+        # if the variables are empty strings. So the `or` condition is added in the
+        # following lines purposefully to handle fallback to default values in
+        # such cases.
         db_name = os.environ.get("GKCORE_DB_NAME") or "gkdata"
         db_user = os.environ.get("GKCORE_DB_USER") or "gkadmin"
         db_password = os.environ.get("GKCORE_DB_PASSWORD") or "gkadmin"
