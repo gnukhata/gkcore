@@ -54,17 +54,21 @@ def generate_db_url():
     db_url = os.environ.get("GKCORE_DB_URL")
 
     if not db_url:
-        db_name = os.environ.get("GKCORE_DB_NAME", "gkdata")
-        db_user = os.environ.get("GKCORE_DB_USER", "gkadmin")
-        db_password = os.environ.get("GKCORE_DB_PASSWORD", "gkadmin")
+        # Setting default value using `get` method's `default` param won't work
+        # if the variables are empty strings. So the `or` condition is added in the
+        # following lines purposefully to handle fallback to default values in
+        # such cases.
+        db_name = os.environ.get("GKCORE_DB_NAME") or "gkdata"
+        db_user = os.environ.get("GKCORE_DB_USER") or "gkadmin"
+        db_password = os.environ.get("GKCORE_DB_PASSWORD") or "gkadmin"
         unix_sock_path = os.environ.get("UNIX_SOCKET_PATH")
         if unix_sock_path:
             db_url = (
                 f"postgresql+psycopg2://{db_user}:{db_password}@/{db_name}?host={unix_sock_path}"
             )
         else:
-            db_host = os.environ.get("GKCORE_DB_HOST", "localhost")
-            db_port = os.environ.get("GKCORE_DB_PORT", 5432)
+            db_host = os.environ.get("GKCORE_DB_HOST") or "localhost"
+            db_port = os.environ.get("GKCORE_DB_PORT") or 5432
             db_url = (
                 f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
             )
