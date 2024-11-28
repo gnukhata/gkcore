@@ -54,9 +54,9 @@ def generate_db_url():
     db_url = os.environ.get("GKCORE_DB_URL")
 
     if not db_url:
-        db_name = os.environ.get("GKCORE_DB_NAME", "gkdata")
-        db_user = os.environ.get("GKCORE_DB_USER", "gkadmin")
-        db_password = os.environ.get("GKCORE_DB_PASSWORD", "gkadmin")
+        db_name = os.environ.get("GKCORE_DB_NAME") or "gkdata"
+        db_user = os.environ.get("GKCORE_DB_USER") or "gkadmin"
+        db_password = os.environ.get("GKCORE_DB_PASSWORD") or "gkadmin"
         unix_sock_path = os.environ.get("UNIX_SOCKET_PATH")
         if unix_sock_path:
             db_url = (
