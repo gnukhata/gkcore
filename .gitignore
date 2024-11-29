@@ -8,3 +8,4 @@ gkenv/
 .direnv/
 .envrc
 .env
+dist/
