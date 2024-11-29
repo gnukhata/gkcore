@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-source .env
 
 echo "Initializing database migrations..."
 gkdb --init
