@@ -235,6 +235,6 @@ def load_initial_data():
                 "insert into state( statecode, statename, abbreviation)values(38, 'Ladakh', 'LA')"
             )
 
-            con.execute("alter table transfernote add recieveddate date")
-            con.execute("alter table delchal add noofpackages int")
-            con.execute("alter table delchal add modeoftransport text")
+            con.execute("alter table transfernote add column if not exists recieveddate date")
+            con.execute("alter table delchal add column if not exists noofpackages int")
+            con.execute("alter table delchal add column if not exists modeoftransport text")
