@@ -37,13 +37,14 @@ This module also scanns for the secret from the database which is then used for 
 import os
 from pyramid.config import Configurator
 from wsgicors import CORS
-from gkcore.enum import STATUS_CODES as enumdict
+from gkcore.data.enum import STATUS_CODES as enumdict
 from dotenv import load_dotenv
 from gkcore.models import eng
 
 # Load environment variables from the .env file
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 def main(global_config, **settings):
     config = Configurator(settings=settings)

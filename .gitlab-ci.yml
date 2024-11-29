@@ -16,15 +16,14 @@ variables:
 
 # test run gkcore on creating or updating merge requests
 gkcore:
-  image: python:3.8-slim-buster
+  image: python:3.12-slim
   stage: test
   script:
-   - apt update && apt install -y build-essential libpq-dev
-   - pip3 install -r requirements.txt
-   - python3 setup.py develop
-   - python3 initdb.py
-   - python3 db_migrate.py
-   - prequest development.ini /state
+   - apt update && apt install -y build-essential libpq-dev curl python3-poetry
+   - poetry build && pip install dist/*.whl
+   - gkdb --init
+   - gkdb --migrate
+   - prequest src/gkcore/configs/development.ini /state
   rules:
   - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
 

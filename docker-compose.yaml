@@ -17,10 +17,11 @@ services:
   gkcore:
     build: .
     restart: "always"
+    env_file:
+      - .env
     environment:
       - GKCORE_DB_HOST=db
       - GKCORE_DB_PORT=5432
-      - PYRAMID_CONFIG_FILE=${PYRAMID_CONFIG_FILE:-production.ini}
     ports:
       - "6543:6543"
     depends_on:

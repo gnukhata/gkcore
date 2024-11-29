@@ -1,5 +1,4 @@
 import logging
-import gkcore
 import jwt
 import traceback
 from gkcore.models import eng, gkdb
@@ -83,7 +82,7 @@ def authCheck(token):
         # get the user role of current org
         try:
             user_info = (
-                gkcore.eng.connect()
+                eng.connect()
                 .execute(
                     select([gkdb.gkusers]).where(
                         and_(

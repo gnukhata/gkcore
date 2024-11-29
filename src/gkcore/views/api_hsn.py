@@ -25,12 +25,12 @@ Contributors:
 """
 
 
-from gkcore.fin_utils import hsn_codes
 from gkcore.utils import authCheck
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import re
 from gkcore import enumdict
+from gkcore.views.helpers.fin_utils import hsn_codes
 
 
 @view_defaults(route_name="hsn")

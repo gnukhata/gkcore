@@ -50,7 +50,7 @@ from ast import literal_eval
 import requests
 from base64 import b64decode, b64encode
 from json import dumps, loads
-from gkcore.enum import GST_REG_TYPE, GST_PARTY_TYPE
+from gkcore.data.enum import GST_REG_TYPE, GST_PARTY_TYPE
 
 import traceback  # for printing detailed exception logs
 
