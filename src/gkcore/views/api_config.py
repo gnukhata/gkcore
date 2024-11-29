@@ -39,7 +39,7 @@ from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import text
 import gkcore
 from jsonschema import RefResolver, Draft202012Validator, validate
-from gkcore.config_schema import (
+from gkcore.data.config_schema import (
     payloadSchema1,
     payloadSchema2,
     transactionBaseSchema,
