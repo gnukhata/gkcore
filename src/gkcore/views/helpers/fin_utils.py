@@ -3,15 +3,13 @@
 #
 # This module contains the utility functions related to ifsc & hsn codes which
 # can be used throughout the application
-import pathlib
 import csv
 import json
-from .utils import gk_log
+from gkcore.utils import gk_log
+from gkcore import BASE_DIR
 
 _hsn: list = []
 _ifsc: list = []
-
-gkcore_root = pathlib.Path("././").resolve()
 
 
 def ifsc_codes():
@@ -22,7 +20,7 @@ def ifsc_codes():
         return _ifsc
     try:
         # else read the file in static/ dir
-        f = open(f"{gkcore_root}/static/IFSC.csv", "r")
+        f = open(f"{BASE_DIR}/data/IFSC.csv", "r")
         # parse the file as a python dict
         tmp_ifsc = csv.DictReader(f)
         # loop over all items of the list and
@@ -42,7 +40,7 @@ def hsn_codes():
         return _hsn
     try:
         # else read the file in static/ dir
-        with open(f"{gkcore_root}/static/gst-hsn.json", "r") as f:
+        with open(f"{BASE_DIR}/data/gst-hsn.json", "r") as f:
             # parse the contents of the file as json
             tmp_hsn = json.load(f)
             # loop over all items of the list and
