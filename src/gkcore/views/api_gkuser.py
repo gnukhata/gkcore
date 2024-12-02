@@ -89,13 +89,9 @@ class api_gkuser(object):
         purpose
         adds a user in the users table.
         """
-        dataset = self.request.json_body
 
-        # validate payload schema
-        try:
-            dataset = UserSchema(**dataset).model_dump()
-        except ValidationError as e:
-            return {"gkstatus": enumdict["ConnectionFailed"], "gkresult": e.errors()}
+        validated_data = UserSchema.model_validate(self.request.json_body)
+        dataset = validated_data.model_dump(exclude_none=True)
 
         try:
             self.con = eng.connect()
