@@ -114,14 +114,14 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
             balType = "Cr"
     else:
         tdrfrm = con.execute(
-            text("select sum(cast(drs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
-            accountcode = int(accountCode),
+            text("select sum(cast(drs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
+            accountcode = accountCode,
             from_date = financialStart,
             to_date = calculateFrom,
         )
         tcrfrm = con.execute(
-            text("select sum(cast(crs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
-            accountcode = int(accountCode),
+            text("select sum(cast(crs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
+            accountcode = accountCode,
             from_date = financialStart,
             to_date = calculateFrom,
         )
@@ -178,14 +178,14 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
             openingBalanceType = "Cr"
 
     tdrfrm = con.execute(
-            text("select sum(cast(drs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
-        accountcode = int(accountCode),
+            text("select sum(cast(drs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
+        accountcode = accountCode,
         from_date = calculateFrom,
         to_date = calculateTo,
     )
     tcrfrm = con.execute(
-        text("select sum(cast(crs->>:accountcode as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
-        accountcode = int(accountCode),
+        text("select sum(cast(crs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
+        accountcode = accountCode,
         from_date = calculateFrom,
         to_date = calculateTo,
     )
