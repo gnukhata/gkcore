@@ -20,12 +20,16 @@ def main():
 
     # Parse arguments
     ini_file = os.environ.get("PYRAMID_CONFIG_FILE")
+
+    mode = "production"
+
     if len(sys.argv) > 1:
         arg = sys.argv[1].lower()
         if arg == "--production":
             ini_file = production_ini
         elif arg == "--development":
             ini_file = development_ini
+            mode = "development"
         elif arg.endswith(".ini"):  # Custom config file
             ini_file = arg
         else:
@@ -44,7 +48,7 @@ def main():
     # Call Pyramid's pserve with the selected ini file
     print(f"Loading {ini_file}.")
     command = ["pserve", ini_file]
-    if ini_file == "development_ini":
+    if mode == "development":
         command.append("--reload")
     sys.exit(call(command))
 
