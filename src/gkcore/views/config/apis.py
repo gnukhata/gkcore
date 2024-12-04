@@ -29,19 +29,11 @@ from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from gkcore.models import gkdb
 from gkcore.views.config.services import get_conf
-from sqlalchemy.sql import select
 import json
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
-from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import text
-import gkcore
 from jsonschema import RefResolver, Draft202012Validator, validate
 from gkcore.data.config_schema import (
-    payloadSchema1,
     payloadSchema2,
     transactionBaseSchema,
     transactionConfigSchema,
@@ -69,17 +61,13 @@ validator = Draft202012Validator(transactionConfigSchema, resolver=resolver)
 @view_defaults(route_name="config")
 class api_config(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
-        print("User config initialized")
 
-    """
-        Returns the config of a user/organisation, given proper gktoken
-    """
 
     @view_config(request_method="GET", renderer="json")
     def getConfg(self):
+        """ Returns the config of a user/organisation, given proper gktoken
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -108,12 +96,10 @@ class api_config(object):
             }
 
 
-    """
-        Updates the entire config
-    """
-
     @view_config(request_method="PUT", renderer="json")
     def updateConfig(self):
+        """Updates the entire config
+        """
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -157,122 +143,121 @@ class api_config(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as conn:
-                dataset = self.request.json_body
+        with eng.connect() as conn:
+            dataset = self.request.json_body
 
-                # Validate the payload structure
-                try:
-                    validate(instance=dataset, schema=payloadSchema2)
-                    print("Config Structure Validated")
-                except Exception as e:
-                    # print(e)
-                    return {
-                        "gkstatus": enumdict["ActionDisallowed"],
-                        "gkmessage": "Invalid Payload. Please check the payload structure",
-                    }
+            # Validate the payload structure
+            try:
+                validate(instance=dataset, schema=payloadSchema2)
+                print("Config Structure Validated")
+            except Exception as e:
+                # print(e)
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                    "gkmessage": "Invalid Payload. Please check the payload structure",
+                }
 
-                # Array of keys in descending order of hierarchy [parent, child, grand child, etc.]
-                pathArr = dataset["path"]
+            # Array of keys in descending order of hierarchy [parent, child, grand child, etc.]
+            pathArr = dataset["path"]
 
-                confToValidate = {}
-                target = confToValidate
-                pathLen = len(pathArr)
-                for pathIndex, path in enumerate(pathArr):
-                    target[path] = {}
-                    if pathIndex + 1 < pathLen:
-                        target = target[path]
-                    else:
-                        target[path] = dataset["config"]
-
-                # Validate the config structure
-                try:
-                    # print(confToValidate)
-                    if self.request.params["confcategory"] == "transaction":
-                        if "inv" in confToValidate:
-                            validator.validate(confToValidate)
-                    elif self.request.params["confcategory"] == "global":
-                        validate(instance=confToValidate, schema=globalConfigSchema)
-                    else:
-                        validate(instance=confToValidate, schema=workflowConfigSchema)
-                    print("Config Validated")
-                except Exception:
-                    return {
-                        "gkstatus": enumdict["ActionDisallowed"],
-                        "gkmessage": "Invalid Config. Please check the config structure",
-                    }
-
-                newConfig = dataset["config"]
-                oldConfig = get_conf(
-                    conn,
-                    self.request.params["conftype"],
-                    authDetails["orgcode"],
-                    authDetails["userid"],
-                    None,
-                    None,
-                )
-
-                target = oldConfig
-                targetPath = []
-                targetParent = oldConfig
-                payload = {}
-                for path in pathArr:
-                    if type(target) != dict:
-                        target = {}
-                    if path in target:
-                        targetPath.append(path)
-                        target = target[path]
-                    else:
-                        if not payload:
-                            payload = target
-                            payload[path] = {}
-                            targetParent = payload
-                            target = payload[path]
-                        else:
-                            target[path] = {}
-                            targetParent = target
-                            target = target[path]
-                if not payload:
-                    payload = newConfig
+            confToValidate = {}
+            target = confToValidate
+            pathLen = len(pathArr)
+            for pathIndex, path in enumerate(pathArr):
+                target[path] = {}
+                if pathIndex + 1 < pathLen:
+                    target = target[path]
                 else:
-                    targetParent[path] = newConfig
-                if not len(targetPath):
-                    if self.request.params["conftype"] == "user":
-                        targetPath = [str(authDetails["orgcode"]), "userconf"]
-                        payload = json.dumps(payload)
-                        path = "{" + ",".join(targetPath) + "}"
+                    target[path] = dataset["config"]
 
-                        conn.execute(
-                            text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
-                            path = path,
-                            payload = payload,
-                            userid = authDetails["userid"],
-                        )
-
-                    elif self.request.params["conftype"] == "org":
-                        conn.execute(
-                            gkdb.organisation.update()
-                            .where(
-                                gkdb.organisation.c.orgcode == authDetails["orgcode"]
-                            )
-                            .values(orgconf=payload)
-                        )
+            # Validate the config structure
+            try:
+                # print(confToValidate)
+                if self.request.params["confcategory"] == "transaction":
+                    if "inv" in confToValidate:
+                        validator.validate(confToValidate)
+                elif self.request.params["confcategory"] == "global":
+                    validate(instance=confToValidate, schema=globalConfigSchema)
                 else:
-                    targetPath = [str(authDetails["orgcode"]), "userconf", *targetPath]
+                    validate(instance=confToValidate, schema=workflowConfigSchema)
+                print("Config Validated")
+            except Exception:
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                    "gkmessage": "Invalid Config. Please check the config structure",
+                }
+
+            newConfig = dataset["config"]
+            oldConfig = get_conf(
+                conn,
+                self.request.params["conftype"],
+                authDetails["orgcode"],
+                authDetails["userid"],
+                None,
+                None,
+            )
+
+            target = oldConfig
+            targetPath = []
+            targetParent = oldConfig
+            payload = {}
+            for path in pathArr:
+                if type(target) != dict:
+                    target = {}
+                if path in target:
+                    targetPath.append(path)
+                    target = target[path]
+                else:
+                    if not payload:
+                        payload = target
+                        payload[path] = {}
+                        targetParent = payload
+                        target = payload[path]
+                    else:
+                        target[path] = {}
+                        targetParent = target
+                        target = target[path]
+            if not payload:
+                payload = newConfig
+            else:
+                targetParent[path] = newConfig
+            if not len(targetPath):
+                if self.request.params["conftype"] == "user":
+                    targetPath = [str(authDetails["orgcode"]), "userconf"]
                     payload = json.dumps(payload)
                     path = "{" + ",".join(targetPath) + "}"
-                    if self.request.params["conftype"] == "user":
-                        conn.execute(
-                            text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
-                            path = path,
-                            payload = payload,
-                            userid = authDetails["userid"],
+
+                    conn.execute(
+                        text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                        path = path,
+                        payload = payload,
+                        userid = authDetails["userid"],
+                    )
+
+                elif self.request.params["conftype"] == "org":
+                    conn.execute(
+                        gkdb.organisation.update()
+                        .where(
+                            gkdb.organisation.c.orgcode == authDetails["orgcode"]
                         )
-                    elif self.request.params["conftype"] == "org":
-                        conn.execute(
-                            text("update organisation set orgconf = jsonb_set(orgs, :path, :payload) where orgcode = :orgcode;"),
-                            path = path,
-                            payload = payload,
-                            orgcode = authDetails["orgcode"],
-                        )
-                return {"gkstatus": enumdict["Success"]}
+                        .values(orgconf=payload)
+                    )
+            else:
+                targetPath = [str(authDetails["orgcode"]), "userconf", *targetPath]
+                payload = json.dumps(payload)
+                path = "{" + ",".join(targetPath) + "}"
+                if self.request.params["conftype"] == "user":
+                    conn.execute(
+                        text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                        path = path,
+                        payload = payload,
+                        userid = authDetails["userid"],
+                    )
+                elif self.request.params["conftype"] == "org":
+                    conn.execute(
+                        text("update organisation set orgconf = jsonb_set(orgs, :path, :payload) where orgcode = :orgcode;"),
+                        path = path,
+                        payload = payload,
+                        orgcode = authDetails["orgcode"],
+                    )
+            return {"gkstatus": enumdict["Success"]}
