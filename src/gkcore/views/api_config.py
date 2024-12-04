@@ -86,29 +86,26 @@ class api_config(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                pageid = None
-                confid = None
-                if "pageid" in self.request.params:
-                    pageid = self.request.params["pageid"]
-                if "confid" in self.request.params:
-                    confid = self.request.params["confid"]
-                config = self.getConf(
-                    self.request.params["conftype"],
-                    authDetails["orgcode"],
-                    authDetails["userid"],
-                    pageid,
-                    confid,
-                )
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": config,
-                }
-            except Exception as e:
-                # print(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+        with eng.connect() as con:
+            pageid = None
+            confid = None
+            if "pageid" in self.request.params:
+                pageid = self.request.params["pageid"]
+            if "confid" in self.request.params:
+                confid = self.request.params["confid"]
+            config = get_conf(
+                con,
+                self.request.params["conftype"],
+                authDetails["orgcode"],
+                authDetails["userid"],
+                pageid,
+                confid,
+            )
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": config,
+            }
+
 
     """
         Updates the entire config
@@ -211,7 +208,8 @@ class api_config(object):
                     }
 
                 newConfig = dataset["config"]
-                oldConfig = self.getConf(
+                oldConfig = get_conf(
+                    conn,
                     self.request.params["conftype"],
                     authDetails["orgcode"],
                     authDetails["userid"],
@@ -285,42 +283,37 @@ class api_config(object):
                 return {"gkstatus": enumdict["Success"]}
 
 
-    def getConf(self, confType, orgcode, userid, pageid, confid):
-        try:
-            self.con = eng.connect()
-            config = {}
-            if confType == "user":
-                orgconf = [orgcode, "userconf"]
+def get_conf(con, confType, orgcode, userid, pageid, confid):
+    config = {}
+    if confType == "user":
+        orgconf = [orgcode, "userconf"]
 
-                if pageid:
-                    orgconf.append(pageid)
-                    if confid:
-                        orgconf.append(confid)
-                configRow = self.con.execute(
-                    text("select u.orgs#>:orgconf as userconf from gkusers u where userid = :userid;"),
-                    orgconf = "{"+",".join(orgconf)+"}",
-                    userid = userid,
-                ).fetchone()
-                config = configRow["userconf"]
-            elif confType == "org":
-                if pageid:
-                    if confid:
-                        orgconf = "{"+pageid+","+confid+"}"
-                    else:
-                        orgconf = "{"+pageid+"}"
-                    configRow = self.con.execute(
-                        text("select org.orgconf#>:orgconf as orgconf from organisation org where orgcode = :orgcode;"),
-                        orgconf = orgconf,
-                        orgcode = orgcode,
-                    ).fetchone()
-                else:
-                    configRow = self.con.execute(
-                        select([gkdb.organisation.c.orgconf]).where(
-                            gkdb.organisation.c.orgcode == orgcode,
-                        )
-                    ).fetchone()
-                config = configRow["orgconf"]
-            return config
-        except Exception as e:
-            # print(e)
-            return e
+        if pageid:
+            orgconf.append(pageid)
+            if confid:
+                orgconf.append(confid)
+        configRow = con.execute(
+            text("select u.orgs#>:orgconf as userconf from gkusers u where userid = :userid;"),
+            orgconf = "{"+",".join(orgconf)+"}",
+            userid = userid,
+        ).fetchone()
+        config = configRow["userconf"]
+    elif confType == "org":
+        if pageid:
+            if confid:
+                orgconf = "{"+pageid+","+confid+"}"
+            else:
+                orgconf = "{"+pageid+"}"
+            configRow = con.execute(
+                text("select org.orgconf#>:orgconf as orgconf from organisation org where orgcode = :orgcode;"),
+                orgconf = orgconf,
+                orgcode = orgcode,
+            ).fetchone()
+        else:
+            configRow = con.execute(
+                select([gkdb.organisation.c.orgconf]).where(
+                    gkdb.organisation.c.orgcode == orgcode,
+                )
+            ).fetchone()
+        config = configRow["orgconf"]
+    return config
