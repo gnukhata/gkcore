@@ -121,34 +121,28 @@ class api_config(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                config = dataset["config"]
-                confType = self.request.params["conftype"]
-                if confType == "user":
-                    targetPath = [authDetails["orgcode"], "userconf"]
-                    payload = "'" + json.dumps(config) + "'"
-                    path = "'{" + ",".join(targetPath) + "}'"
-                    self.con.execute(
-                        text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
-                        path = str(path),
-                        payload = str(payload),
-                        userid = authDetails["userid"],
-                    )
-                else:
-                    self.con.execute(
-                        gkdb.organisation.update()
-                        .where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
-                        .values(orgconf=config)
-                    )
-                return {"gkstatus": enumdict["Success"]}
-            except Exception as e:
-                # print(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+        with eng.connect() as con:
+            dataset = self.request.json_body
+            config = dataset["config"]
+            confType = self.request.params["conftype"]
+            if confType == "user":
+                targetPath = [authDetails["orgcode"], "userconf"]
+                payload = "'" + json.dumps(config) + "'"
+                path = "'{" + ",".join(targetPath) + "}'"
+                con.execute(
+                    text("update gkusers set orgs = jsonb_set(orgs, :path, :payload) where userid = :userid;"),
+                    path = str(path),
+                    payload = str(payload),
+                    userid = authDetails["userid"],
+                )
+            else:
+                con.execute(
+                    gkdb.organisation.update()
+                    .where(gkdb.organisation.c.orgcode == authDetails["orgcode"])
+                    .values(orgconf=config)
+                )
+            return {"gkstatus": enumdict["Success"]}
+
 
     """
         Updates the config based on the given path
