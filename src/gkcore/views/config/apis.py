@@ -28,6 +28,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from gkcore.models import gkdb
+from gkcore.views.config.services import get_conf
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -281,39 +282,3 @@ class api_config(object):
                             orgcode = authDetails["orgcode"],
                         )
                 return {"gkstatus": enumdict["Success"]}
-
-
-def get_conf(con, confType, orgcode, userid, pageid, confid):
-    config = {}
-    if confType == "user":
-        orgconf = [str(orgcode), "userconf"]
-
-        if pageid:
-            orgconf.append(pageid)
-            if confid:
-                orgconf.append(confid)
-        configRow = con.execute(
-            text("select u.orgs#>:orgconf as userconf from gkusers u where userid = :userid;"),
-            orgconf = "{"+",".join(orgconf)+"}",
-            userid = userid,
-        ).fetchone()
-        config = configRow["userconf"]
-    elif confType == "org":
-        if pageid:
-            if confid:
-                orgconf = "{"+pageid+","+confid+"}"
-            else:
-                orgconf = "{"+pageid+"}"
-            configRow = con.execute(
-                text("select org.orgconf#>:orgconf as orgconf from organisation org where orgcode = :orgcode;"),
-                orgconf = orgconf,
-                orgcode = orgcode,
-            ).fetchone()
-        else:
-            configRow = con.execute(
-                select([gkdb.organisation.c.orgconf]).where(
-                    gkdb.organisation.c.orgcode == orgcode,
-                )
-            ).fetchone()
-        config = configRow["orgconf"]
-    return config
