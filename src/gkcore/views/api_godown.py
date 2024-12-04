@@ -429,6 +429,15 @@ class api_godown(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
+                is_godown_used = self.con.execute(
+                    select([stock.c.goid]).where(stock.c.goid == dataset["goid"])
+                ).rowcount
+                if is_godown_used:
+                    return {
+                        "gkstatus": enumdict["ActionDisallowed"],
+                        "error": "Cannot delete godowns already referred in transactions",
+                    }
+
                 result = self.con.execute(
                     godown.delete().where(godown.c.goid == dataset["goid"])
                 )
