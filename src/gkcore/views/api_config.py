@@ -286,7 +286,7 @@ class api_config(object):
 def get_conf(con, confType, orgcode, userid, pageid, confid):
     config = {}
     if confType == "user":
-        orgconf = [orgcode, "userconf"]
+        orgconf = [str(orgcode), "userconf"]
 
         if pageid:
             orgconf.append(pageid)
