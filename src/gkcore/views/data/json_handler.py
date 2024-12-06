@@ -177,7 +177,7 @@ def insert_org_data(
 
     # Make a dictionary of foreignkeys with with name as key
     foreign_keys = {
-        foreign_key.column.name: foreign_key for foreign_key in list(
+        foreign_key.parent.name: foreign_key for foreign_key in list(
             table.foreign_keys
         )
     }
