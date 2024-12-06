@@ -1381,7 +1381,7 @@ class api_rollclose(object):
 
                     openingStock = float(0)
                     if prodRow["gscode"] == "19":
-                        stockData = stockonhandfun(orgCode, prodRow["productcode"], endDate)
+                        stockData = stockonhandfun(con, orgCode, prodRow["productcode"], endDate)
                         openingStock = float(stockData["gkresult"][0]["balance"])
 
                     con.execute(

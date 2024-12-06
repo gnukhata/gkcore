@@ -921,10 +921,10 @@ class api_godownregister(object):
                             temp[0]["productname"] = pmap[pcode]
                             result.append(temp[0])
                 elif stocktype == 'pag':
-                    stock_on_hand = stockonhandfun(orgcode, productCode, endDate)
+                    stock_on_hand = stockonhandfun(con, orgcode, productCode, endDate)
                     result = stock_on_hand["gkresult"]
                 elif stocktype == 'apag':
-                    stock_on_hand = stockonhandfun(orgcode, "all", endDate)
+                    stock_on_hand = stockonhandfun(con, orgcode, "all", endDate)
                     result = stock_on_hand["gkresult"]
                 else:
                     result = godownwisestockonhandfun(

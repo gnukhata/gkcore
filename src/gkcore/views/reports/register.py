@@ -735,19 +735,18 @@ class api_stock_register(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
                 endDate = datetime.strptime(
                     str(self.request.params["enddate"]), "%Y-%m-%d"
                 )
-                stockresult = stockonhandfun(orgcode, productCode, endDate)
+                stockresult = stockonhandfun(con, orgcode, productCode, endDate)
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": stockresult["gkresult"],
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="category-wise-stock-on-hand", renderer="json")
     def categorywiseStockOnHandReport(self):
