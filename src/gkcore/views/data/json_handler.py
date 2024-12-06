@@ -2,6 +2,7 @@ import json, io, logging
 from gkcore import eng
 from sqlalchemy import MetaData, select, func, and_
 from sqlalchemy.engine.base import Connection
+from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.sql.schema import Table
 from gkcore.models import gkdb
 
@@ -181,28 +182,71 @@ def insert_org_data(
             table.foreign_keys
         )
     }
-    for row in table_data:
-        pk_value = row.pop(pk_field)
 
-        for field, value in dict(row).items():
-            if value == None:
-                row.pop(field)
-
-        for field_name in row.keys():
-            if (field_name in foreign_keys) and row.get(field_name):
-                fk_table_name = foreign_keys[field_name].constraint.referred_table.name
-                row[field_name] = pk_map[fk_table_name][row[field_name]]
-
-        statement = table.insert().values(row).returning(
-            getattr(table.c, pk_field)
+    while len(table_data) > 0:
+        row = table_data.pop(0)
+        row_pk_map = insert_row(
+            con, row, pk_field, foreign_keys, table, pk_map, table_pk_map
         )
-        # Insert row to database
-        row_insert = con.execute(statement).scalar()
-
+        if not row_pk_map:
+            table_data.append(row)
+            continue
         # Update pk_map with newly created primary key and the old one
-        table_pk_map.update({pk_value: row_insert})
-
+        table_pk_map.update(row_pk_map)
     return table_pk_map
+
+
+def insert_row(
+        con: Connection,
+        row: dict,
+        pk_field: quoted_name,
+        foreign_keys: dict,
+        table: Table,
+        pk_map: dict,
+        table_pk_map: dict,
+) -> dict | None:
+    """Inserts single row after updating foreign key relations with newly mapped
+    primary keys.
+
+    :param con: SQL Alchemy engine connection
+    :param row: Row to be inserted to the database
+    :param pk_field: Primary key field name
+    :param foreign_keys: A map between foreignkey field name and foreignkey object
+    :param table: SQL Alchemy table object
+    :param pk_map: Mapping between old `pk`s and newly created `pk`s for all tables
+    :param table_pk_map: Mapping between old `pk`s and newly created `pk`s of
+    current table rows
+    :return: Map between old `pk` and newly created `pk` of the row
+    """
+
+    pk_value = row.pop(pk_field)
+
+    for field, value in dict(row).items():
+        if value == None:
+            row.pop(field)
+
+    for field_name in row.keys():
+        if (field_name in foreign_keys) and row.get(field_name):
+            fk_table_name = foreign_keys[field_name].constraint.referred_table.name
+
+            # Self referencing tables may have connected foreign key row listed
+            # below the row where the foreign key is referred. So if thw rows are
+            # inserted in order, it will raise foreign key is not fount error.
+            if fk_table_name == table.name:
+                field_value = table_pk_map.get(row[field_name])
+                if not field_value:
+                    return None
+            else:
+                field_value = pk_map[fk_table_name].get(row[field_name])
+            row[field_name] = field_value
+
+    statement = table.insert().values(row).returning(
+        getattr(table.c, pk_field)
+    )
+    # Insert row to database
+    row_insert = con.execute(statement).scalar()
+
+    return {pk_value: row_insert}
 
 
 def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
