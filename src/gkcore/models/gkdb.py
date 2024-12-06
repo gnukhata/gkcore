@@ -154,7 +154,12 @@ groupsubgroups = Table(
     metadata,
     Column("groupcode", Integer, primary_key=True),
     Column("groupname", UnicodeText, nullable=False),
-    Column("subgroupof", Integer),
+    Column(
+        "subgroupof",
+        Integer,
+        ForeignKey("groupsubgroups.groupcode", ondelete="CASCADE"),
+        nullable=True,
+    ),
     Column(
         "orgcode",
         Integer,
@@ -178,7 +183,12 @@ categorysubcategories = Table(
     metadata,
     Column("categorycode", Integer, primary_key=True),
     Column("categoryname", UnicodeText, nullable=False),
-    Column("subcategoryof", Integer),
+    Column(
+        "subcategoryof",
+        Integer,
+        ForeignKey("categorysubcategories.categorycode", ondelete="CASCADE"),
+        nullable=True,
+    ),
     Column(
         "orgcode",
         Integer,
@@ -232,7 +242,12 @@ unitofmeasurement = Table(
     Column("unitname", UnicodeText, nullable=False),
     Column("description", UnicodeText),
     Column("conversionrate", Numeric(13, 2), default=0.00),
-    Column("subunitof", Integer),
+    Column(
+        "subunitof",
+        Integer,
+        ForeignKey("unitofmeasurement.uomid", ondelete="CASCADE"),
+        nullable=True,
+    ),
     Column("uqc", Integer),
     Column("frequency", Integer),
     Column("sysunit", Integer, default=0),
