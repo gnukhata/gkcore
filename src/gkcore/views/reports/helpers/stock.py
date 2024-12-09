@@ -783,6 +783,7 @@ def godownwisestockonhandfun(
                     "totalinwardqty": "%.2f" % float(totalinward),
                     "totaloutwardqty": "%.2f" % float(totaloutward),
                     "balance": "%.2f" % float(gopeningStock),
+                    "productcode": productCode,
                 }
             )
             return stockReport
