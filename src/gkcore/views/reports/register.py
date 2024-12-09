@@ -156,12 +156,6 @@ class api_stock_register(object):
                         and_(
                             stock.c.productcode == productCode,
                             stock.c.orgcode == orgcode,
-                            or_(
-                                stock.c.dcinvtnflag != 20,
-                                stock.c.dcinvtnflag != 40,
-                                stock.c.dcinvtnflag != 30,
-                                stock.c.dcinvtnflag != 90,
-                            ),
                         )
                     )
                     .order_by(stock.c.stockdate)
@@ -842,11 +836,6 @@ class api_stock_register(object):
                                     stock.c.productcode == row["productcode"],
                                     stock.c.goid == int(goid),
                                     stock.c.orgcode == orgcode,
-                                    or_(
-                                        stock.c.dcinvtnflag != 40,
-                                        stock.c.dcinvtnflag != 30,
-                                        stock.c.dcinvtnflag != 90,
-                                    ),
                                 )
                             )
                             .order_by(stock.c.stockdate)
@@ -1020,11 +1009,6 @@ class api_stock_register(object):
                                     stock.c.productcode == row["productcode"],
                                     stock.c.goid == int(row["goid"]),
                                     stock.c.orgcode == orgcode,
-                                    or_(
-                                        stock.c.dcinvtnflag != 40,
-                                        stock.c.dcinvtnflag != 30,
-                                        stock.c.dcinvtnflag != 90,
-                                    ),
                                 )
                             )
                             .order_by(stock.c.stockdate)
@@ -1192,11 +1176,6 @@ class api_stock_register(object):
                                         stock.c.productcode == productCd,
                                         stock.c.goid == int(goid),
                                         stock.c.orgcode == orgcode,
-                                        or_(
-                                            stock.c.dcinvtnflag != 40,
-                                            stock.c.dcinvtnflag != 30,
-                                            stock.c.dcinvtnflag != 90,
-                                        ),
                                     )
                                 )
                                 .order_by(stock.c.stockdate)
@@ -1207,12 +1186,6 @@ class api_stock_register(object):
                                     and_(
                                         stock.c.productcode == productCd,
                                         stock.c.orgcode == orgcode,
-                                        or_(
-                                            stock.c.dcinvtnflag != 20,
-                                            stock.c.dcinvtnflag != 40,
-                                            stock.c.dcinvtnflag != 30,
-                                            stock.c.dcinvtnflag != 90,
-                                        ),
                                     )
                                 )
                             )

@@ -53,12 +53,6 @@ def stockonhandfun(con, orgcode, productCode, endDate):
                 and_(
                     stock.c.productcode == productCode,
                     stock.c.orgcode == orgcode,
-                    or_(
-                        stock.c.dcinvtnflag != 20,
-                        stock.c.dcinvtnflag != 40,
-                        stock.c.dcinvtnflag != 30,
-                        stock.c.dcinvtnflag != 90,
-                    ),
                 )
             )
             .order_by(stock.c.stockdate)
@@ -204,12 +198,6 @@ def stockonhandfun(con, orgcode, productCode, endDate):
                     and_(
                         stock.c.productcode == productCd,
                         stock.c.orgcode == orgcode,
-                        or_(
-                            stock.c.dcinvtnflag != 20,
-                            stock.c.dcinvtnflag != 40,
-                            stock.c.dcinvtnflag != 30,
-                            stock.c.dcinvtnflag != 90,
-                        ),
                     )
                 )
             )
@@ -649,11 +637,6 @@ def godownwisestockonhandfun(
                         stock.c.productcode == productCode,
                         stock.c.goid == godownCode,
                         stock.c.orgcode == orgcode,
-                        or_(
-                            stock.c.dcinvtnflag != 40,
-                            stock.c.dcinvtnflag != 30,
-                            stock.c.dcinvtnflag != 90,
-                        ),
                     )
                 )
                 .order_by(stock.c.stockdate)
@@ -829,11 +812,6 @@ def godownwisestockonhandfun(
                             stock.c.productcode == productCode,
                             stock.c.goid == row["goid"],
                             stock.c.orgcode == orgcode,
-                            or_(
-                                stock.c.dcinvtnflag != 40,
-                                stock.c.dcinvtnflag != 30,
-                                stock.c.dcinvtnflag != 90,
-                            ),
                         )
                     )
                     .order_by(stock.c.stockdate)
