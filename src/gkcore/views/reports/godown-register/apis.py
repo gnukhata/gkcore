@@ -886,6 +886,7 @@ class api_godownregister(object):
                         select([product.c.productcode, product.c.productdesc]).where(
                             and_(
                                 product.c.orgcode == orgcode,
+                                product.c.gsflag == 7,
                             )
                         )
                     )
