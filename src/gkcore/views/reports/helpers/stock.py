@@ -66,9 +66,6 @@ def stockonhandfun(con, orgcode, productCode, endDate):
         stockData = stockRecords.fetchall()
         totalinward = totalinward + float(openingStock)
 
-        if not stockData:
-            return { "gkresult": stockReport }
-
         for finalRow in stockData:
             if finalRow["dcinvtnflag"] == 3 or finalRow["dcinvtnflag"] == 9:
                 countresult = con.execute(
@@ -179,7 +176,6 @@ def stockonhandfun(con, orgcode, productCode, endDate):
                 "totalinwardqty": "%.2f" % float(totalinward),
                 "totaloutwardqty": "%.2f" % float(totaloutward),
                 "balance": "%.2f" % float(openingStock),
-                "goid": finalRow["goid"],
                 "gsflag": gsflag,
 
             }
@@ -353,7 +349,6 @@ def stockonhandfun(con, orgcode, productCode, endDate):
                     "totalinwardqty": "%.2f" % float(totalinward),
                     "totaloutwardqty": "%.2f" % float(totaloutward),
                     "balance": "%.2f" % float(openingStock),
-                    "goid": finalRow["goid"],
                 }
             )
             srno = srno + 1
