@@ -266,10 +266,9 @@ class api_account(object):
                         )
                     )
                 )
-                accountcode = result.fetchone()
                 return {
                     "gkstatus": enumdict["Success"],
-                    "accountcode": accountcode["accountcode"],
+                    "accountcode": result.scalar(),
                 }
 
 
