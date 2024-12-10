@@ -115,13 +115,13 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
     else:
         tdrfrm = con.execute(
             text("select sum(cast(drs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
-            accountcode = accountCode,
+            accountcode = int(accountCode),
             from_date = financialStart,
             to_date = calculateFrom,
         )
         tcrfrm = con.execute(
             text("select sum(cast(crs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate < :to_date"),
-            accountcode = accountCode,
+            accountcode = int(accountCode),
             from_date = financialStart,
             to_date = calculateFrom,
         )
@@ -179,13 +179,13 @@ def calculateBalance(con, accountCode, financialStart, calculateFrom, calculateT
 
     tdrfrm = con.execute(
             text("select sum(cast(drs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
-        accountcode = accountCode,
+        accountcode = int(accountCode),
         from_date = calculateFrom,
         to_date = calculateTo,
     )
     tcrfrm = con.execute(
         text("select sum(cast(crs->>':accountcode' as float)) as total from vouchers where delflag = false and voucherdate >= :from_date and voucherdate <= :to_date"),
-        accountcode = accountCode,
+        accountcode = int(accountCode),
         from_date = calculateFrom,
         to_date = calculateTo,
     )
