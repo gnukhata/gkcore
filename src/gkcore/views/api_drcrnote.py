@@ -825,7 +825,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -1024,7 +1024,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxRate = float(queryParams["taxes"][prod])
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 tx = float(taxRate) / 2
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
@@ -1225,7 +1225,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -1425,7 +1425,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -1656,7 +1656,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -1883,7 +1883,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -2112,7 +2112,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -2341,7 +2341,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -2586,7 +2586,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -2785,7 +2785,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxRate = float(queryParams["taxes"][prod])
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 tx = float(taxRate) / 2
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
@@ -2986,7 +2986,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -3186,7 +3186,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -3388,7 +3388,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -3587,7 +3587,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxRate = float(queryParams["taxes"][prod])
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 tx = float(taxRate) / 2
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
@@ -3788,7 +3788,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
@@ -3988,7 +3988,7 @@ def drcrVoucher(con, queryParams, orgcode):
                             taxable = float(queryParams["reductionval"][prod])
                             if taxRate > 0.00:
                                 tx = float(taxRate) / 2
-                                taxHalf = taxRateDict[int(taxRate)]
+                                taxHalf = taxRateDict[float(taxRate)]
                                 # this is the value which is going to Dr/Cr
                                 taxVal = taxable * (tx / 100) * float(queryParams["reductionval"]["quantities"][prod])
                                 taxNameSGST = (
