@@ -117,16 +117,38 @@ def import_org_data(con: Connection, data: dict) -> int:
 
     In Second iteration, `pk`s stored in JSONB fields are updated.
 
+    If the imported organisation has users that have names that are present in the
+    host gnukhata instance, the imported usernames are updated to <username>_<number>
+    format.
+
     :param con: SQL Alchemy engine connection
     :param data: Organisation data to be imported
     :return: `orgcode` of the new organisation
     """
     table_list = metadata.sorted_tables
-    excluded_tables = ["unitofmeasurement", "state", "signature", "gkusers"]
+    excluded_tables = ["unitofmeasurement", "state", "signature"]
 
     pk_map = {}
     for table in table_list:
         table_data = data.get(table.name, [])
+        if table.name == "gkusers":
+            data_user_name_list = [user["username"] for user in table_data]
+            current_user_names = con.execute(
+                select([gkdb.gkusers.c.username])
+            ).fetchall()
+            current_user_names = [user.username for user in current_user_names]
+            duplicate_user_names = list(
+                set(current_user_names) & set(data_user_name_list)
+            )
+
+            for user in table_data:
+                if user["username"] in duplicate_user_names:
+                    counter = 1
+                    username = user["username"]
+                    while username in current_user_names:
+                        username = f"{user['username']}_{counter}"
+                        counter += 1
+                    user["username"] = username
 
         if table.name in ["signature", "state"]:
             continue
