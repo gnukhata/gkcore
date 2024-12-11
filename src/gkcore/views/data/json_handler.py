@@ -352,6 +352,28 @@ def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
                             }
                         )
                     )
+    if table.name == "drcr":
+        for row in table_rows:
+            quantities = row["reductionval"]["quantities"].items()
+            quantity_map = {
+                pk_map["product"][int(key)]: value for key, value in quantities
+            }
+            con.execute(
+                table
+                .update()
+                .where(getattr(table.c, pk_field) == row[pk_field])
+                .values(
+                    {
+                        "reductionval": func.jsonb_set(
+                            table.c.reductionval,
+                            '{"quantities"}',
+                            json.dumps(quantity_map),
+                        )
+                    }
+                )
+            )
+
+
 
 def update_user_conf(con: Connection, userid: int, orgcode: int) -> None:
     """Updates user conf with new orgcode.
