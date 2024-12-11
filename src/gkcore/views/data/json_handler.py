@@ -36,7 +36,13 @@ def get_table_array(con: Connection, table_name: str, orgcode: int) -> list:
 
         table_org = con.execute(statement).fetchall()
 
-        return [dict(row) for row in table_org]
+        table_org_dict =  [dict(row) for row in table_org]
+
+        if table_name == "gkusers":
+            for user in table_org_dict:
+                user["orgs"] = {str(orgcode): user["orgs"][str(orgcode)]}
+
+        return table_org_dict
 
 
 def type_cast(key):
