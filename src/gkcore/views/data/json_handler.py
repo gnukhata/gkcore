@@ -400,6 +400,16 @@ def update_user_conf(con: Connection, userid: int, orgcode: int) -> None:
             )
         )
     )
+    con.execute(
+        gkdb.organisation
+        .update()
+        .where(gkdb.organisation.c.orgcode == orgcode)
+        .values(
+            users = func.jsonb_set(
+                gkdb.organisation.c.users, '{'+str(userid)+'}', "true"
+            )
+        )
+    )
 
 
 def delete_organisation(con: Connection, orgcode: int) -> None:
