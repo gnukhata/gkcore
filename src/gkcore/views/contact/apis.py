@@ -199,7 +199,7 @@ class api_customer(object):
             validated_data = ContactDetailsUpdate.model_validate(
                 self.request.json_body, context={"orgcode": authDetails["orgcode"]}
             )
-            dataset = validated_data.model_dump()
+            dataset = validated_data.model_dump(exclude_none=True)
             with eng.begin() as con:
                 dataset["orgcode"] = authDetails["orgcode"]
                 custcode = dataset["custid"]
