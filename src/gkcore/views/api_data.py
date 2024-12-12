@@ -36,6 +36,8 @@ from gkcore.views.data.json_handler import (
 )
 from pyramid.view import view_config
 from gkcore import eng
+from sqlalchemy.sql import select
+from gkcore.models.gkdb import organisation
 
 import gkcore.views.data as data
 
@@ -103,7 +105,7 @@ class api_data(object):
     @view_config(
         route_name="overwrite-organisation",
         request_method="POST",
-        renderer="json",
+        renderer="json_extended",
         permission="admin",
     )
     def overwrite_organisation(self):
@@ -116,4 +118,15 @@ class api_data(object):
             new_orgcode = import_org_data(con, json.load(data))
             update_user_conf(con, user_id, new_orgcode)
             update_organisation_rocode(con, new_orgcode)
-        return {"gkstatus": 0}
+            org_data = con.execute(
+                select([organisation.c.yearstart, organisation.c.yearend])
+                .where(organisation.c.orgcode == new_orgcode)
+            ).fetchone()
+            return {
+                "gkstatus": 0,
+                "gkresult": {
+                    "orgcode": new_orgcode,
+                    "yearstart": org_data["yearstart"],
+                    "yearend": org_data["yearend"],
+                }
+            }
