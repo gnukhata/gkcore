@@ -1285,28 +1285,31 @@ class api_rollclose(object):
                     "select * from customerandsupplier where orgcode = %d" % (orgCode)
                 )
                 for row in oldContacts:
+                    contact_data = {
+                        "custname": row["custname"],
+                        "custaddr": row["custaddr"],
+                        "custphone": row["custphone"],
+                        "custemail": row["custemail"],
+                        "custfax": row["custfax"],
+                        "custpan": row["custpan"],
+                        "custtan": row["custtan"],
+                        "state": row["state"],
+                        "custdoc": row["custdoc"],
+                        "csflag": row["csflag"],
+                        "pincode": row["pincode"],
+                        "bankdetails": row["bankdetails"],
+                        "orgcode": newOrgCode,
+                        "gst_reg_type": row["gst_reg_type"],
+                        "gst_party_type": row["gst_party_type"],
+                        "tin": row["tin"],
+                        "country": row["country"],
+                    }
+                    gstin = row["gstin"]
+                    if gstin:
+                        contact_data = contact_data.update({"gstin": gstin})
                     con.execute(
                         customerandsupplier.insert(),
-                        {
-                            "custname": row["custname"],
-                            "custaddr": row["custaddr"],
-                            "custphone": row["custphone"],
-                            "custemail": row["custemail"],
-                            "custfax": row["custfax"],
-                            "custpan": row["custpan"],
-                            "custtan": row["custtan"],
-                            "state": row["state"],
-                            "custdoc": row["custdoc"],
-                            "csflag": row["csflag"],
-                            "gstin": row["gstin"],
-                            "pincode": row["pincode"],
-                            "bankdetails": row["bankdetails"],
-                            "orgcode": newOrgCode,
-                            "gst_reg_type": row["gst_reg_type"],
-                            "gst_party_type": row["gst_party_type"],
-                            "tin": row["tin"],
-                            "country": row["country"],
-                        },
+                        contact_data,
                     )
                 ## Category Migration
 
