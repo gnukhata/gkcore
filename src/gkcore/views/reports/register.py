@@ -156,12 +156,6 @@ class api_stock_register(object):
                         and_(
                             stock.c.productcode == productCode,
                             stock.c.orgcode == orgcode,
-                            or_(
-                                stock.c.dcinvtnflag != 20,
-                                stock.c.dcinvtnflag != 40,
-                                stock.c.dcinvtnflag != 30,
-                                stock.c.dcinvtnflag != 90,
-                            ),
                         )
                     )
                     .order_by(stock.c.stockdate)
@@ -735,19 +729,18 @@ class api_stock_register(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
+            with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
                 productCode = self.request.params["productcode"]
                 endDate = datetime.strptime(
                     str(self.request.params["enddate"]), "%Y-%m-%d"
                 )
-                stockresult = stockonhandfun(orgcode, productCode, endDate)
+                stockresult = stockonhandfun(con, orgcode, productCode, endDate)
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": stockresult["gkresult"],
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(route_name="category-wise-stock-on-hand", renderer="json")
     def categorywiseStockOnHandReport(self):
@@ -843,11 +836,6 @@ class api_stock_register(object):
                                     stock.c.productcode == row["productcode"],
                                     stock.c.goid == int(goid),
                                     stock.c.orgcode == orgcode,
-                                    or_(
-                                        stock.c.dcinvtnflag != 40,
-                                        stock.c.dcinvtnflag != 30,
-                                        stock.c.dcinvtnflag != 90,
-                                    ),
                                 )
                             )
                             .order_by(stock.c.stockdate)
@@ -1021,11 +1009,6 @@ class api_stock_register(object):
                                     stock.c.productcode == row["productcode"],
                                     stock.c.goid == int(row["goid"]),
                                     stock.c.orgcode == orgcode,
-                                    or_(
-                                        stock.c.dcinvtnflag != 40,
-                                        stock.c.dcinvtnflag != 30,
-                                        stock.c.dcinvtnflag != 90,
-                                    ),
                                 )
                             )
                             .order_by(stock.c.stockdate)
@@ -1193,11 +1176,6 @@ class api_stock_register(object):
                                         stock.c.productcode == productCd,
                                         stock.c.goid == int(goid),
                                         stock.c.orgcode == orgcode,
-                                        or_(
-                                            stock.c.dcinvtnflag != 40,
-                                            stock.c.dcinvtnflag != 30,
-                                            stock.c.dcinvtnflag != 90,
-                                        ),
                                     )
                                 )
                                 .order_by(stock.c.stockdate)
@@ -1208,12 +1186,6 @@ class api_stock_register(object):
                                     and_(
                                         stock.c.productcode == productCd,
                                         stock.c.orgcode == orgcode,
-                                        or_(
-                                            stock.c.dcinvtnflag != 20,
-                                            stock.c.dcinvtnflag != 40,
-                                            stock.c.dcinvtnflag != 30,
-                                            stock.c.dcinvtnflag != 90,
-                                        ),
                                     )
                                 )
                             )
