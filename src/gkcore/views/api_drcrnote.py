@@ -48,7 +48,7 @@ from datetime import datetime
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_invoice import getStateCode, createAccount
+from gkcore.views.invoice.apis import getStateCode, createAccount
 import traceback  # for printing detailed exception logs
 
 

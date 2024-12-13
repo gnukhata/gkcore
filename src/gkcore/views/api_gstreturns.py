@@ -35,7 +35,7 @@ from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
-from gkcore.views.api_invoice import getInvoiceList, getInvoiceData
+from gkcore.views.invoice.apis import getInvoiceList, getInvoiceData
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     invoice,

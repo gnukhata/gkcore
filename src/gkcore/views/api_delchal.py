@@ -55,7 +55,7 @@ import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.api_godown import getusergodowns
-from gkcore.views.api_invoice import getStateCode
+from gkcore.views.invoice.apis import getStateCode
 
 
 @view_defaults(request_method="GET", renderer="json")

@@ -31,7 +31,7 @@ from gkcore.utils import authCheck
 from pyramid.response import Response
 
 
-from gkcore.views.api_invoice import getInvoiceList
+from gkcore.views.invoice.apis import getInvoiceList
 from datetime import datetime
 
 # Spreadsheet libraries

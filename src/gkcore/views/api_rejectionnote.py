@@ -48,7 +48,7 @@ from datetime import datetime, date
 import jwt
 import gkcore
 from gkcore.utils import authCheck
-from gkcore.views.api_invoice import getStateCode
+from gkcore.views.invoice.apis import getStateCode
 
 
 @view_defaults(route_name="rejectionnote")
