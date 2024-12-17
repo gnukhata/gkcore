@@ -764,6 +764,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
         else:
@@ -776,6 +777,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
 
@@ -803,6 +805,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
         else:
@@ -815,6 +818,7 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
     # In case of no loss/profit
