@@ -62,6 +62,7 @@ from gkcore.models.gkdb import (
     log,
 )
 from gkcore.views.api_tax import calTax
+from gkcore.views.invoice.schemas import InvoiceDetails
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -1581,8 +1582,11 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
+            validated_data = InvoiceDetails.model_validate(
+                self.request.json_body
+            )
+            dtset = validated_data.model_dump(exclude_none=True)
             with eng.begin() as con:
-                dtset = self.request.json_body
                 delivery_note_id = create_delivery_note(
                     con,
                     dtset,
@@ -1697,7 +1701,7 @@ class api_invoice(object):
                                 "invtype": invdataset["inoutflag"],
                                 "pmtmode": invdataset["paymentmode"],
                                 "taxType": invdataset["taxflag"],
-                                "destinationstate": invdataset["taxstate"],
+                                "destinationstate": invdataset.get("taxstate"),
                                 "totaltaxablevalue": avData["totaltaxable"],
                                 "maflag": maFlag["maflag"],
                                 "totalAmount": (invdataset["invoicetotal"]),
@@ -2683,7 +2687,6 @@ class api_invoice(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         with eng.begin() as con:
-            # Data is stored in a variable dtset.
             dtset = self.request.json_body
             # Empty dictionary to store details of delivery challan linked if any.
             dcinvdataset = {}
@@ -2691,7 +2694,7 @@ class api_invoice(object):
             invdataset = dtset["invoice"]
             invid = self.request.matchdict["invid"]
             stockdataset = dtset["stock"]
-            discount = invdataset["discount"]
+            discount = invdataset.get("discount")
             items = invdataset["contents"]
             invdataset["orgcode"] = authDetails["orgcode"]
             stockdataset["orgcode"] = authDetails["orgcode"]
