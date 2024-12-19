@@ -29,6 +29,7 @@ Contributors:
 from requests import request
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.views.uom.schemas import UnitOfMeasurement, UnitOfMeasurementUpdate
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, exc, desc, func, or_
@@ -55,21 +56,17 @@ class api_unitOfMeasurement(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = UnitOfMeasurement.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump(exclude_none=True)
         with eng.begin() as con:
-            dataset = self.request.json_body
-            # Check for duplicate entry before insertion
-            result_duplicate_check = con.execute(
-                select([gkdb.unitofmeasurement.c.unitname]).where(
-                    and_(
-                        func.lower(gkdb.unitofmeasurement.c.unitname) == func.lower(dataset["unitname"]),
-                    )
-                )
+            dataset.update(
+                {
+                    "orgcode": authDetails["orgcode"],
+                    "sysunit": 0,
+                }
             )
-
-            if result_duplicate_check.rowcount > 0:
-                # Duplicate entry found, handle accordingly
-                return {"gkstatus": enumdict["DuplicateEntry"]}
-
             con.execute(gkdb.unitofmeasurement.insert(), [dataset])
             return {"gkstatus": enumdict["Success"]}
 
@@ -129,8 +126,17 @@ class api_unitOfMeasurement(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = UnitOfMeasurementUpdate.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump(exclude_none=True)
+        dataset.update(
+            {
+                "orgcode": authDetails["orgcode"],
+                "sysunit": 0,
+            }
+        )
         with eng.begin() as con:
-            dataset = self.request.json_body
             uom = con.execute(
                 gkdb.unitofmeasurement.update()
                 .where(
