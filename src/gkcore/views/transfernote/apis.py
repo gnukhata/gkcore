@@ -27,6 +27,7 @@ Contributors:
 """
 
 
+from gkcore.views.transfernote.schemas import TransfernoteDetails
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
 from gkcore import eng, enumdict
@@ -76,6 +77,10 @@ class api_transfernote(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        validated_data = TransfernoteDetails.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump(exclude_none=True)
         with eng.begin() as con:
             dataset = self.request.json_body
             transferdata = dataset["transferdata"]
