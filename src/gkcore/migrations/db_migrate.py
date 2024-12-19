@@ -2056,4 +2056,26 @@ def migrate():
                     )
 
 
+        with eng.begin() as con:
+
+            con.execute(
+                "alter table unitofmeasurement add column if not exists orgcode int references organisation"
+            )
+            if not does_foreignkey_exist(
+                    eng,
+                    "unitofmeasurement",
+                    "unitofmeasurement_orgcode_fkey"
+            ):
+                con.execute(
+                    "alter table unitofmeasurement add foreign key (orgcode) references organisation(orgcode)"
+                )
+            if not does_unique_constraint_exist(
+                    eng,
+                    "unitofmeasurement",
+                    "unitofmeasurement_orgcode_unitname_key"
+            ):
+                con.execute(
+                    "alter table unitofmeasurement add constraint unitofmeasurement_orgcode_unitname_key unique (orgcode, unitname)"
+                )
+
         print("Database migration successful")

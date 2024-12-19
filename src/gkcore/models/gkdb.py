@@ -251,9 +251,16 @@ unitofmeasurement = Table(
     Column("uqc", Integer),
     Column("frequency", Integer),
     Column("sysunit", Integer, default=0),
-    UniqueConstraint("unitname"),
+    Column(
+        "orgcode",
+        Integer,
+        ForeignKey("organisation.orgcode", ondelete="CASCADE"),
+        nullable=True,
+    ),
+    UniqueConstraint("unitname", "orgcode"),
     Index("unitofmeasurement_frequency", "frequency"),
     Index("unitofmeasurement_unitname", "unitname"),
+    Index("unitofmeasurement_orgcode", "orgcode"),
 )
 """
 This table is for product, based on a certain category.
