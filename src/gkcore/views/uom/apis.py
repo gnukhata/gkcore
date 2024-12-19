@@ -131,7 +131,7 @@ class api_unitOfMeasurement(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         with eng.begin() as con:
             dataset = self.request.json_body
-            con.execute(
+            uom = con.execute(
                 gkdb.unitofmeasurement.update()
                 .where(
                     and_(
@@ -140,7 +140,10 @@ class api_unitOfMeasurement(object):
                     )
                 )
                 .values(dataset)
+                .returning(gkdb.unitofmeasurement.c.uomid)
             )
+            if not uom.scalar():
+                return {"gkstatus": enumdict["ActionDisallowed"]}
             return {"gkstatus": enumdict["Success"]}
 
 
@@ -215,9 +218,17 @@ class api_unitOfMeasurement(object):
             if check_uom["gkresult"]["flag"] == "True":
                 return {"gkstatus": enumdict["ActionDisallowed"]}
             # proceed to deletion if not used
-            con.execute(
+            uom = con.execute(
                 gkdb.unitofmeasurement
                 .delete()
-                .where(gkdb.unitofmeasurement.c.uomid == dataset["uomid"])
+                .where(
+                    and_(
+                        gkdb.unitofmeasurement.c.uomid == dataset["uomid"],
+                        gkdb.unitofmeasurement.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+                .returning(gkdb.unitofmeasurement.c.uomid)
             )
+            if not uom.scalar():
+                return {"gkstatus": enumdict["ActionDisallowed"]}
             return {"gkstatus": enumdict["Success"]}
