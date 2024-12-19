@@ -101,7 +101,10 @@ class api_unitOfMeasurement(object):
                 dataset = self.request.matchdict
                 result = self.con.execute(
                     select([gkdb.unitofmeasurement]).where(
-                        gkdb.unitofmeasurement.c.uomid == dataset["uomid"]
+                        and_(
+                            gkdb.product.c.uomid == row["uomid"],
+                            gkdb.unitofmeasurement.c.orgcode == authDetails["orgcode"],
+                        )
                     )
                 )
                 row = result.fetchone()
@@ -116,7 +119,10 @@ class api_unitOfMeasurement(object):
                 }
                 countresult = self.con.execute(
                     select([func.count(gkdb.product.c.uomid).label("subcount")]).where(
-                        gkdb.product.c.uomid == row["uomid"]
+                        and_(
+                            gkdb.product.c.uomid == row["uomid"],
+                            gkdb.unitofmeasurement.c.orgcode == authDetails["orgcode"],
+                        )
                     )
                 )
                 countrow = countresult.fetchone()
@@ -149,7 +155,12 @@ class api_unitOfMeasurement(object):
                 dataset = self.request.json_body
                 result = self.con.execute(
                     gkdb.unitofmeasurement.update()
-                    .where(gkdb.unitofmeasurement.c.uomid == dataset["uomid"])
+                    .where(
+                        and_(
+                            gkdb.product.c.uomid == dataset["uomid"],
+                            gkdb.unitofmeasurement.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
                     .values(dataset)
                 )
                 return {"gkstatus": enumdict["Success"]}
@@ -181,7 +192,13 @@ class api_unitOfMeasurement(object):
                             gkdb.unitofmeasurement.c.sysunit,
                             gkdb.unitofmeasurement.c.uqc,
                         ]
-                    ).order_by(gkdb.unitofmeasurement.c.unitname)
+                    )
+                    .where(
+                        gkdb.unitofmeasurement.c.orgcode._in(
+                            [authDetails["orgcode"], None])
+                        ,
+                    )
+                    .order_by(gkdb.unitofmeasurement.c.unitname)
                 )
                 unitofmeasurements = []
                 for row in result:
@@ -231,7 +248,10 @@ class api_unitOfMeasurement(object):
                 # proceed to deletion if not used
                 self.con.execute(
                     gkdb.unitofmeasurement.delete().where(
-                        gkdb.unitofmeasurement.c.uomid == dataset["uomid"]
+                        and_(
+                            gkdb.product.c.uomid == dataset["uomid"],
+                            gkdb.unitofmeasurement.c.orgcode == authDetails["orgcode"],
+                        )
                     )
                 )
                 return {"gkstatus": enumdict["Success"]}
