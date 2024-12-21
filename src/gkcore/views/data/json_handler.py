@@ -155,10 +155,20 @@ def import_org_data(con: Connection, data: dict) -> int:
         is_excluded = table.name in excluded_tables
         table_pk_map = insert_org_data(con, table, table_data, pk_map, is_excluded)
         pk_map.update({table.name: table_pk_map})
+
+    orgcode = list(pk_map["organisation"].values()).pop()
+
     for table in table_list:
-        if table.name in ["signature", "state"]:
+        if table.name in ["signature", "state", "gkusers"]:
             continue
-        update_json_fields(con, table, pk_map)
+
+        # Table is being required to imported again, otherwise old data is being shown
+        table = getattr(gkdb, table.name)
+        pk_field = get_pk_field_name(table)
+        table_rows = con.execute(table.select().where(table.c.orgcode == orgcode)).fetchall()
+        if table.name == "stock":
+            update_stock_data(con, table, pk_map, table_rows, pk_field)
+        update_json_fields(con, table, pk_map, table_rows, pk_field)
     new_org_code = list(pk_map["organisation"].values())[0]
     return new_org_code
 
@@ -277,7 +287,55 @@ def insert_row(
     return {pk_value: row_insert}
 
 
-def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
+def update_stock_data(
+        con: Connection,
+        table: Table,
+        pk_map: dict,
+        table_rows: list,
+        pk_field: str,
+) -> None:
+    """ Update `dcinvtnid` in stock table.
+
+    :param con: SQL Alchemy engine connection
+    :param table: SQL Alchemy table object
+    :param pk_map: Mapping between old `pk`s and newly created `pk`s
+    :param table_rows: Table rows
+    :param pk_field: Primary key for the table
+    :return: None
+
+    """
+    for row in table_rows:
+        dcinvtnid = row["dcinvtnid"]
+        dcinvtnflag = row["dcinvtnflag"]
+
+        table_map = {
+            2: "drcr",
+            3: "invoice",
+            4: "delchal",
+            7: "drcr",
+            9: "invoice",
+            18: "rejectionnote",
+            20: "transfernote",
+        }
+
+        updated_dcinvtnid = pk_map[table_map[dcinvtnflag]][dcinvtnid]
+
+        con.execute(
+            table
+            .update()
+            .where(getattr(table.c, pk_field) == row[pk_field])
+            .values(dcinvtnid = updated_dcinvtnid)
+            .returning(table.c.dcinvtnid)
+        )
+
+
+def update_json_fields(
+        con: Connection,
+        table: Table,
+        pk_map: dict,
+        table_rows: list,
+        pk_field: str,
+) -> None:
     """ Updates JSONB fields with updated primary key.
 
     JSONB fields are handled by using info attribute of SQL Alchemy tables. Following
@@ -298,18 +356,15 @@ def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
     :param con: SQL Alchemy engine connection
     :param table: SQL Alchemy table object
     :param pk_map: Mapping between old `pk`s and newly created `pk`s
+    :param table_rows: Table rows
+    :param pk_field: Primary key for the table
     :return: None
     """
-    # Table is being required to imported again, otherwise old data is being shown
-    table = getattr(gkdb, table.name)
-    pk_field = get_pk_field_name(table)
+
     key_related_json_fields = table.info.get("key_related_json_fields")
     value_related_json_fields = table.info.get("value_related_json_fields")
     if not (key_related_json_fields or value_related_json_fields):
         return
-
-    orgcode = list(pk_map["organisation"].values()).pop()
-    table_rows = con.execute(table.select().where(table.c.orgcode == orgcode)).fetchall()
     for row in table_rows:
         for field_name in row.keys():
             field = getattr(table.c, field_name)
@@ -372,7 +427,6 @@ def update_json_fields(con: Connection, table: Table, pk_map: dict) -> None:
                     }
                 )
             )
-
 
 
 def update_user_conf(con: Connection, userid: int, orgcode: int) -> None:
