@@ -757,25 +757,27 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
         if orgtype == "Profit Making":
             sbalanceSheet.append(
                 {
-                    "groupAccname": "Loss for the Year:",
+                    "groupAccname": "Loss for the Year",
                     "amount": "%.2f" % (profit),
                     "groupAcccode": "",
                     "subgroupof": groupcode,
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
         else:
             sbalanceSheet.append(
                 {
-                    "groupAccname": "Deficit for the Year:",
+                    "groupAccname": "Deficit for the Year",
                     "amount": "%.2f" % (profit),
                     "groupAcccode": "",
                     "subgroupof": groupcode,
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
 
@@ -796,25 +798,27 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
         if orgtype == "Profit Making":
             sbalanceSheet.append(
                 {
-                    "groupAccname": "Profit for the Year:",
+                    "groupAccname": "Profit for the Year",
                     "amount": "%.2f" % (profit),
                     "groupAcccode": "",
                     "subgroupof": groupcode,
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
         else:
             sbalanceSheet.append(
                 {
-                    "groupAccname": "Surplus for the Year:",
+                    "groupAccname": "Surplus for the Year",
                     "amount": "%.2f" % (profit),
                     "groupAcccode": "",
                     "subgroupof": groupcode,
                     "accountof": "",
                     "groupAccflag": 2,
                     "advflag": "",
+                    "type": "pnl",
                 }
             )
     # In case of no loss/profit
