@@ -1634,6 +1634,8 @@ class api_transaction(object):
                             vouchers.c.crs,
                             vouchers.c.vouchertype,
                             vouchers.c.orgcode,
+                            vouchers.c.invid,
+                            vouchers.c.drcrid,
                         ]
                     )
                     .where(
