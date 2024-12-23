@@ -125,7 +125,8 @@ def includeme(config):
     config.add_route("export-json", "/export/json")
     config.add_route("export-xlsx", "/export/xlsx")
     # import org data
-    config.add_route("import-json", "/import/json")
+    config.add_route("import-organisation", "/import/organisation")
+    config.add_route("overwrite-organisation", "/import/overwrite-organisation")
     config.add_route("import-xlsx", "/import/xlsx")
 
     config.add_route("index", "/")

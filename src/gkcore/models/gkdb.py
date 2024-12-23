@@ -67,7 +67,7 @@ A state will have its corresponding code with name.
 state = Table(
     "state",
     metadata,
-    Column("statecode", Integer),
+    Column("statecode", Integer, primary_key=True),
     Column("statename", UnicodeText),
     Column("abbreviation", UnicodeText),
 )
@@ -142,6 +142,7 @@ organisation = Table(
     UniqueConstraint("orgname", "orgtype", "yearstart"),
     UniqueConstraint("orgname", "orgtype", "yearend"),
     Index("orgindex", "orgname", "yearstart", "yearend"),
+    info={"key_related_json_fields": {"users": "gkusers"}},
 )
 
 """ the table for groups and subgroups.
@@ -153,7 +154,12 @@ groupsubgroups = Table(
     metadata,
     Column("groupcode", Integer, primary_key=True),
     Column("groupname", UnicodeText, nullable=False),
-    Column("subgroupof", Integer),
+    Column(
+        "subgroupof",
+        Integer,
+        ForeignKey("groupsubgroups.groupcode", ondelete="CASCADE"),
+        nullable=True,
+    ),
     Column(
         "orgcode",
         Integer,
@@ -177,7 +183,12 @@ categorysubcategories = Table(
     metadata,
     Column("categorycode", Integer, primary_key=True),
     Column("categoryname", UnicodeText, nullable=False),
-    Column("subcategoryof", Integer),
+    Column(
+        "subcategoryof",
+        Integer,
+        ForeignKey("categorysubcategories.categorycode", ondelete="CASCADE"),
+        nullable=True,
+    ),
     Column(
         "orgcode",
         Integer,
@@ -231,7 +242,12 @@ unitofmeasurement = Table(
     Column("unitname", UnicodeText, nullable=False),
     Column("description", UnicodeText),
     Column("conversionrate", Numeric(13, 2), default=0.00),
-    Column("subunitof", Integer),
+    Column(
+        "subunitof",
+        Integer,
+        ForeignKey("unitofmeasurement.uomid", ondelete="CASCADE"),
+        nullable=True,
+    ),
     Column("uqc", Integer),
     Column("frequency", Integer),
     Column("sysunit", Integer, default=0),
@@ -444,6 +460,7 @@ vouchers = Table(
     Index("voucher_entrydate", "entrydate"),
     Index("voucher_vno", "vouchernumber"),
     Index("voucher_vdate", "voucherdate"),
+    info={"key_related_json_fields": {"drs": "accounts", "crs": "accounts"}},
 )
 
 
@@ -521,6 +538,15 @@ invoice = Table(
     UniqueConstraint("orgcode", "invoiceno", name="invoice_orgcode_invoiceno_key"),
     Index("invoice_orgcodeindex", "orgcode"),
     Index("invoice_invoicenoindex", "invoiceno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 billwise = Table(
     "billwise",
@@ -589,6 +615,15 @@ invoicebin = Table(
     Column("dcinfo", JSONB),
     Index("invoicebin_orgcodeindex", "orgcode"),
     Index("invoicebin_invoicenoindex", "invoiceno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 
 """
@@ -653,6 +688,15 @@ delchal = Table(
     UniqueConstraint("orgcode", "dcno", "custid"),
     Index("delchal_orgcodeindex", "orgcode"),
     Index("delchal_dcnoindex", "dcno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 """
 This is the table which acts as a bin for cancelled delivery notes.
@@ -701,6 +745,15 @@ delchalbin = Table(
     Column("totalinword", UnicodeText),
     Index("delchalbin_orgcodeindex", "orgcode"),
     Index("delchalbin_dcnoindex", "dcno"),
+    info={
+        "key_related_json_fields": {
+            "contents": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 """
 The join table which has keys from both inv and dc table.
@@ -723,6 +776,7 @@ dcinv = Table(
     Index("deinv_orgcodeindex", "orgcode"),
     Index("deinv_dcidindex", "dcid"),
     Index("deinv_invidindex", "invid"),
+    info={"key_related_json_fields": {"invprods": "product"}},
 )
 """
 Table for stock.
@@ -953,6 +1007,15 @@ purchaseorder = Table(
     Index("purchaseorder_orgcodeindex", "orgcode"),
     Index("purchaseorder_date", "orderdate"),
     Index("purchaseorder_togodown", "togodown"),
+    info={
+        "key_related_json_fields": {
+            "schedule": "product",
+            "tax": "product",
+            "cess": "product",
+            "freeqty": "product",
+            "discount": "product"
+        }
+    },
 )
 
 
@@ -1005,6 +1068,7 @@ budget = Table(
     Column("budtype", Integer, nullable=False),
     Column("projectcode", Integer, ForeignKey("projects.projectcode")),
     Column("gaflag", Integer, nullable=False),
+    info={"key_related_json_fields": {"contents": "accounts"}},
 )
 
 """
@@ -1173,6 +1237,7 @@ rejectionnote = Table(
     ),
     UniqueConstraint("rnno", "inout", "orgcode"),
     Index("rejection_note", "orgcode"),
+    info={"key_related_json_fields": {"rejprods": "product"}},
 )
 
 """
@@ -1216,4 +1281,5 @@ drcr = Table(
     UniqueConstraint("orgcode", "drcrno", "dctypeflag"),
     UniqueConstraint("orgcode", "invid", "dctypeflag"),
     UniqueConstraint("orgcode", "rnid", "dctypeflag"),
+    info={"key_related_json_fields": {"reductionval": "product"}},
 )

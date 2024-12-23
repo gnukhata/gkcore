@@ -27,18 +27,24 @@ Contributors:
 "Sai Karthik" <kskarthik@disroot.org>
 """
 
-from pyramid.request import Request
+import json
+
+from pyramid.response import Response
+
+from gkcore.views.data.json_handler import (
+    delete_organisation, export_org_data, import_org_data, update_organisation_rocode, update_user_conf
+)
 from pyramid.view import view_config
-from sqlalchemy.engine.base import Connection
+from gkcore import eng
+from sqlalchemy.sql import select
+from gkcore.models.gkdb import organisation
 
 import gkcore.views.data as data
 
 
 class api_data(object):
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.conn = Connection
 
     @view_config(
         route_name="export-xlsx",
@@ -49,14 +55,6 @@ class api_data(object):
         return data.spreadsheet_handler.export_ledger(self)
 
     @view_config(
-        route_name="export-json",
-        request_method="GET",
-        renderer="json",
-    )
-    def export_json(self):
-        return data.json_handler.export_json(self)
-
-    @view_config(
         route_name="import-xlsx",
         request_method="POST",
         renderer="json",
@@ -65,9 +63,70 @@ class api_data(object):
         return data.spreadsheet_handler.import_tally(self)
 
     @view_config(
-        route_name="import-json",
+        route_name="export-json",
+        request_method="GET",
+        renderer="json_extended",
+        permission="admin",
+    )
+    def export_json(self):
+        """Exports organisation data as JSON"""
+        orgcode = self.request.identity.get("orgcode")
+        with eng.connect() as con:
+            export_file = export_org_data(con, orgcode)
+            headerList = {
+                "Content-Type": "application/json; charset=utf-8",
+                "Content-Length": len(export_file),
+                "Content-Disposition": "attachment; filename=report.json",
+                "X-Content-Type-Options": "nosniff",
+                "Set-Cookie": "fileDownload=true; path=/ ;HttpOnly",
+            }
+            return Response(
+                export_file,
+                headerlist=list(headerList.items()),
+            )
+
+    @view_config(
+        route_name="import-organisation",
         request_method="POST",
         renderer="json",
+        is_authenticated=True,
     )
-    def import_json(self):
-        return data.json_handler.import_json(self)
+    def import_organisation(self):
+        """Imports organisation as new organisation"""
+        data = self.request.POST["gkfile"].file
+        user_id = self.request.authenticated_userid
+        with eng.begin() as con:
+            new_orgcode = import_org_data(con, json.load(data))
+            update_user_conf(con, user_id, new_orgcode)
+            update_organisation_rocode(con, new_orgcode)
+        return {"gkstatus": 0}
+
+
+    @view_config(
+        route_name="overwrite-organisation",
+        request_method="POST",
+        renderer="json_extended",
+        permission="admin",
+    )
+    def overwrite_organisation(self):
+        """Imports organisation replacing an existing organisation"""
+        data = self.request.POST["gkfile"].file
+        user_id = self.request.authenticated_userid
+        with eng.begin() as con:
+            orgcode = self.request.identity.get("orgcode")
+            delete_organisation(con, orgcode)
+            new_orgcode = import_org_data(con, json.load(data))
+            update_user_conf(con, user_id, new_orgcode)
+            update_organisation_rocode(con, new_orgcode)
+            org_data = con.execute(
+                select([organisation.c.yearstart, organisation.c.yearend])
+                .where(organisation.c.orgcode == new_orgcode)
+            ).fetchone()
+            return {
+                "gkstatus": 0,
+                "gkresult": {
+                    "orgcode": new_orgcode,
+                    "yearstart": org_data["yearstart"],
+                    "yearend": org_data["yearend"],
+                }
+            }
