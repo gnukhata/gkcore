@@ -159,7 +159,7 @@ def import_org_data(con: Connection, data: dict) -> int:
     orgcode = list(pk_map["organisation"].values()).pop()
 
     for table in table_list:
-        if table.name in ["signature", "state", "gkusers"]:
+        if table.name in ["unitofmeasurement", "signature", "state", "gkusers"]:
             continue
 
         # Table is being required to imported again, otherwise old data is being shown
