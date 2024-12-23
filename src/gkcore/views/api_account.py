@@ -349,6 +349,7 @@ class api_account(object):
                                 "defaultflag": accrow["defaultflag"],
                                 "defaultflag_name": defaultflag_name,
                                 "account_balance": account_balance or 0,
+                                "has_voucher": bool(accrow["vouchercount"]),
                             }
                         )
 
@@ -366,6 +367,7 @@ class api_account(object):
                                 "sysaccount": accrow["sysaccount"],
                                 "defaultflag": defaultflag_name,
                                 "account_balance": account_balance or 0,
+                                "has_voucher": bool(accrow["vouchercount"]),
                             }
                         )
                     srno = srno + 1
