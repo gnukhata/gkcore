@@ -3015,13 +3015,14 @@ class api_invoice(object):
             delivery_note_details = cancel_delivery_note(
                 con, int(invid), authDetails["orgcode"]
             )
-            invoiceBinData.update({
-                "dcinfo": {
-                    "dcno": delivery_note_details["dcno"],
-                    "dcdate": delivery_note_details["dcdate"],
-                    "goid": delivery_note_details["goid"],
-                },
-            })
+            if delivery_note_details:
+                invoiceBinData.update({
+                    "dcinfo": {
+                        "dcno": delivery_note_details.get("dcno"),
+                        "dcdate": delivery_note_details.get("dcdate"),
+                        "goid": delivery_note_details.get("goid"),
+                    },
+                })
 
             invbin = con.execute(invoicebin.insert(), [invoiceBinData])
 

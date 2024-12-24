@@ -132,7 +132,7 @@ def cancel_delivery_note(con, invoice_id, org_code):
 
     # Exit if no related delivery note found
     if not hasattr(delivery_note, "dcinvid"):
-        return {}
+        return None
 
     # Delete dcinv record which connects invoice and delivery note
     con.execute(
@@ -140,9 +140,11 @@ def cancel_delivery_note(con, invoice_id, org_code):
         .where(dcinv.c.dcinvid == delivery_note["dcinvid"])
     )
 
-    # Soft delete delivery note
-    delivery_note_details = move_delivery_note_to_bin(
-        con, delivery_note["dcid"], org_code,
-    )
+    delivery_note_details = None
+    if delivery_note["dcid"]:
+        # Soft delete delivery note
+        delivery_note_details = move_delivery_note_to_bin(
+            con, delivery_note["dcid"], org_code,
+        )
 
     return delivery_note_details
