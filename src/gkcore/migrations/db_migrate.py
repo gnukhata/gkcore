@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 """
 This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
@@ -17,36 +16,21 @@ Contributors:
 
 """
 
-# from pyramid.view import view_defaults, view_config
-from requests import request
 from gkcore import eng
 from gkcore.data.uoms import UQC_LIST
-from pyramid.request import Request
-from gkcore.models import gkdb
-from sqlalchemy.sql import select
-from sqlalchemy import func, desc, MetaData, inspect
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from gkcore.views.api_invoice import rename_inv_no_uniquely
 from sqlalchemy.exc import IntegrityError
-import jwt
-import gkcore
-import json
-from Crypto.PublicKey import RSA
+from gkcore.models import gkdb
+from sqlalchemy import and_, func, select
 from gkcore.models.meta import (
     does_foreignkey_exist,
     does_unique_constraint_exist,
     does_primarykey_exist,
-    inventoryMigration,
-    addFields,
     columnExists,
-    columnTypeMatches,
     tableExists,
     getOnDelete,
     uniqueConstraintExists,
 )
-from datetime import datetime, timedelta
-import traceback
-from gkcore.views.api_gkuser import getUserRole
 
 
 def migrate():
