@@ -1452,28 +1452,58 @@ def migrate():
             )
 
     with eng.connect() as con:
-        con.execute(
-            "ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)"
-        )
-        con.execute(
-            "ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)"
-        )
+        if does_foreignkey_exist(
+                eng,
+                "delchal",
+                "delchal_custid_fkey"
+        ):
+            con.execute(
+                "ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)"
+            )
+        if does_foreignkey_exist(
+                eng,
+                "invoice",
+                "invoice_custid_fkey"
+        ):
+            con.execute(
+                "ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)"
+            )
 
     with eng.connect() as con:
-        con.execute(
-            "alter table goprod add UNIQUE(goid,productcode,orgcode)"
-        )
-        con.execute("alter table product add UNIQUE(productdesc,orgcode)")
+        if not does_unique_constraint_exist(
+                eng,
+                "goprod",
+                "goprod_goid_productcode_orgcode_key"
+        ):
+            con.execute(
+                "alter table goprod add UNIQUE(goid,productcode,orgcode)"
+            )
+        if not does_unique_constraint_exist(
+                eng,
+                "product",
+                "product_productdesc_orgcode_key"
+        ):
+            con.execute("alter table product add UNIQUE(productdesc,orgcode)")
 
     with eng.connect() as con:
-        con.execute(
-            "alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)"
-        )
+        if not does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custname_gstin_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)"
+            )
 
     with eng.connect() as con:
-        con.execute(
-            "alter table transfernote add foreign key(fromgodown) references godown(goid)"
-        )
+        if not does_foreignkey_exist(
+                eng,
+                "transfernote",
+                "transfernote_fromgodown_fkey"
+        ):
+            con.execute(
+                "alter table transfernote add foreign key(fromgodown) references godown(goid)"
+            )
 
     with eng.connect() as con:
         if not tableExists("budget"):
