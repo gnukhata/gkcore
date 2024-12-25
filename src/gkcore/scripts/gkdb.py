@@ -1,6 +1,6 @@
 import sys
 from dotenv import load_dotenv
-from gkcore.migrations.initdb import load_initial_data, create_tables
+from gkcore.migrations.initdb import create_tables
 from gkcore.migrations.db_migrate import migrate
 
 load_dotenv()
@@ -20,8 +20,6 @@ def main():
         if arg == "--init":
             create_tables()
             print("Created tables.")
-            load_initial_data()
-            print("Added initial data.")
         elif arg == "--migrate":
             migrate()
             print("Migration complete.")
