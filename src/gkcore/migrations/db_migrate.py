@@ -1659,18 +1659,18 @@ def migrate():
         if usersExist:
             oldUsersLength = con.execute(
                 "select COUNT(userid) as count from users"
-            ).fetchone()
+            ).scalar()
             # print("Old users length = %d"%(oldUsersLength["count"]))
         if gkusersExist:
             gkusersLength = con.execute(
                 select([func.count(gkdb.gkusers.c.userid).label("count")])
-            ).fetchone()
+            ).scalar()
             # print("GK users length = %d"%(gkusersLength["count"]))
         if (not gkusersExist and usersExist) or (
             gkusersExist
             and usersExist
-            and oldUsersLength["count"] > 0
-            and gkusersLength["count"] == 0
+            and oldUsersLength > 0
+            and gkusersLength == 0
         ):
             con.execute(
                 "create table if not exists gkusers(userid serial, username text NOT NULL, userpassword text NOT NULL, userquestion text NOT NULL, useranswer text NOT NULL, orgs jsonb default '{}', primary key (userid), unique(username))"
