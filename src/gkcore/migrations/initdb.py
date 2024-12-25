@@ -28,6 +28,7 @@ Contributors:
 from gkcore import eng
 from gkcore.models.gkdb import metadata
 from gkcore.models import gkdb
+from gkcore.models.meta import does_foreignkey_exist
 from sqlalchemy.sql import select
 from sqlalchemy import func
 
@@ -44,15 +45,30 @@ def create_tables():
 
 def load_initial_data():
     with eng.connect() as con:
-        con.execute(
-            "alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)"
-        )
-        con.execute(
-            "alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)"
-        )
-        con.execute(
-            "alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)"
-        )
+        if not does_foreignkey_exist(
+                eng,
+                "groupsubgroups",
+                "groupsubgroups_subgroupof_fkey"
+        ):
+            con.execute(
+                "alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)"
+            )
+        if not does_foreignkey_exist(
+                eng,
+                "categorysubcategories",
+                "categorysubcategories_subcategoryof_fkey"
+        ):
+            con.execute(
+                "alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)"
+            )
+        if not does_foreignkey_exist(
+                eng,
+                "unitofmeasurement",
+                "unitofmeasurement_subunitof_fkey"
+        ):
+            con.execute(
+                "alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)"
+            )
 
         uomscount = con.execute(
             select([func.count(gkdb.unitofmeasurement.c.uomid).label("numofuom")])
