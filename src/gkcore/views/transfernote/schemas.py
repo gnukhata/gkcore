@@ -58,3 +58,8 @@ class StockData(BaseModel):
 class TransfernoteDetails(BaseModel):
     stockdata: StockData
     transferdata: TransferData
+
+
+class ApproveTransferNote(BaseModel):
+    transfernoteid: int
+    recieveddate: date
