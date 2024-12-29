@@ -122,8 +122,7 @@ def voucherBinInsert(con, vcode, orgcode):
 
 # this fuction is called to delete vouchers.
 def deleteVoucherFun(vcode, orgcode):
-    try:
-        con = eng.connect()
+    with eng.begin() as con:
         # Removing invoice related entries.
         invoices = con.execute(
             "select invid from billwise  where vouchercode = %d " % (int(vcode))
@@ -178,10 +177,7 @@ def deleteVoucherFun(vcode, orgcode):
             if voucherCodeToDelete and voucherCodeToDelete["vouchercode"] != None:
                 voucherBinInsert(con, voucherCodeToDelete["vouchercode"], orgcode)
         voucherBinInsert(con, vcode, orgcode)
-        con.close()
         return {"gkstatus": enumdict["Success"]}
-    except:
-        return {"gkstatus": enumdict["ConnectionFailed"]}
 
 
 def getInvVouchers(con, orgcode, invid, include_drcrid=False, include_invid=False):
