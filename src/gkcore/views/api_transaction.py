@@ -181,95 +181,92 @@ def deleteVoucherFun(vcode, orgcode):
 
 
 def getInvVouchers(con, orgcode, invid, include_drcrid=False, include_invid=False):
-    try:
-        columns = [
-            vouchers.c.vouchercode,
-            vouchers.c.attachmentcount,
-            vouchers.c.vouchernumber,
-            vouchers.c.voucherdate,
-            vouchers.c.narration,
-            vouchers.c.drs,
-            vouchers.c.crs,
-            vouchers.c.prjcrs,
-            vouchers.c.prjdrs,
-            vouchers.c.vouchertype,
-            vouchers.c.lockflag,
-            vouchers.c.delflag,
-            vouchers.c.projectcode,
-            vouchers.c.orgcode,
-        ]
+    columns = [
+        vouchers.c.vouchercode,
+        vouchers.c.attachmentcount,
+        vouchers.c.vouchernumber,
+        vouchers.c.voucherdate,
+        vouchers.c.narration,
+        vouchers.c.drs,
+        vouchers.c.crs,
+        vouchers.c.prjcrs,
+        vouchers.c.prjdrs,
+        vouchers.c.vouchertype,
+        vouchers.c.lockflag,
+        vouchers.c.delflag,
+        vouchers.c.projectcode,
+        vouchers.c.orgcode,
+    ]
 
-        # Construct the query based on the conditions
-        if include_drcrid:
-            vouchersData = con.execute(select(columns).where(
-                and_(
-                    vouchers.c.orgcode == orgcode,
-                    vouchers.c.drcrid == invid,
-                    vouchers.c.delflag == False,
-                )
-            ).order_by(vouchers.c.voucherdate, vouchers.c.vouchercode))
-        elif include_invid:
-            vouchersData = con.execute(select(columns).where(
-                and_(
-                    vouchers.c.orgcode == orgcode,
-                    vouchers.c.invid == invid,
-                    vouchers.c.delflag == False,
-                )
-            ).order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
-        )
-        voucherRecords = []
-
-        for voucher in vouchersData:
-            rawDr = dict(voucher["drs"])
-            rawCr = dict(voucher["crs"])
-            finalDR = {}
-            finalCR = {}
-            tdr = 0.00
-            tcr = 0.00
-
-            for d in list(rawDr.keys()):
-                accname = con.execute(
-                    select([accounts.c.accountname]).where(
-                        accounts.c.accountcode == int(d)
-                    )
-                )
-                account = accname.fetchone()
-                finalDR[account["accountname"]] = rawDr[d]
-
-            for c in list(rawCr.keys()):
-                accname = con.execute(
-                    select([accounts.c.accountname]).where(
-                        accounts.c.accountcode == int(c)
-                    )
-                )
-                account = accname.fetchone()
-                finalCR[account["accountname"]] = rawCr[c]
-
-            if voucher["narration"] == "null":
-                voucher["narration"] = ""
-            voucherRecords.append(
-                {
-                    "invid": invid,
-                    "vouchercode": voucher["vouchercode"],
-                    "attachmentcount": voucher["attachmentcount"],
-                    "vouchernumber": voucher["vouchernumber"],
-                    "voucherdate": datetime.strftime(
-                        voucher["voucherdate"], "%d-%m-%Y"
-                    ),
-                    "narration": voucher["narration"],
-                    "drs": finalDR,
-                    "crs": finalCR,
-                    "prjdrs": voucher["prjdrs"],
-                    "prjcrs": voucher["prjcrs"],
-                    "vouchertype": voucher["vouchertype"],
-                    "delflag": voucher["delflag"],
-                    "orgcode": voucher["orgcode"],
-                    "status": voucher["lockflag"],
-                }
+    # Construct the query based on the conditions
+    if include_drcrid:
+        vouchersData = con.execute(select(columns).where(
+            and_(
+                vouchers.c.orgcode == orgcode,
+                vouchers.c.drcrid == invid,
+                vouchers.c.delflag == False,
             )
-        return voucherRecords
-    except:
-        return []
+        ).order_by(vouchers.c.voucherdate, vouchers.c.vouchercode))
+    elif include_invid:
+        vouchersData = con.execute(select(columns).where(
+            and_(
+                vouchers.c.orgcode == orgcode,
+                vouchers.c.invid == invid,
+                vouchers.c.delflag == False,
+            )
+        ).order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
+    )
+    voucherRecords = []
+
+    for voucher in vouchersData:
+        rawDr = dict(voucher["drs"])
+        rawCr = dict(voucher["crs"])
+        finalDR = {}
+        finalCR = {}
+        tdr = 0.00
+        tcr = 0.00
+
+        for d in list(rawDr.keys()):
+            accname = con.execute(
+                select([accounts.c.accountname]).where(
+                    accounts.c.accountcode == int(d)
+                )
+            )
+            account = accname.fetchone()
+            finalDR[account["accountname"]] = rawDr[d]
+
+        for c in list(rawCr.keys()):
+            accname = con.execute(
+                select([accounts.c.accountname]).where(
+                    accounts.c.accountcode == int(c)
+                )
+            )
+            account = accname.fetchone()
+            finalCR[account["accountname"]] = rawCr[c]
+
+        if voucher["narration"] == "null":
+            voucher["narration"] = ""
+        voucherRecords.append(
+            {
+                "invid": invid,
+                "vouchercode": voucher["vouchercode"],
+                "attachmentcount": voucher["attachmentcount"],
+                "vouchernumber": voucher["vouchernumber"],
+                "voucherdate": datetime.strftime(
+                    voucher["voucherdate"], "%d-%m-%Y"
+                ),
+                "narration": voucher["narration"],
+                "drs": finalDR,
+                "crs": finalCR,
+                "prjdrs": voucher["prjdrs"],
+                "prjcrs": voucher["prjcrs"],
+                "vouchertype": voucher["vouchertype"],
+                "delflag": voucher["delflag"],
+                "orgcode": voucher["orgcode"],
+                "status": voucher["lockflag"],
+            }
+        )
+    return voucherRecords
 
 @view_defaults(route_name="transaction")
 class api_transaction(object):
