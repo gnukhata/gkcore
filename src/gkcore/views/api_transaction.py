@@ -1424,21 +1424,20 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 if "lockflag" in dataset:
                     if dataset["lockflag"] == "True":
                         dataset["lockflag"] = True
                     else:
                         dataset["lockflag"] = False
-                    result = self.con.execute(
+                    result = con.execute(
                         vouchers.update()
                         .where(vouchers.c.vouchercode == dataset["vouchercode"])
                         .values(dataset)
                     )
                 else:
-                    result = self.con.execute(
+                    result = con.execute(
                         vouchers.update()
                         .where(vouchers.c.lockflag == "f")
                         .where(vouchers.c.vouchercode == dataset["vouchercode"])
@@ -1447,12 +1446,12 @@ class api_transaction(object):
                 if "drs" in dataset:
                     drs = dataset["drs"]
                     crs = dataset["crs"]
-                    delrecoresult = self.con.execute(
+                    delrecoresult = con.execute(
                         "delete from bankrecon where vouchercode = %d"
                         % (int(dataset["vouchercode"]))
                     )
                     for drkeys in list(drs.keys()):
-                        accgrpdata = self.con.execute(
+                        accgrpdata = con.execute(
                             select(
                                 [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
                             ).where(
@@ -1467,7 +1466,7 @@ class api_transaction(object):
                         accgrp = accgrpdata.fetchone()
                         if accgrp["groupname"] == "Bank":
                             vouchercode = dataset["vouchercode"]
-                            recoresult = self.con.execute(
+                            recoresult = con.execute(
                                 bankrecon.insert(),
                                 [
                                     {
@@ -1478,7 +1477,7 @@ class api_transaction(object):
                                 ],
                             )
                     for crkeys in list(crs.keys()):
-                        accgrpdata = self.con.execute(
+                        accgrpdata = con.execute(
                             select(
                                 [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
                             ).where(
@@ -1493,7 +1492,7 @@ class api_transaction(object):
                         accgrp = accgrpdata.fetchone()
                         if accgrp["groupname"] == "Bank":
                             vouchercode = dataset["vouchercode"]
-                            recoresult = self.con.execute(
+                            recoresult = con.execute(
                                 bankrecon.insert(),
                                 [
                                     {
@@ -1503,11 +1502,7 @@ class api_transaction(object):
                                     }
                                 ],
                             )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteVoucher(self):
