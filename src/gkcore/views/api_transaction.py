@@ -611,9 +611,8 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
+            with eng.connect() as con:
+                result = con.execute(
                     select(
                         [
                             vouchers.c.vouchernumber,
@@ -643,11 +642,7 @@ class api_transaction(object):
                         "vno": row["vouchernumber"],
                         "narration": row["narration"],
                     }
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": voucher}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", renderer="json")
     def getVoucher(self):
