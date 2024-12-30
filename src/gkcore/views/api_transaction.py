@@ -361,8 +361,7 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 dataset["orgcode"] = authDetails["orgcode"]
                 drs = dataset["drs"]
@@ -377,16 +376,16 @@ class api_transaction(object):
                 if ("vouchernumber" in dataset) == False:
                     voucherType = dataset["vouchertype"]
                     vchNo = self.__genVoucherNumber(
-                        self.con, voucherType, dataset["orgcode"]
+                        con, voucherType, dataset["orgcode"]
                     )
                     dataset["vouchernumber"] = vchNo
-                result = self.con.execute(vouchers.insert(), [dataset])
+                result = con.execute(vouchers.insert(), [dataset])
                 for drkeys in list(drs.keys()):
-                    self.con.execute(
+                    con.execute(
                         "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
                         % (int(drkeys))
                     )
-                    accgrpdata = self.con.execute(
+                    accgrpdata = con.execute(
                         select(
                             [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
                         ).where(
@@ -400,11 +399,11 @@ class api_transaction(object):
                     )
                     accgrp = accgrpdata.fetchone()
                     if accgrp["groupname"] == "Bank":
-                        vouchercodedata = self.con.execute(
+                        vouchercodedata = con.execute(
                             "select max(vouchercode) as vcode from vouchers"
                         )
                         vouchercode = vouchercodedata.fetchone()
-                        self.con.execute(
+                        con.execute(
                             bankrecon.insert(),
                             [
                                 {
@@ -417,11 +416,11 @@ class api_transaction(object):
                             ],
                         )
                 for crkeys in list(crs.keys()):
-                    self.con.execute(
+                    con.execute(
                         "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
                         % (int(crkeys))
                     )
-                    accgrpdata = self.con.execute(
+                    accgrpdata = con.execute(
                         select(
                             [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
                         ).where(
@@ -435,11 +434,11 @@ class api_transaction(object):
                     )
                     accgrp = accgrpdata.fetchone()
                     if accgrp["groupname"] == "Bank":
-                        vouchercodedata = self.con.execute(
+                        vouchercodedata = con.execute(
                             "select max(vouchercode) as vcode from vouchers"
                         )
                         vouchercode = vouchercodedata.fetchone()
-                        self.con.execute(
+                        con.execute(
                             bankrecon.insert(),
                             [
                                 {
@@ -451,19 +450,15 @@ class api_transaction(object):
                                 }
                             ],
                         )
-                vchdata = self.con.execute(
+                vchdata = con.execute(
                     "select max(vouchercode) as vcode from vouchers"
                 )
                 vchcode = vchdata.fetchone()
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "vouchercode": int(vchcode["vcode"]),
                     "vouchernumber": dataset["vouchernumber"],
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="POST", request_param="mode=auto", renderer="json")
     def addVoucherAuto(self):
