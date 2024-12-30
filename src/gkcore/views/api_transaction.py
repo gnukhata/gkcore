@@ -1542,13 +1542,12 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 fromDate = self.request.params["from"]
                 toDate = self.request.params["to"]
-                vouchersData = self.con.execute(
+                vouchersData = con.execute(
                     select(
                         [
                             vouchers.c.vouchercode,
@@ -1581,7 +1580,7 @@ class api_transaction(object):
                     finalDR = {}
                     finalCR = {}
                     for Dac in list(rawDr.keys()):
-                        accname = self.con.execute(
+                        accname = con.execute(
                             select([accounts.c.accountname]).where(
                                 accounts.c.accountcode == int(Dac)
                             )
@@ -1589,7 +1588,7 @@ class api_transaction(object):
                         account = accname.fetchone()
                         finalDR[account["accountname"]] = rawDr[Dac]
                     for Cac in list(rawCr.keys()):
-                        accname = self.con.execute(
+                        accname = con.execute(
                             select([accounts.c.accountname]).where(
                                 accounts.c.accountcode == int(Cac)
                             )
@@ -1613,12 +1612,8 @@ class api_transaction(object):
                             "orgcode": voucher["orgcode"],
                         }
                     )
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": voucherRecords,
                     "userrole": urole["userrole"],
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
