@@ -659,12 +659,11 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherCode = self.request.params["code"]
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             vouchers.c.vouchercode,
@@ -696,7 +695,7 @@ class api_transaction(object):
                     )
                 )
                 row = result.fetchone()
-                icflagResult = self.con.execute(
+                icflagResult = con.execute(
                         select([invoice.c.icflag]).where(
                         invoice.c.invid == row["invid"]
                     )
@@ -708,7 +707,7 @@ class api_transaction(object):
                 finalCR = {}
                 for d in list(rawDr.keys()):
                     account_code = int(d)
-                    accname = self.con.execute(
+                    accname = con.execute(
                         select([accounts.c.accountname, accounts.c.accountcode]).where(
                             accounts.c.accountcode == int(d)
                         )
@@ -722,7 +721,7 @@ class api_transaction(object):
 
                 for c in list(rawCr.keys()):
                     account_code = int(c)
-                    accname = self.con.execute(
+                    accname = con.execute(
                         select([accounts.c.accountname, accounts.c.accountcode]).where(
                             accounts.c.accountcode == int(c)
                         )
@@ -766,15 +765,11 @@ class api_transaction(object):
                     )
                 else:
                     voucher["instrumentdate"] = ""
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": voucher,
                     "userrole": urole["userrole"],
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", request_param="searchby=type", renderer="json")
     def searchByType(self):
