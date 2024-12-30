@@ -492,9 +492,7 @@ class api_transaction(object):
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-
+            with eng.begin() as con:
                 dataset = self.request.json_body
                 vdetails = dataset["vdetails"]
                 transactions = dataset["transactions"]
@@ -512,14 +510,14 @@ class api_transaction(object):
 
                 # b_accCode is the user's default bank account code
                 if payment_mode in ["both", "bank"]:
-                    b_accCode = self.con.execute(
+                    b_accCode = con.execute(
                         select([accounts.c.accountcode])
                         .where(accounts.c.defaultflag == 2)
                         .where(accounts.c.orgcode == int(vdetails["orgcode"]))
                     ).fetchone()[0]
                 # c_accCode is the user's default cash account code
                 if payment_mode in ["both", "cash"]:
-                    c_accCode = self.con.execute(
+                    c_accCode = con.execute(
                         select([accounts.c.accountcode])
                         .where(accounts.c.defaultflag == 3)
                         .where(accounts.c.orgcode == int(vdetails["orgcode"]))
@@ -547,43 +545,43 @@ class api_transaction(object):
                 # Database expects vouchernumber to be unicode encoded
                 vdetails["vouchernumber"] = str(
                     self.__genVoucherNumber(
-                        self.con, vdetails["vouchertype"], vdetails["orgcode"]
+                        con, vdetails["vouchertype"], vdetails["orgcode"]
                     )
                 )
 
-                self.con.execute(vouchers.insert(), [vdetails])
+                con.execute(vouchers.insert(), [vdetails])
 
                 if payment_mode == "both":
-                    self.con.execute(
+                    con.execute(
                         "update accounts set vouchercount = vouchercount+1 where accountcode = %d"
                         % (int(b_accCode))
                     )
-                    self.con.execute(
+                    con.execute(
                         "update accounts set vouchercount = vouchercount+1 where accountcode = %d"
                         % (int(c_accCode))
                     )
                 elif payment_mode == "bank":
-                    self.con.execute(
+                    con.execute(
                         "update accounts set vouchercount = vouchercount+1 where accountcode = %d"
                         % (int(b_accCode))
                     )
                 else:
-                    self.con.execute(
+                    con.execute(
                         "update accounts set vouchercount = vouchercount+1 where accountcode = %d"
                         % (int(c_accCode))
                     )
 
-                self.con.execute(
+                con.execute(
                     "update accounts set vouchercount = vouchercount+1 where accountcode = %d"
                     % (int(party_accCode))
                 )
 
-                vouchercodedata = self.con.execute(
+                vouchercodedata = con.execute(
                     "select max(vouchercode) as vcode from vouchers"
                 )
                 vouchercode = vouchercodedata.fetchone()
                 if transactions["payment_mode"] in ["bank", "both"]:
-                    self.con.execute(
+                    con.execute(
                         bankrecon.insert(),
                         [
                             {
@@ -597,10 +595,6 @@ class api_transaction(object):
                     "gkstatus": enumdict["Success"],
                     "vouchercode": int(vouchercode["vcode"]),
                 }
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(request_param="details=last", request_method="GET", renderer="json")
     def getLastVoucherDetails(self):
