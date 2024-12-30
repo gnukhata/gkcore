@@ -933,12 +933,11 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 urole = ur["gkresult"]
                 voucherNo = self.request.params["voucherno"]
-                vouchersData = self.con.execute(
+                vouchersData = con.execute(
                     select(
                         [
                             vouchers.c.vouchercode,
@@ -977,7 +976,7 @@ class api_transaction(object):
                     tdr = 0.00
                     tcr = 0.00
 
-                    accname = self.con.execute(
+                    accname = con.execute(
                         select([accounts.c.accountname]).where(
                             accounts.c.accountcode == int(list(rawDr.keys())[0])
                         )
@@ -994,7 +993,7 @@ class api_transaction(object):
                     else:
                         finalDR[account["accountname"]] = rawDr[list(rawDr.keys())[0]]
 
-                    accname = self.con.execute(
+                    accname = con.execute(
                         select([accounts.c.accountname]).where(
                             accounts.c.accountcode == int(list(rawCr.keys())[0])
                         )
@@ -1030,15 +1029,11 @@ class api_transaction(object):
                             "status": voucher["lockflag"],
                         }
                     )
-                self.con.close()
                 return {
                     "gkstatus": enumdict["Success"],
                     "gkresult": voucherRecords,
                     "userrole": urole["userrole"],
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", request_param="searchby=amount", renderer="json")
     def searchByAmount(self):
