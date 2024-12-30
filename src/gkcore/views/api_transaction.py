@@ -917,16 +917,11 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 voucherRecords = getInvVouchers(
-                    self.con, authDetails["orgcode"], self.request.params["drcrid"], include_drcrid=True, include_invid=False
+                    con, authDetails["orgcode"], self.request.params["drcrid"], include_drcrid=True, include_invid=False
                 )
-                self.con.close()
                 return {"gkstatus": enumdict["Success"], "gkresult": voucherRecords}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", request_param="searchby=vnum", renderer="json")
     def searchByVoucherNumber(self):
