@@ -109,7 +109,7 @@ def voucherBinInsert(con, vcode, orgcode):
         "projectname": projectName,
         "orgcode": orgcode,
     }
-    voucherBinInsert = con.execute(voucherbin.insert(), [voucherBinData])
+    con.execute(voucherbin.insert(), [voucherBinData])
 
 
 # this fuction is called to delete vouchers.
@@ -215,8 +215,6 @@ def getInvVouchers(con, orgcode, invid, include_drcrid=False, include_invid=Fals
         rawCr = dict(voucher["crs"])
         finalDR = {}
         finalCR = {}
-        tdr = 0.00
-        tcr = 0.00
 
         for d in list(rawDr.keys()):
             accname = con.execute(
@@ -278,7 +276,6 @@ class api_transaction(object):
         Initialising the request object which gets the data from client.
         """
         self.request = request
-        self.con = Connection
 
     def __genVoucherNumber(self, con, voucherType, orgcode):
         """
@@ -370,7 +367,8 @@ class api_transaction(object):
                     con, voucherType, dataset["orgcode"]
                 )
                 dataset["vouchernumber"] = vchNo
-            result = con.execute(vouchers.insert(), [dataset])
+            con.execute(vouchers.insert(), [dataset])
+
             for drkeys in list(drs.keys()):
                 con.execute(
                     "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
@@ -1422,13 +1420,13 @@ class api_transaction(object):
                     dataset["lockflag"] = True
                 else:
                     dataset["lockflag"] = False
-                result = con.execute(
+                con.execute(
                     vouchers.update()
                     .where(vouchers.c.vouchercode == dataset["vouchercode"])
                     .values(dataset)
                 )
             else:
-                result = con.execute(
+                con.execute(
                     vouchers.update()
                     .where(vouchers.c.lockflag == "f")
                     .where(vouchers.c.vouchercode == dataset["vouchercode"])
@@ -1437,7 +1435,7 @@ class api_transaction(object):
             if "drs" in dataset:
                 drs = dataset["drs"]
                 crs = dataset["crs"]
-                delrecoresult = con.execute(
+                con.execute(
                     "delete from bankrecon where vouchercode = %d"
                     % (int(dataset["vouchercode"]))
                 )
@@ -1457,7 +1455,7 @@ class api_transaction(object):
                     accgrp = accgrpdata.fetchone()
                     if accgrp["groupname"] == "Bank":
                         vouchercode = dataset["vouchercode"]
-                        recoresult = con.execute(
+                        con.execute(
                             bankrecon.insert(),
                             [
                                 {
@@ -1483,7 +1481,7 @@ class api_transaction(object):
                     accgrp = accgrpdata.fetchone()
                     if accgrp["groupname"] == "Bank":
                         vouchercode = dataset["vouchercode"]
-                        recoresult = con.execute(
+                        con.execute(
                             bankrecon.insert(),
                             [
                                 {
