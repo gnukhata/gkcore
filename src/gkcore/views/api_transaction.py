@@ -1521,15 +1521,15 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                dataset = self.request.json_body
-                vcode = int(dataset["vouchercode"])
-                orgcode = authDetails["orgcode"]
-                deletestatus = deleteVoucherFun(vcode, orgcode)
-                return deletestatus
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+
+        try:
+            dataset = self.request.json_body
+            vcode = int(dataset["vouchercode"])
+            orgcode = authDetails["orgcode"]
+            deletestatus = deleteVoucherFun(vcode, orgcode)
+            return deletestatus
+        except:
+            return {"gkstatus": enumdict["ConnectionFailed"]}
 
     # Get all data of all vouchers for certain period.
     @view_config(request_method="GET", request_param="getdataby=date", renderer="json")
