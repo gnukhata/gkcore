@@ -1044,123 +1044,123 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                urole = ur["gkresult"]
-                voucherAmount = self.request.params["total"]
-                vouchersData = con.execute(
-                    select([vouchers.c.vouchercode, vouchers.c.drs])
-                    .where(
-                        and_(
-                            vouchers.c.orgcode == authDetails["orgcode"],
-                            vouchers.c.delflag == False,
+
+        with eng.connect() as con:
+            ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            urole = ur["gkresult"]
+            voucherAmount = self.request.params["total"]
+            vouchersData = con.execute(
+                select([vouchers.c.vouchercode, vouchers.c.drs])
+                .where(
+                    and_(
+                        vouchers.c.orgcode == authDetails["orgcode"],
+                        vouchers.c.delflag == False,
+                    )
+                )
+                .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
+            )
+            voucherRecords = []
+
+            for vr in vouchersData:
+                total = 0.00
+                drs = dict(vr["drs"])
+                for d in list(drs.keys()):
+                    total = total + float(drs[d])
+                if total == float(voucherAmount):
+                    voucherDetailsData = con.execute(
+                        select(
+                            [
+                                vouchers.c.vouchercode,
+                                vouchers.c.attachmentcount,
+                                vouchers.c.vouchernumber,
+                                vouchers.c.voucherdate,
+                                vouchers.c.narration,
+                                vouchers.c.drs,
+                                vouchers.c.crs,
+                                vouchers.c.prjcrs,
+                                vouchers.c.prjdrs,
+                                vouchers.c.vouchertype,
+                                vouchers.c.lockflag,
+                                vouchers.c.delflag,
+                                vouchers.c.projectcode,
+                                vouchers.c.orgcode,
+                            ]
+                        ).where(vouchers.c.vouchercode == vr["vouchercode"])
+                    )
+                    voucher = voucherDetailsData.fetchone()
+                    rawDr = dict(voucher["drs"])
+                    rawCr = dict(voucher["crs"])
+                    finalDR = {}
+                    finalCR = {}
+                    tdr = 0.00
+                    tcr = 0.00
+                    accname = con.execute(
+                        select([accounts.c.accountname]).where(
+                            accounts.c.accountcode == int(list(rawDr.keys())[0])
                         )
                     )
-                    .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
-                )
-                voucherRecords = []
+                    account = accname.fetchone()
 
-                for vr in vouchersData:
-                    total = 0.00
-                    drs = dict(vr["drs"])
-                    for d in list(drs.keys()):
-                        total = total + float(drs[d])
-                    if total == float(voucherAmount):
-                        voucherDetailsData = con.execute(
-                            select(
-                                [
-                                    vouchers.c.vouchercode,
-                                    vouchers.c.attachmentcount,
-                                    vouchers.c.vouchernumber,
-                                    vouchers.c.voucherdate,
-                                    vouchers.c.narration,
-                                    vouchers.c.drs,
-                                    vouchers.c.crs,
-                                    vouchers.c.prjcrs,
-                                    vouchers.c.prjdrs,
-                                    vouchers.c.vouchertype,
-                                    vouchers.c.lockflag,
-                                    vouchers.c.delflag,
-                                    vouchers.c.projectcode,
-                                    vouchers.c.orgcode,
-                                ]
-                            ).where(vouchers.c.vouchercode == vr["vouchercode"])
-                        )
-                        voucher = voucherDetailsData.fetchone()
-                        rawDr = dict(voucher["drs"])
-                        rawCr = dict(voucher["crs"])
-                        finalDR = {}
-                        finalCR = {}
-                        tdr = 0.00
-                        tcr = 0.00
-                        accname = con.execute(
-                            select([accounts.c.accountname]).where(
-                                accounts.c.accountcode == int(list(rawDr.keys())[0])
-                            )
-                        )
-                        account = accname.fetchone()
-
-                        if len(rawDr) > 1:
-                            drcount = (
-                                account["accountname"] + " + " + str(len(rawDr) - 1)
-                            )
-
-                            for d in rawDr:
-                                tdr = tdr + float(rawDr[d])
-
-                            finalDR["%s" % (drcount)] = tdr
-                        else:
-                            finalDR[account["accountname"]] = rawDr[
-                                list(rawDr.keys())[0]
-                            ]
-
-                        accname = con.execute(
-                            select([accounts.c.accountname]).where(
-                                accounts.c.accountcode == int(list(rawCr.keys())[0])
-                            )
-                        )
-                        account = accname.fetchone()
-
-                        if len(rawCr) > 1:
-                            crcount = (
-                                account["accountname"] + " + " + str(len(rawCr) - 1)
-                            )
-
-                            for d in rawCr:
-                                tcr = tcr + float(rawCr[d])
-                            finalCR["%s" % (crcount)] = tcr
-                        else:
-                            finalCR[account["accountname"]] = rawCr[
-                                list(rawCr.keys())[0]
-                            ]
-                        if voucher["narration"] == "null":
-                            voucher["narration"] = ""
-                        voucherRecords.append(
-                            {
-                                "vouchercode": voucher["vouchercode"],
-                                "attachmentcount": voucher["attachmentcount"],
-                                "vouchernumber": voucher["vouchernumber"],
-                                "voucherdate": datetime.strftime(
-                                    voucher["voucherdate"], "%d-%m-%Y"
-                                ),
-                                "narration": voucher["narration"],
-                                "drs": finalDR,
-                                "crs": finalCR,
-                                "prjdrs": voucher["prjdrs"],
-                                "prjcrs": voucher["prjcrs"],
-                                "vouchertype": voucher["vouchertype"],
-                                "delflag": voucher["delflag"],
-                                "orgcode": voucher["orgcode"],
-                                "status": voucher["lockflag"],
-                            }
+                    if len(rawDr) > 1:
+                        drcount = (
+                            account["accountname"] + " + " + str(len(rawDr) - 1)
                         )
 
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": voucherRecords,
-                    "userrole": urole["userrole"],
-                }
+                        for d in rawDr:
+                            tdr = tdr + float(rawDr[d])
+
+                        finalDR["%s" % (drcount)] = tdr
+                    else:
+                        finalDR[account["accountname"]] = rawDr[
+                            list(rawDr.keys())[0]
+                        ]
+
+                    accname = con.execute(
+                        select([accounts.c.accountname]).where(
+                            accounts.c.accountcode == int(list(rawCr.keys())[0])
+                        )
+                    )
+                    account = accname.fetchone()
+
+                    if len(rawCr) > 1:
+                        crcount = (
+                            account["accountname"] + " + " + str(len(rawCr) - 1)
+                        )
+
+                        for d in rawCr:
+                            tcr = tcr + float(rawCr[d])
+                        finalCR["%s" % (crcount)] = tcr
+                    else:
+                        finalCR[account["accountname"]] = rawCr[
+                            list(rawCr.keys())[0]
+                        ]
+                    if voucher["narration"] == "null":
+                        voucher["narration"] = ""
+                    voucherRecords.append(
+                        {
+                            "vouchercode": voucher["vouchercode"],
+                            "attachmentcount": voucher["attachmentcount"],
+                            "vouchernumber": voucher["vouchernumber"],
+                            "voucherdate": datetime.strftime(
+                                voucher["voucherdate"], "%d-%m-%Y"
+                            ),
+                            "narration": voucher["narration"],
+                            "drs": finalDR,
+                            "crs": finalCR,
+                            "prjdrs": voucher["prjdrs"],
+                            "prjcrs": voucher["prjcrs"],
+                            "vouchertype": voucher["vouchertype"],
+                            "delflag": voucher["delflag"],
+                            "orgcode": voucher["orgcode"],
+                            "status": voucher["lockflag"],
+                        }
+                    )
+
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": voucherRecords,
+                "userrole": urole["userrole"],
+            }
 
     @view_config(request_method="GET", request_param="searchby=date", renderer="json")
     def searchByDate(self):
