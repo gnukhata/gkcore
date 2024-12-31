@@ -360,105 +360,105 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                dataset["orgcode"] = authDetails["orgcode"]
-                drs = dataset["drs"]
-                crs = dataset["crs"]
-                if "instrumentdate" in dataset:
-                    instrumentdate = dataset["instrumentdate"]
-                    dataset["instrumentdate"] = datetime.strptime(
-                        instrumentdate, "%Y-%m-%d"
-                    )
 
-                # generate voucher number if it is not sent.
-                if ("vouchernumber" in dataset) == False:
-                    voucherType = dataset["vouchertype"]
-                    vchNo = self.__genVoucherNumber(
-                        con, voucherType, dataset["orgcode"]
-                    )
-                    dataset["vouchernumber"] = vchNo
-                result = con.execute(vouchers.insert(), [dataset])
-                for drkeys in list(drs.keys()):
-                    con.execute(
-                        "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
-                        % (int(drkeys))
-                    )
-                    accgrpdata = con.execute(
-                        select(
-                            [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
-                        ).where(
-                            groupsubgroups.c.groupcode
-                            == (
-                                select([accounts.c.groupcode]).where(
-                                    accounts.c.accountcode == int(drkeys)
-                                )
-                            )
-                        )
-                    )
-                    accgrp = accgrpdata.fetchone()
-                    if accgrp["groupname"] == "Bank":
-                        vouchercodedata = con.execute(
-                            "select max(vouchercode) as vcode from vouchers"
-                        )
-                        vouchercode = vouchercodedata.fetchone()
-                        con.execute(
-                            bankrecon.insert(),
-                            [
-                                {
-                                    "vouchercode": int(vouchercode["vcode"]),
-                                    "accountcode": drkeys,
-                                    "orgcode": authDetails["orgcode"],
-                                    "entry_type": "Dr",
-                                    "amount": drs[drkeys],
-                                }
-                            ],
-                        )
-                for crkeys in list(crs.keys()):
-                    con.execute(
-                        "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
-                        % (int(crkeys))
-                    )
-                    accgrpdata = con.execute(
-                        select(
-                            [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
-                        ).where(
-                            groupsubgroups.c.groupcode
-                            == (
-                                select([accounts.c.groupcode]).where(
-                                    accounts.c.accountcode == int(crkeys)
-                                )
-                            )
-                        )
-                    )
-                    accgrp = accgrpdata.fetchone()
-                    if accgrp["groupname"] == "Bank":
-                        vouchercodedata = con.execute(
-                            "select max(vouchercode) as vcode from vouchers"
-                        )
-                        vouchercode = vouchercodedata.fetchone()
-                        con.execute(
-                            bankrecon.insert(),
-                            [
-                                {
-                                    "vouchercode": int(vouchercode["vcode"]),
-                                    "accountcode": crkeys,
-                                    "orgcode": authDetails["orgcode"],
-                                    "entry_type": "Cr",
-                                    "amount": crs[crkeys],
-                                }
-                            ],
-                        )
-                vchdata = con.execute(
-                    "select max(vouchercode) as vcode from vouchers"
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            dataset["orgcode"] = authDetails["orgcode"]
+            drs = dataset["drs"]
+            crs = dataset["crs"]
+            if "instrumentdate" in dataset:
+                instrumentdate = dataset["instrumentdate"]
+                dataset["instrumentdate"] = datetime.strptime(
+                    instrumentdate, "%Y-%m-%d"
                 )
-                vchcode = vchdata.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "vouchercode": int(vchcode["vcode"]),
-                    "vouchernumber": dataset["vouchernumber"],
-                }
+
+            # generate voucher number if it is not sent.
+            if ("vouchernumber" in dataset) == False:
+                voucherType = dataset["vouchertype"]
+                vchNo = self.__genVoucherNumber(
+                    con, voucherType, dataset["orgcode"]
+                )
+                dataset["vouchernumber"] = vchNo
+            result = con.execute(vouchers.insert(), [dataset])
+            for drkeys in list(drs.keys()):
+                con.execute(
+                    "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
+                    % (int(drkeys))
+                )
+                accgrpdata = con.execute(
+                    select(
+                        [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
+                    ).where(
+                        groupsubgroups.c.groupcode
+                        == (
+                            select([accounts.c.groupcode]).where(
+                                accounts.c.accountcode == int(drkeys)
+                            )
+                        )
+                    )
+                )
+                accgrp = accgrpdata.fetchone()
+                if accgrp["groupname"] == "Bank":
+                    vouchercodedata = con.execute(
+                        "select max(vouchercode) as vcode from vouchers"
+                    )
+                    vouchercode = vouchercodedata.fetchone()
+                    con.execute(
+                        bankrecon.insert(),
+                        [
+                            {
+                                "vouchercode": int(vouchercode["vcode"]),
+                                "accountcode": drkeys,
+                                "orgcode": authDetails["orgcode"],
+                                "entry_type": "Dr",
+                                "amount": drs[drkeys],
+                            }
+                        ],
+                    )
+            for crkeys in list(crs.keys()):
+                con.execute(
+                    "update accounts set vouchercount = vouchercount +1 where accountcode = %d"
+                    % (int(crkeys))
+                )
+                accgrpdata = con.execute(
+                    select(
+                        [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
+                    ).where(
+                        groupsubgroups.c.groupcode
+                        == (
+                            select([accounts.c.groupcode]).where(
+                                accounts.c.accountcode == int(crkeys)
+                            )
+                        )
+                    )
+                )
+                accgrp = accgrpdata.fetchone()
+                if accgrp["groupname"] == "Bank":
+                    vouchercodedata = con.execute(
+                        "select max(vouchercode) as vcode from vouchers"
+                    )
+                    vouchercode = vouchercodedata.fetchone()
+                    con.execute(
+                        bankrecon.insert(),
+                        [
+                            {
+                                "vouchercode": int(vouchercode["vcode"]),
+                                "accountcode": crkeys,
+                                "orgcode": authDetails["orgcode"],
+                                "entry_type": "Cr",
+                                "amount": crs[crkeys],
+                            }
+                        ],
+                    )
+            vchdata = con.execute(
+                "select max(vouchercode) as vcode from vouchers"
+            )
+            vchcode = vchdata.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "vouchercode": int(vchcode["vcode"]),
+                "vouchernumber": dataset["vouchernumber"],
+            }
 
     @view_config(request_method="POST", request_param="mode=auto", renderer="json")
     def addVoucherAuto(self):
