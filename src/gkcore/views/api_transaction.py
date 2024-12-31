@@ -43,16 +43,8 @@ from sqlalchemy.sql import select
 from sqlalchemy import func
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, between
-from pyramid.request import Request
-
-# from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-
-# from sqlalchemy.ext.baked import Result
 from datetime import datetime
-
-# import base64
-# from PIL import Image
 
 
 # This function deletes a voucher and inserts an entry into voucherbin table.
@@ -285,7 +277,6 @@ class api_transaction(object):
         """
         Initialising the request object which gets the data from client.
         """
-        self.request = Request
         self.request = request
         self.con = Connection
 
