@@ -1541,79 +1541,79 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                urole = ur["gkresult"]
-                fromDate = self.request.params["from"]
-                toDate = self.request.params["to"]
-                vouchersData = con.execute(
-                    select(
-                        [
-                            vouchers.c.vouchercode,
-                            vouchers.c.attachmentcount,
-                            vouchers.c.vouchernumber,
-                            vouchers.c.voucherdate,
-                            vouchers.c.narration,
-                            vouchers.c.drs,
-                            vouchers.c.crs,
-                            vouchers.c.vouchertype,
-                            vouchers.c.orgcode,
-                            vouchers.c.invid,
-                            vouchers.c.drcrid,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            vouchers.c.orgcode == authDetails["orgcode"],
-                            between(vouchers.c.voucherdate, fromDate, toDate),
-                            vouchers.c.delflag == False,
-                        )
-                    )
-                    .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
-                )
-                voucherRecords = []
 
-                for voucher in vouchersData:
-                    rawDr = dict(voucher["drs"])
-                    rawCr = dict(voucher["crs"])
-                    finalDR = {}
-                    finalCR = {}
-                    for Dac in list(rawDr.keys()):
-                        accname = con.execute(
-                            select([accounts.c.accountname]).where(
-                                accounts.c.accountcode == int(Dac)
-                            )
-                        )
-                        account = accname.fetchone()
-                        finalDR[account["accountname"]] = rawDr[Dac]
-                    for Cac in list(rawCr.keys()):
-                        accname = con.execute(
-                            select([accounts.c.accountname]).where(
-                                accounts.c.accountcode == int(Cac)
-                            )
-                        )
-                        account = accname.fetchone()
-                        finalCR[account["accountname"]] = rawCr[Cac]
-                    if voucher["narration"] == "null":
-                        voucher["narration"] = ""
-                    voucherRecords.append(
-                        {
-                            "vouchercode": voucher["vouchercode"],
-                            "attachmentcount": voucher["attachmentcount"],
-                            "voucherno": voucher["vouchernumber"],
-                            "voucherdate": datetime.strftime(
-                                voucher["voucherdate"], "%Y-%m-%d"
-                            ),
-                            "narration": voucher["narration"],
-                            "drs": finalDR,
-                            "crs": finalCR,
-                            "vouchertype": voucher["vouchertype"],
-                            "orgcode": voucher["orgcode"],
-                        }
+        with eng.connect() as con:
+            ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            urole = ur["gkresult"]
+            fromDate = self.request.params["from"]
+            toDate = self.request.params["to"]
+            vouchersData = con.execute(
+                select(
+                    [
+                        vouchers.c.vouchercode,
+                        vouchers.c.attachmentcount,
+                        vouchers.c.vouchernumber,
+                        vouchers.c.voucherdate,
+                        vouchers.c.narration,
+                        vouchers.c.drs,
+                        vouchers.c.crs,
+                        vouchers.c.vouchertype,
+                        vouchers.c.orgcode,
+                        vouchers.c.invid,
+                        vouchers.c.drcrid,
+                    ]
+                )
+                .where(
+                    and_(
+                        vouchers.c.orgcode == authDetails["orgcode"],
+                        between(vouchers.c.voucherdate, fromDate, toDate),
+                        vouchers.c.delflag == False,
                     )
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": voucherRecords,
-                    "userrole": urole["userrole"],
-                }
+                )
+                .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
+            )
+            voucherRecords = []
+
+            for voucher in vouchersData:
+                rawDr = dict(voucher["drs"])
+                rawCr = dict(voucher["crs"])
+                finalDR = {}
+                finalCR = {}
+                for Dac in list(rawDr.keys()):
+                    accname = con.execute(
+                        select([accounts.c.accountname]).where(
+                            accounts.c.accountcode == int(Dac)
+                        )
+                    )
+                    account = accname.fetchone()
+                    finalDR[account["accountname"]] = rawDr[Dac]
+                for Cac in list(rawCr.keys()):
+                    accname = con.execute(
+                        select([accounts.c.accountname]).where(
+                            accounts.c.accountcode == int(Cac)
+                        )
+                    )
+                    account = accname.fetchone()
+                    finalCR[account["accountname"]] = rawCr[Cac]
+                if voucher["narration"] == "null":
+                    voucher["narration"] = ""
+                voucherRecords.append(
+                    {
+                        "vouchercode": voucher["vouchercode"],
+                        "attachmentcount": voucher["attachmentcount"],
+                        "voucherno": voucher["vouchernumber"],
+                        "voucherdate": datetime.strftime(
+                            voucher["voucherdate"], "%Y-%m-%d"
+                        ),
+                        "narration": voucher["narration"],
+                        "drs": finalDR,
+                        "crs": finalCR,
+                        "vouchertype": voucher["vouchertype"],
+                        "orgcode": voucher["orgcode"],
+                    }
+                )
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": voucherRecords,
+                "userrole": urole["userrole"],
+            }
