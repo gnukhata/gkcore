@@ -658,118 +658,118 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                urole = ur["gkresult"]
-                voucherCode = self.request.params["code"]
-                result = con.execute(
-                    select(
-                        [
-                            vouchers.c.vouchercode,
-                            vouchers.c.attachmentcount,
-                            vouchers.c.vouchernumber,
-                            vouchers.c.voucherdate,
-                            vouchers.c.narration,
-                            vouchers.c.drs,
-                            vouchers.c.crs,
-                            vouchers.c.prjcrs,
-                            vouchers.c.prjdrs,
-                            vouchers.c.vouchertype,
-                            vouchers.c.lockflag,
-                            vouchers.c.delflag,
-                            vouchers.c.projectcode,
-                            vouchers.c.orgcode,
-                            vouchers.c.invid,
-                            vouchers.c.instrumentno,
-                            vouchers.c.bankname,
-                            vouchers.c.branchname,
-                            vouchers.c.instrumentdate,
-                            vouchers.c.drcrid,
-                        ]
-                    ).where(
-                        and_(
-                            vouchers.c.delflag == False,
-                            vouchers.c.vouchercode == voucherCode,
-                        )
+
+        with eng.connect() as con:
+            ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            urole = ur["gkresult"]
+            voucherCode = self.request.params["code"]
+            result = con.execute(
+                select(
+                    [
+                        vouchers.c.vouchercode,
+                        vouchers.c.attachmentcount,
+                        vouchers.c.vouchernumber,
+                        vouchers.c.voucherdate,
+                        vouchers.c.narration,
+                        vouchers.c.drs,
+                        vouchers.c.crs,
+                        vouchers.c.prjcrs,
+                        vouchers.c.prjdrs,
+                        vouchers.c.vouchertype,
+                        vouchers.c.lockflag,
+                        vouchers.c.delflag,
+                        vouchers.c.projectcode,
+                        vouchers.c.orgcode,
+                        vouchers.c.invid,
+                        vouchers.c.instrumentno,
+                        vouchers.c.bankname,
+                        vouchers.c.branchname,
+                        vouchers.c.instrumentdate,
+                        vouchers.c.drcrid,
+                    ]
+                ).where(
+                    and_(
+                        vouchers.c.delflag == False,
+                        vouchers.c.vouchercode == voucherCode,
                     )
                 )
-                row = result.fetchone()
-                icflagResult = con.execute(
-                        select([invoice.c.icflag]).where(
-                        invoice.c.invid == row["invid"]
+            )
+            row = result.fetchone()
+            icflagResult = con.execute(
+                    select([invoice.c.icflag]).where(
+                    invoice.c.invid == row["invid"]
+                )
+            )
+            icflag = icflagResult.fetchone()
+            rawDr = dict(row["drs"])
+            rawCr = dict(row["crs"])
+            finalDR = {}
+            finalCR = {}
+            for d in list(rawDr.keys()):
+                account_code = int(d)
+                accname = con.execute(
+                    select([accounts.c.accountname, accounts.c.accountcode]).where(
+                        accounts.c.accountcode == int(d)
                     )
                 )
-                icflag = icflagResult.fetchone()
-                rawDr = dict(row["drs"])
-                rawCr = dict(row["crs"])
-                finalDR = {}
-                finalCR = {}
-                for d in list(rawDr.keys()):
-                    account_code = int(d)
-                    accname = con.execute(
-                        select([accounts.c.accountname, accounts.c.accountcode]).where(
-                            accounts.c.accountcode == int(d)
-                        )
+                account = accname.fetchone()
+                if account:  # Check if account exists
+                    finalDR[account_code] = {
+                        "accountname": account["accountname"],
+                        "amount": rawDr[d]
+                    }
+
+            for c in list(rawCr.keys()):
+                account_code = int(c)
+                accname = con.execute(
+                    select([accounts.c.accountname, accounts.c.accountcode]).where(
+                        accounts.c.accountcode == int(c)
                     )
-                    account = accname.fetchone()
-                    if account:  # Check if account exists
-                        finalDR[account_code] = {
-                            "accountname": account["accountname"],
-                            "amount": rawDr[d]
-                        }
-
-                for c in list(rawCr.keys()):
-                    account_code = int(c)
-                    accname = con.execute(
-                        select([accounts.c.accountname, accounts.c.accountcode]).where(
-                            accounts.c.accountcode == int(c)
-                        )
-                    )
-                    account = accname.fetchone()
-                    if account:  # Check if account exists
-                        finalCR[account_code] = {
-                            "accountname": account["accountname"],
-                            "amount": rawCr[c]
-                        }
+                )
+                account = accname.fetchone()
+                if account:  # Check if account exists
+                    finalCR[account_code] = {
+                        "accountname": account["accountname"],
+                        "amount": rawCr[c]
+                    }
 
 
 
-                if row["narration"] == "null":
-                    row["narration"] = ""
-                voucher = {
-                    "project": row["projectcode"],
-                    "vouchercode": row["vouchercode"],
-                    "attachmentcount": row["attachmentcount"],
-                    "vouchernumber": row["vouchernumber"],
-                    "voucherdate": datetime.strftime(row["voucherdate"], "%d-%m-%Y"),
-                    "narration": row["narration"],
-                    "drs": finalDR,
-                    "crs": finalCR,
-                    "prjdrs": row["prjdrs"],
-                    "prjcrs": row["prjcrs"],
-                    "vouchertype": row["vouchertype"],
-                    "delflag": row["delflag"],
-                    "orgcode": row["orgcode"],
-                    "status": row["lockflag"],
-                    "invid": row["invid"],
-                    "instrumentno": row["instrumentno"],
-                    "bankname": row["bankname"],
-                    "branchname": row["branchname"],
-                    "drcrid": row['drcrid'],
-                    "icflag": icflag[0] if icflag else None,
-                }
-                if row["instrumentdate"]:
-                    voucher["instrumentdate"] = datetime.strftime(
-                        row["instrumentdate"], "%d-%m-%Y"
-                    )
-                else:
-                    voucher["instrumentdate"] = ""
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": voucher,
-                    "userrole": urole["userrole"],
-                }
+            if row["narration"] == "null":
+                row["narration"] = ""
+            voucher = {
+                "project": row["projectcode"],
+                "vouchercode": row["vouchercode"],
+                "attachmentcount": row["attachmentcount"],
+                "vouchernumber": row["vouchernumber"],
+                "voucherdate": datetime.strftime(row["voucherdate"], "%d-%m-%Y"),
+                "narration": row["narration"],
+                "drs": finalDR,
+                "crs": finalCR,
+                "prjdrs": row["prjdrs"],
+                "prjcrs": row["prjcrs"],
+                "vouchertype": row["vouchertype"],
+                "delflag": row["delflag"],
+                "orgcode": row["orgcode"],
+                "status": row["lockflag"],
+                "invid": row["invid"],
+                "instrumentno": row["instrumentno"],
+                "bankname": row["bankname"],
+                "branchname": row["branchname"],
+                "drcrid": row['drcrid'],
+                "icflag": icflag[0] if icflag else None,
+            }
+            if row["instrumentdate"]:
+                voucher["instrumentdate"] = datetime.strftime(
+                    row["instrumentdate"], "%d-%m-%Y"
+                )
+            else:
+                voucher["instrumentdate"] = ""
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": voucher,
+                "userrole": urole["userrole"],
+            }
 
     @view_config(request_method="GET", request_param="searchby=type", renderer="json")
     def searchByType(self):
