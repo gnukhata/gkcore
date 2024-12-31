@@ -610,39 +610,39 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                result = con.execute(
-                    select(
-                        [
-                            vouchers.c.vouchernumber,
-                            vouchers.c.narration,
-                            vouchers.c.voucherdate,
-                        ]
-                    ).where(
-                        vouchers.c.vouchercode
-                        == (
-                            select([func.max(vouchers.c.vouchercode)]).where(
-                                and_(
-                                    vouchers.c.delflag == False,
-                                    vouchers.c.vouchertype
-                                    == self.request.params["type"],
-                                    vouchers.c.orgcode == authDetails["orgcode"],
-                                )
+
+        with eng.connect() as con:
+            result = con.execute(
+                select(
+                    [
+                        vouchers.c.vouchernumber,
+                        vouchers.c.narration,
+                        vouchers.c.voucherdate,
+                    ]
+                ).where(
+                    vouchers.c.vouchercode
+                    == (
+                        select([func.max(vouchers.c.vouchercode)]).where(
+                            and_(
+                                vouchers.c.delflag == False,
+                                vouchers.c.vouchertype
+                                == self.request.params["type"],
+                                vouchers.c.orgcode == authDetails["orgcode"],
                             )
                         )
                     )
                 )
-                row = result.fetchone()
-                if row == None:
-                    voucher = {"vdate": "", "vno": "", "narration": ""}
-                else:
-                    voucher = {
-                        "vdate": datetime.strftime((row["voucherdate"]), "%d-%m-%Y"),
-                        "vno": row["vouchernumber"],
-                        "narration": row["narration"],
-                    }
-                return {"gkstatus": enumdict["Success"], "gkresult": voucher}
+            )
+            row = result.fetchone()
+            if row == None:
+                voucher = {"vdate": "", "vno": "", "narration": ""}
+            else:
+                voucher = {
+                    "vdate": datetime.strftime((row["voucherdate"]), "%d-%m-%Y"),
+                    "vno": row["vouchernumber"],
+                    "narration": row["narration"],
+                }
+            return {"gkstatus": enumdict["Success"], "gkresult": voucher}
 
     @view_config(request_method="GET", renderer="json")
     def getVoucher(self):
