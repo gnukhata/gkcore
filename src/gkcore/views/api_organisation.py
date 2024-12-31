@@ -1258,20 +1258,16 @@ class api_organisation(object):
 
         if userAuthDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        # proceed to check if org name is unique
+        # proceed to check if org name exists
         with eng.connect() as con:
-            orgname = self.request.matchdict["orgname"]
-            orgncount = con.execute(
-                select(
-                    [func.count(gkdb.organisation.c.orgcode).label("orgcode")]
-                ).where(
-                    and_(
-                        gkdb.organisation.c.orgname == orgname,
-                    )
+            org_exists = con.execute(
+                gkdb.organisation
+                .select()
+                .where(
+                    gkdb.organisation.c.orgname == self.request.matchdict["orgname"],
                 )
-            )
-            org = orgncount.fetchone()
-            if org["orgcode"] != 0:
+            ).rowcount
+            if bool(org_exists):
                 return {"gkstatus": enumdict["DuplicateEntry"]}
             else:
                 return {"gkstatus": enumdict["Success"]}
