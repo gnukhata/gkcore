@@ -916,12 +916,12 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                voucherRecords = getInvVouchers(
-                    con, authDetails["orgcode"], self.request.params["drcrid"], include_drcrid=True, include_invid=False
-                )
-                return {"gkstatus": enumdict["Success"], "gkresult": voucherRecords}
+
+        with eng.connect() as con:
+            voucherRecords = getInvVouchers(
+                con, authDetails["orgcode"], self.request.params["drcrid"], include_drcrid=True, include_invid=False
+            )
+            return {"gkstatus": enumdict["Success"], "gkresult": voucherRecords}
 
     @view_config(request_method="GET", request_param="searchby=vnum", renderer="json")
     def searchByVoucherNumber(self):
