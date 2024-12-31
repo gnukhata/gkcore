@@ -1396,23 +1396,23 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                urole = ur["gkresult"]
-                voucherCode = self.request.params["vouchercode"]
-                vouchersData = con.execute(
-                    select([vouchers.c.attachment, vouchers.c.lockflag]).where(
-                        and_(vouchers.c.vouchercode == voucherCode)
-                    )
+
+        with eng.connect() as con:
+            ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            urole = ur["gkresult"]
+            voucherCode = self.request.params["vouchercode"]
+            vouchersData = con.execute(
+                select([vouchers.c.attachment, vouchers.c.lockflag]).where(
+                    and_(vouchers.c.vouchercode == voucherCode)
                 )
-                attachment = vouchersData.fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": attachment["attachment"],
-                    "lockflag": attachment["lockflag"],
-                    "userrole": urole["userrole"],
-                }
+            )
+            attachment = vouchersData.fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": attachment["attachment"],
+                "lockflag": attachment["lockflag"],
+                "userrole": urole["userrole"],
+            }
 
     @view_config(request_method="PUT", renderer="json")
     def updateVoucher(self):
