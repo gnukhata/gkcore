@@ -1423,86 +1423,86 @@ class api_transaction(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.begin() as con:
-                dataset = self.request.json_body
-                if "lockflag" in dataset:
-                    if dataset["lockflag"] == "True":
-                        dataset["lockflag"] = True
-                    else:
-                        dataset["lockflag"] = False
-                    result = con.execute(
-                        vouchers.update()
-                        .where(vouchers.c.vouchercode == dataset["vouchercode"])
-                        .values(dataset)
-                    )
+
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            if "lockflag" in dataset:
+                if dataset["lockflag"] == "True":
+                    dataset["lockflag"] = True
                 else:
-                    result = con.execute(
-                        vouchers.update()
-                        .where(vouchers.c.lockflag == "f")
-                        .where(vouchers.c.vouchercode == dataset["vouchercode"])
-                        .values(dataset)
-                    )
-                if "drs" in dataset:
-                    drs = dataset["drs"]
-                    crs = dataset["crs"]
-                    delrecoresult = con.execute(
-                        "delete from bankrecon where vouchercode = %d"
-                        % (int(dataset["vouchercode"]))
-                    )
-                    for drkeys in list(drs.keys()):
-                        accgrpdata = con.execute(
-                            select(
-                                [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
-                            ).where(
-                                groupsubgroups.c.groupcode
-                                == (
-                                    select([accounts.c.groupcode]).where(
-                                        accounts.c.accountcode == int(drkeys)
-                                    )
+                    dataset["lockflag"] = False
+                result = con.execute(
+                    vouchers.update()
+                    .where(vouchers.c.vouchercode == dataset["vouchercode"])
+                    .values(dataset)
+                )
+            else:
+                result = con.execute(
+                    vouchers.update()
+                    .where(vouchers.c.lockflag == "f")
+                    .where(vouchers.c.vouchercode == dataset["vouchercode"])
+                    .values(dataset)
+                )
+            if "drs" in dataset:
+                drs = dataset["drs"]
+                crs = dataset["crs"]
+                delrecoresult = con.execute(
+                    "delete from bankrecon where vouchercode = %d"
+                    % (int(dataset["vouchercode"]))
+                )
+                for drkeys in list(drs.keys()):
+                    accgrpdata = con.execute(
+                        select(
+                            [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
+                        ).where(
+                            groupsubgroups.c.groupcode
+                            == (
+                                select([accounts.c.groupcode]).where(
+                                    accounts.c.accountcode == int(drkeys)
                                 )
                             )
                         )
-                        accgrp = accgrpdata.fetchone()
-                        if accgrp["groupname"] == "Bank":
-                            vouchercode = dataset["vouchercode"]
-                            recoresult = con.execute(
-                                bankrecon.insert(),
-                                [
-                                    {
-                                        "vouchercode": int(vouchercode),
-                                        "accountcode": drkeys,
-                                        "orgcode": authDetails["orgcode"],
-                                    }
-                                ],
-                            )
-                    for crkeys in list(crs.keys()):
-                        accgrpdata = con.execute(
-                            select(
-                                [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
-                            ).where(
-                                groupsubgroups.c.groupcode
-                                == (
-                                    select([accounts.c.groupcode]).where(
-                                        accounts.c.accountcode == int(crkeys)
-                                    )
+                    )
+                    accgrp = accgrpdata.fetchone()
+                    if accgrp["groupname"] == "Bank":
+                        vouchercode = dataset["vouchercode"]
+                        recoresult = con.execute(
+                            bankrecon.insert(),
+                            [
+                                {
+                                    "vouchercode": int(vouchercode),
+                                    "accountcode": drkeys,
+                                    "orgcode": authDetails["orgcode"],
+                                }
+                            ],
+                        )
+                for crkeys in list(crs.keys()):
+                    accgrpdata = con.execute(
+                        select(
+                            [groupsubgroups.c.groupname, groupsubgroups.c.groupcode]
+                        ).where(
+                            groupsubgroups.c.groupcode
+                            == (
+                                select([accounts.c.groupcode]).where(
+                                    accounts.c.accountcode == int(crkeys)
                                 )
                             )
                         )
-                        accgrp = accgrpdata.fetchone()
-                        if accgrp["groupname"] == "Bank":
-                            vouchercode = dataset["vouchercode"]
-                            recoresult = con.execute(
-                                bankrecon.insert(),
-                                [
-                                    {
-                                        "vouchercode": int(vouchercode),
-                                        "accountcode": crkeys,
-                                        "orgcode": authDetails["orgcode"],
-                                    }
-                                ],
-                            )
-                return {"gkstatus": enumdict["Success"]}
+                    )
+                    accgrp = accgrpdata.fetchone()
+                    if accgrp["groupname"] == "Bank":
+                        vouchercode = dataset["vouchercode"]
+                        recoresult = con.execute(
+                            bankrecon.insert(),
+                            [
+                                {
+                                    "vouchercode": int(vouchercode),
+                                    "accountcode": crkeys,
+                                    "orgcode": authDetails["orgcode"],
+                                }
+                            ],
+                        )
+            return {"gkstatus": enumdict["Success"]}
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteVoucher(self):
