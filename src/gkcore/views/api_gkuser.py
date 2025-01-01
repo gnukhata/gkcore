@@ -1,3 +1,4 @@
+import os
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select, delete
@@ -73,6 +74,10 @@ class api_gkuser(object):
         self.request = Request
         self.request = request
         self.con = Connection
+        self.is_user_registration_disabled = os.environ.get(
+            "GKCORE_DISABLE_USER_REGISTRATION",
+            "false",
+        ).lower()
 
     """
     - Check if the user is logged in using their old username and password
@@ -89,6 +94,15 @@ class api_gkuser(object):
         purpose
         adds a user in the users table.
         """
+
+        if self.is_user_registration_disabled == "true":
+            try:
+                token = self.request.headers["gktoken"]
+            except KeyError:
+                return {"gkstatus": gkcore.enumdict["ActionDisallowed"]}
+            authDetails = authCheck(token)
+            if not authDetails["auth"]:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
 
         validated_data = UserSchema.model_validate(self.request.json_body)
         dataset = validated_data.model_dump(exclude_none=True)
