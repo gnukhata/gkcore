@@ -79,6 +79,27 @@ class api_gkuser(object):
             "false",
         ).lower()
 
+    @view_config(
+        request_method="GET",
+        renderer="json",
+        route_name="gkuser_registration",
+    )
+    def checkRegistrationStatus(self):
+        """
+        This function checks if registrations are disabled by server admin
+        """
+        if self.is_user_registration_disabled == "true":
+            try:
+                token = self.request.headers["gktoken"]
+            except KeyError:
+                return {"gkstatus": gkcore.enumdict["ActionDisallowed"]}
+            authDetails = authCheck(token)
+            if not authDetails["auth"]:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+            return {"gkstatus": enumdict["Success"]}
+
+        return {"gkstatus": enumdict["Success"]}
+
     """
     - Check if the user is logged in using their old username and password
     - If yes,

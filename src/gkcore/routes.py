@@ -25,6 +25,7 @@ def includeme(config):
     config.add_route("gkuser_pwd_validate", "/gkuser/pwd/validate")
     config.add_route("gkuser_users_of_role", "/gkuser/all/role/{userrole}")
     config.add_route("gkuser_uname", "/gkuser/check/{username}")
+    config.add_route("gkuser_registration", "/gkuser/check_registration")
 
     # invite
     config.add_route("invite", "/invite")
