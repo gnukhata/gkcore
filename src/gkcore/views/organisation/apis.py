@@ -53,7 +53,10 @@ con = Connection
 class api_organisation(object):
     def __init__(self, request):
         self.request = request
-        self.disableRegistration = os.getenv("GKCORE_DISABLE_REGISTRATION")
+        self.is_org_registration_disabled = os.environ.get(
+            "GKCORE_DISABLE_ORG_REGISTRATION",
+            "false",
+        )
 
     @view_config(
         request_method="GET",
@@ -130,7 +133,7 @@ class api_organisation(object):
         """
         This function checks if registrations are disabled by server admin & return corresponding gkstatus code
         """
-        if self.disableRegistration == "yes":
+        if self.is_org_registration_disabled == "true":
             return {"gkstatus": enumdict["ActionDisallowed"]}
         else:
             return {"gkstatus": enumdict["Success"]}
@@ -145,7 +148,7 @@ class api_organisation(object):
         This function checks if registrations are disabled by server admin & return corresponding gkstatus code
         else create org based on parameters provided
         """
-        if self.disableRegistration == "yes":
+        if self.is_org_registration_disabled == "true":
             return {"gkstatus": enumdict["ActionDisallowed"]}
 
         try:
