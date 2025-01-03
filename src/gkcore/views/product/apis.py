@@ -39,7 +39,7 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.sql.expression import text
 from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_godown import getusergodowns
+from gkcore.views.godown.services import getusergodowns
 from datetime import datetime
 
 

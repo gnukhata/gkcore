@@ -31,6 +31,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
+from gkcore.views.godown.services import getusergodowns
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -42,59 +43,6 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
-
-
-def getusergodowns(userid):
-    try:
-        con = Connection
-        con = eng.connect()
-        uid = userid
-        godowns = con.execute(
-            select([godown]).where(
-                and_(
-                    godown.c.goid.in_(
-                        select([usergodown.c.goid]).where(usergodown.c.userid == uid)
-                    )
-                )
-            )
-        )
-        usergo = []
-        srno = 1
-        for row in godowns:
-            godownstock = con.execute(
-                select([func.count(stock.c.goid).label("godownstockstatus")]).where(
-                    stock.c.goid == row["goid"]
-                )
-            )
-
-            godownstockcount = godownstock.fetchone()
-            godownstatus = godownstockcount["godownstockstatus"]
-
-            if godownstatus > 0:
-                status = "Active"
-            else:
-                status = "Inactive"
-
-            usergo.append(
-                {
-                    "godownstatus": status,
-                    "srno": srno,
-                    "goid": row["goid"],
-                    "goname": row["goname"],
-                    "goaddr": row["goaddr"],
-                    "gocontact": row["gocontact"],
-                    "state": row["state"],
-                    "contactname": row["contactname"],
-                    "designation": row["designation"],
-                }
-            )
-
-            srno = srno + 1
-        return {"gkstatus": gkcore.enumdict["Success"], "gkresult": usergo}
-    except:
-        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
 
 
 @view_defaults(route_name="godown")

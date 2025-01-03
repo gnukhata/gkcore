@@ -28,6 +28,7 @@ Contributors:
 
 
 from gkcore.views.transfernote.schemas import ApproveTransferNote, TransfernoteDetails
+from gkcore.views.godown.services import getusergodowns
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
 from gkcore import eng, enumdict
@@ -48,7 +49,6 @@ from sqlalchemy import and_, exc, or_
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.views.api_godown import getusergodowns
 
 
 @view_defaults(route_name="transfernote")

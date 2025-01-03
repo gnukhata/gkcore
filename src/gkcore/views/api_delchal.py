@@ -54,7 +54,7 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_godown import getusergodowns
+from gkcore.views.godown.services import getusergodowns
 from gkcore.views.api_invoice import getStateCode
 
 
