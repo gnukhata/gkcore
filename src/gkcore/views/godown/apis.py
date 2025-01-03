@@ -138,7 +138,7 @@ class api_godown(object):
             gorole = userrole["gkresult"]
             if gorole["userrole"] == 3:
                 try:
-                    result = getusergodowns(authDetails["userid"])
+                    result = getusergodowns(con, authDetails["userid"])
                     return {
                         "gkstatus": gkcore.enumdict["Success"],
                         "gkresult": result["gkresult"],
@@ -248,7 +248,7 @@ class api_godown(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         with eng.connect() as con:
-            result = getusergodowns(self.request.params["userid"])
+            result = getusergodowns(con, self.request.params["userid"])
             return {
                 "gkstatus": gkcore.enumdict["Success"],
                 "gkresult": result["gkresult"],

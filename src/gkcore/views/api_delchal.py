@@ -121,7 +121,7 @@ class api_delchal(object):
             If user is not a godown keeper this list will be empty.
             If user has godowns assigned, only those delivery notes for moving goods into those godowns are appended into the above list.
             """
-            usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+            usergodowmns = getusergodowns(con, authDetails["userid"])["gkresult"]
             godowns = []
             for godown in usergodowmns:
                 godowns.append(godown["goid"])
