@@ -65,44 +65,37 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                dataset["orgcode"] = authDetails["orgcode"]
-                # Check for duplicate entry before insertion
-                result_duplicate_check = self.con.execute(
-                    select([godown.c.goid]).where(
-                        and_(
-                            godown.c.orgcode == authDetails["orgcode"],
-                            func.lower(godown.c.goname) == func.lower(dataset["goname"]),
-                        )
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            dataset["orgcode"] = authDetails["orgcode"]
+            # Check for duplicate entry before insertion
+            result_duplicate_check = con.execute(
+                select([godown.c.goid]).where(
+                    and_(
+                        godown.c.orgcode == authDetails["orgcode"],
+                        func.lower(godown.c.goname) == func.lower(dataset["goname"]),
                     )
                 )
-                
-                if result_duplicate_check.rowcount > 0:
-                    # Duplicate entry found, handle accordingly
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
+            )
 
-                result = self.con.execute(godown.insert(), [dataset])
-                godownCreated = self.con.execute(
-                    select([godown.c.goid]).where(
-                        and_(
-                            godown.c.orgcode == authDetails["orgcode"],
-                            godown.c.goname == dataset["goname"],
-                        )
-                    )
-                ).fetchone()
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult": godownCreated["goid"],
-                }
-            except exc.IntegrityError:
+            if result_duplicate_check.rowcount > 0:
+                # Duplicate entry found, handle accordingly
                 return {"gkstatus": enumdict["DuplicateEntry"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
+            result = con.execute(godown.insert(), [dataset])
+            godownCreated = con.execute(
+                select([godown.c.goid]).where(
+                    and_(
+                        godown.c.orgcode == authDetails["orgcode"],
+                        godown.c.goname == dataset["goname"],
+                    )
+                )
+            ).fetchone()
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": godownCreated["goid"],
+            }
+
 
     """
     below function is use to update existing godown .
@@ -117,20 +110,15 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                result = self.con.execute(
-                    godown.update()
-                    .where(godown.c.goid == dataset["goid"])
-                    .values(dataset)
-                )
-                return {"gkstatus": enumdict["Success"]}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+        with eng.begin as con:
+            dataset = self.request.json_body
+            result = con.execute(
+                godown.update()
+                .where(godown.c.goid == dataset["goid"])
+                .values(dataset)
+            )
+            return {"gkstatus": enumdict["Success"]}
+
 
     """
     below function is use to get all godowns.
@@ -145,61 +133,56 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
-                gorole = userrole["gkresult"]
-                if gorole["userrole"] == 3:
-                    try:
-                        result = getusergodowns(authDetails["userid"])
-                        return {
-                            "gkstatus": gkcore.enumdict["Success"],
-                            "gkresult": result["gkresult"],
-                        }
-                    except:
-                        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-                if gorole["userrole"] != 3:
-                    result = self.con.execute(
-                        select([godown])
-                        .where(godown.c.orgcode == authDetails["orgcode"])
-                        .order_by(godown.c.goname)
+        with eng.connect() as con:
+            userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
+            gorole = userrole["gkresult"]
+            if gorole["userrole"] == 3:
+                try:
+                    result = getusergodowns(authDetails["userid"])
+                    return {
+                        "gkstatus": gkcore.enumdict["Success"],
+                        "gkresult": result["gkresult"],
+                    }
+                except:
+                    return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+            if gorole["userrole"] != 3:
+                result = con.execute(
+                    select([godown])
+                    .where(godown.c.orgcode == authDetails["orgcode"])
+                    .order_by(godown.c.goname)
+                )
+                godowns = []
+                srno = 1
+                for row in result:
+                    godownstock = con.execute(
+                        select(
+                            [func.count(stock.c.goid).label("godownstockstatus")]
+                        ).where(stock.c.goid == row["goid"])
                     )
-                    godowns = []
-                    srno = 1
-                    for row in result:
-                        godownstock = self.con.execute(
-                            select(
-                                [func.count(stock.c.goid).label("godownstockstatus")]
-                            ).where(stock.c.goid == row["goid"])
-                        )
-                        godownstockcount = godownstock.fetchone()
-                        godownstatus = godownstockcount["godownstockstatus"]
-                        if godownstatus > 0:
-                            status = "Active"
-                        else:
-                            status = "Inactive"
+                    godownstockcount = godownstock.fetchone()
+                    godownstatus = godownstockcount["godownstockstatus"]
+                    if godownstatus > 0:
+                        status = "Active"
+                    else:
+                        status = "Inactive"
 
-                        godowns.append(
-                            {
-                                "godownstatus": status,
-                                "srno": srno,
-                                "goid": row["goid"],
-                                "goname": row["goname"],
-                                "goaddr": row["goaddr"],
-                                "gocontact": row["gocontact"],
-                                "state": row["state"],
-                                "contactname": row["contactname"],
-                                "designation": row["designation"],
-                            }
-                        )
+                    godowns.append(
+                        {
+                            "godownstatus": status,
+                            "srno": srno,
+                            "goid": row["goid"],
+                            "goname": row["goname"],
+                            "goaddr": row["goaddr"],
+                            "gocontact": row["gocontact"],
+                            "state": row["state"],
+                            "contactname": row["contactname"],
+                            "designation": row["designation"],
+                        }
+                    )
 
-                        srno = srno + 1
-                    return {"gkstatus": gkcore.enumdict["Success"], "gkresult": godowns}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                    srno = srno + 1
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": godowns}
+
 
     @view_config(request_method="GET", request_param="type=togodown", renderer="json")
     def togodowns(self):
@@ -210,26 +193,21 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
-                    select([godown]).where(godown.c.orgcode == authDetails["orgcode"])
+        with eng.connect() as con:
+            result = con.execute(
+                select([godown]).where(godown.c.orgcode == authDetails["orgcode"])
+            )
+            godowns = []
+            for row in result:
+                godowns.append(
+                    {
+                        "goid": row["goid"],
+                        "goname": row["goname"],
+                        "goaddr": row["goaddr"],
+                    }
                 )
-                godowns = []
-                for row in result:
-                    godowns.append(
-                        {
-                            "goid": row["goid"],
-                            "goname": row["goname"],
-                            "goaddr": row["goaddr"],
-                        }
-                    )
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": godowns}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": godowns}
+
 
     @view_config(request_param="qty=single", request_method="GET", renderer="json")
     def getGodown(self):
@@ -240,28 +218,22 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
-                    select([godown]).where(godown.c.goid == self.request.params["goid"])
-                )
-                row = result.fetchone()
-                godownDetails = {
-                    "goid": row["goid"],
-                    "goname": row["goname"],
-                    "goaddr": row["goaddr"],
-                    "gocontact": row["gocontact"],
-                    "state": row["state"],
-                    "contactname": row["contactname"],
-                    "designation": row["designation"],
-                }
-                self.con.close()
-                return {"gkstatus": enumdict["Success"], "gkresult": godownDetails}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+        with eng.connect() as con:
+            result = con.execute(
+                select([godown]).where(godown.c.goid == self.request.params["goid"])
+            )
+            row = result.fetchone()
+            godownDetails = {
+                "goid": row["goid"],
+                "goname": row["goname"],
+                "goaddr": row["goaddr"],
+                "gocontact": row["gocontact"],
+                "state": row["state"],
+                "contactname": row["contactname"],
+                "designation": row["designation"],
+            }
+            return {"gkstatus": enumdict["Success"], "gkresult": godownDetails}
+
 
     """This function returns all godowns and branch associated with godown in charge.
        It takes user id as a input"""
@@ -275,18 +247,13 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = getusergodowns(self.request.params["userid"])
-                return {
-                    "gkstatus": gkcore.enumdict["Success"],
-                    "gkresult": result["gkresult"],
-                }
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+        with eng.connect() as con:
+            result = getusergodowns(self.request.params["userid"])
+            return {
+                "gkstatus": gkcore.enumdict["Success"],
+                "gkresult": result["gkresult"],
+            }
+
 
     """
     The below function "getNumberOfProductInGodown" will be called when user select a
@@ -302,22 +269,16 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                goid = self.request.params["goid"]
-                result = self.con.execute(
-                    select([func.count(goprod.c.productcode)]).where(
-                        goprod.c.goid == goid
-                    )
+        with eng.connect() as con:
+            goid = self.request.params["goid"]
+            result = con.execute(
+                select([func.count(goprod.c.productcode)]).where(
+                    goprod.c.goid == goid
                 )
-                row = result.fetchone()
-                return {"gkstatus": enumdict["Success"], "gkresult": row[0]}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            )
+            row = result.fetchone()
+            return {"gkstatus": enumdict["Success"], "gkresult": row[0]}
+
 
     """
     The below function "getGodownProd" will be called when user select Dispatched From for Transfer Note, it will return Godown Name with Address containing products.
@@ -332,37 +293,30 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
-                    select([goprod.c.goid])
-                    .distinct()
-                    .where(goprod.c.orgcode == authDetails["orgcode"])
+        with eng.connect() as con:
+            result = con.execute(
+                select([goprod.c.goid])
+                .distinct()
+                .where(goprod.c.orgcode == authDetails["orgcode"])
+            )
+            grow = result.fetchall()
+            godownList = []
+            for g in grow:
+                godownData = con.execute(
+                    select([godown.c.goid, godown.c.goname, godown.c.goaddr]).where(
+                        godown.c.goid == g["goid"]
+                    )
                 )
-                grow = result.fetchall()
-                godownList = []
-                for g in grow:
-                    godownData = self.con.execute(
-                        select([godown.c.goid, godown.c.goname, godown.c.goaddr]).where(
-                            godown.c.goid == g["goid"]
-                        )
-                    )
-                    row = godownData.fetchone()
-                    godownList.append(
-                        {
-                            "goid": row["goid"],
-                            "goname": row["goname"],
-                            "goaddr": row["goaddr"],
-                        }
-                    )
-                self.con.close()
-                return {"gkstatus": enumdict["Success"], "gkresult": godownList}
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                row = godownData.fetchone()
+                godownList.append(
+                    {
+                        "goid": row["goid"],
+                        "goname": row["goname"],
+                        "goaddr": row["goaddr"],
+                    }
+                )
+            return {"gkstatus": enumdict["Success"], "gkresult": godownList}
+
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteGodown(self):
@@ -373,29 +327,22 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                dataset = self.request.json_body
-                is_godown_used = self.con.execute(
-                    select([stock.c.goid]).where(stock.c.goid == dataset["goid"])
-                ).rowcount
-                if is_godown_used:
-                    return {
-                        "gkstatus": enumdict["ActionDisallowed"],
-                        "error": "Cannot delete godowns already referred in transactions",
-                    }
+        with eng.begin() as con:
+            dataset = self.request.json_body
+            is_godown_used = con.execute(
+                select([stock.c.goid]).where(stock.c.goid == dataset["goid"])
+            ).rowcount
+            if is_godown_used:
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                    "error": "Cannot delete godowns already referred in transactions",
+                }
 
-                result = self.con.execute(
-                    godown.delete().where(godown.c.goid == dataset["goid"])
-                )
-                return {"gkstatus": enumdict["Success"]}
-            except exc.IntegrityError:
-                return {"gkstatus": enumdict["ActionDisallowed"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+            con.execute(
+                godown.delete().where(godown.c.goid == dataset["goid"])
+            )
+            return {"gkstatus": enumdict["Success"]}
+
 
     @view_config(
         request_method="GET", request_param="type=lastfivegodown", renderer="json"
@@ -408,28 +355,22 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                result = self.con.execute(
-                    select([godown])
-                    .where(godown.c.orgcode == authDetails["orgcode"])
-                    .order_by(godown.c.goid.desc())
-                    .limit(5)
+        with eng.connect() as con:
+            result = con.execute(
+                select([godown])
+                .where(godown.c.orgcode == authDetails["orgcode"])
+                .order_by(godown.c.goid.desc())
+                .limit(5)
+            )
+            godowns = []
+            srno = 1
+            for row in result:
+                godowns.append(
+                    {
+                        "goname": row["goname"],
+                        "goaddr": row["goaddr"],
+                        "state": row["state"],
+                    }
                 )
-                godowns = []
-                srno = 1
-                for row in result:
-                    godowns.append(
-                        {
-                            "goname": row["goname"],
-                            "goaddr": row["goaddr"],
-                            "state": row["state"],
-                        }
-                    )
-                    srno = srno + 1
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": godowns}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+                srno = srno + 1
+            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": godowns}
