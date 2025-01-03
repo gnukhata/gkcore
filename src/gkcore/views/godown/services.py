@@ -1,6 +1,6 @@
 from gkcore import eng, enumdict
 from sqlalchemy import select, and_, func
-from gkcore.models.gkdb import godown, usergodown, stock
+from gkcore.models.gkdb import godown, usergodown, stock, state
 
 def getusergodowns(con, userid):
     uid = userid
@@ -47,3 +47,30 @@ def getusergodowns(con, userid):
         srno = srno + 1
     return {"gkstatus": enumdict["Success"], "gkresult": usergo}
 
+
+def state_exists(name):
+    with eng.connect() as con:
+        return bool(
+            con.execute(
+                state.select().where(state.c.statename == name)
+            ).rowcount
+        )
+
+def check_duplicate_godown_name(godown_name, orgcode, current_goid=None):
+    """Check for entries with same godown name. Requires `godown_name` and `orgcode`.
+    `current_goid` is required to exclude the current item from the filter while
+    item is being updated.
+    """
+    with eng.connect() as con:
+        statement = select([godown.c.goid]).where(
+            and_(
+                godown.c.goname == godown_name,
+                godown.c.orgcode == orgcode,
+            )
+        )
+        if current_goid:
+            statement = statement.where(
+                godown.c.goid != current_goid,
+            )
+        if con.execute(statement).rowcount:
+            raise ValueError("Godown name is already used.")

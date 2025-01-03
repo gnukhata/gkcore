@@ -31,6 +31,7 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import godown, usergodown, stock, goprod
+from gkcore.views.godown.schemas import GodownDetails, GodownDetailsUpdate
 from gkcore.views.godown.services import getusergodowns
 from sqlalchemy.sql import select
 import json
@@ -66,7 +67,10 @@ class api_godown(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         with eng.begin() as con:
-            dataset = self.request.json_body
+            validated_data = GodownDetails.model_validate(
+                self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+            )
+            dataset = validated_data.model_dump(exclude_none=True)
             dataset["orgcode"] = authDetails["orgcode"]
             # Check for duplicate entry before insertion
             result_duplicate_check = con.execute(
@@ -110,9 +114,12 @@ class api_godown(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        with eng.begin as con:
-            dataset = self.request.json_body
-            result = con.execute(
+        validated_data = GodownDetailsUpdate.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump(exclude_none=True)
+        with eng.begin() as con:
+            con.execute(
                 godown.update()
                 .where(godown.c.goid == dataset["goid"])
                 .values(dataset)
