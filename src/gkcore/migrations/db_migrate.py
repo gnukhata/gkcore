@@ -2069,6 +2069,14 @@ def migrate():
                 con.execute(
                     "alter table unitofmeasurement add foreign key (orgcode) references organisation(orgcode)"
                 )
+            if does_unique_constraint_exist(
+                    eng,
+                    "unitofmeasurement",
+                    "unitofmeasurement_unitname_key"
+            ):
+                con.execute(
+                    "alter table unitofmeasurement drop constraint unitofmeasurement_unitname_key"
+                )
             if not does_unique_constraint_exist(
                     eng,
                     "unitofmeasurement",
