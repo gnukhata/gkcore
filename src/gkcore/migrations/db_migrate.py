@@ -20,12 +20,14 @@ Contributors:
 # from pyramid.view import view_defaults, view_config
 from requests import request
 from gkcore import eng
+from gkcore.data.uoms import UQC_LIST
 from pyramid.request import Request
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 from sqlalchemy import func, desc, MetaData, inspect
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
+from sqlalchemy.exc import IntegrityError
 import jwt
 import gkcore
 import json
@@ -143,73 +145,24 @@ def migrate():
                 "alter table unitofmeasurement add sysunit integer default 0"
             )
 
-            """ Following dictionary of uom, first try to insert single uqc if it fail means uqc is exists in table then updated its description and sysunit"""
-            dictofuqc = {
-                "BAG": "BAGS",
-                "BAL": "BALE",
-                "BDL": "BUNDLES",
-                "BKL": "BUCKLES",
-                "BOU": "BILLIONS OF UNITS",
-                "BOX": "BOX",
-                "BTL": "BOTTLES",
-                "BUN": "BUNCHES",
-                "CAN": "CANS",
-                "CBM": "CUBIC METER",
-                "CCM": "CUBIC CENTIMETER",
-                "CMS": "CENTIMETER",
-                "CRT": "Carat",
-                "CTN": "CARTONS",
-                "DOZ": "DOZEN",
-                "DRM": "DRUM",
-                "GGK": "GREAT GROSS",
-                "GMS": "GRAMS",
-                "GRS": "GROSS",
-                "GYD": "GROSS YARDS",
-                "KGS": "KILOGRAMS",
-                "KLR": "KILOLITER",
-                "KME": "KILOMETERS",
-                "MLT": "MILLILITER",
-                "MTR": "METER",
-                "MTS": "METRIC TON",
-                "NOS": "NUMBER",
-                "OTH": "OTHERS",
-                "PAC": "PACKS",
-                "PCS": "PIECES",
-                "PRS": "PAIRS",
-                "QTL": "QUINTAL",
-                "ROL": "ROLLS",
-                "SET": "SETS",
-                "SQF": "SQUARE FEET",
-                "SQM": "SQUARE METER",
-                "SQY": "SQUARE YARDS",
-                "TBS": "TABLETS",
-                "TGM": "TEN GRAMS",
-                "THD": "THOUSANDS",
-                "TON": "GREAT BRITAIN TON",
-                "TUB": "TUBES",
-                "UGS": "US GALLONS",
-                "UNT": "UNITS",
-                "YDS": "YARDS",
-            }
-            for unit, desc in list(dictofuqc.items()):
-                try:
-                    con.execute(
-                        gkdb.unitofmeasurement.insert(),
-                        [
-                            {
-                                "unitname": unit,
-                                "description": desc,
-                                "conversionrate": 0.00,
-                                "sysunit": 1,
-                            }
-                        ],
-                    )
-                except:
-                    con.execute(
-                        "update unitofmeasurement set sysunit=1, description='%s' where unitname='%s'"
-                        % (desc, unit)
-                    )
-                dictofuqc.pop(unit, 0)
+        # Add default UQCs
+        for unit, desc in list(UQC_LIST.items()):
+            try:
+                con.execute(
+                    gkdb.unitofmeasurement.insert(),
+                    [
+                        {
+                            "unitname": unit,
+                            "description": desc,
+                            "conversionrate": 0.00,
+                            "sysunit": 1,
+                        }
+                    ],
+                )
+            except IntegrityError:
+                pass
+
+            UQC_LIST.pop(unit, 0)
 
         if not columnExists("unitofmeasurement", "uqc"):
             con.execute("alter table unitofmeasurement add uqc integer")
@@ -2102,5 +2055,35 @@ def migrate():
                         "alter table state add primary key (statecode)"
                     )
 
+
+        with eng.begin() as con:
+
+            con.execute(
+                "alter table unitofmeasurement add column if not exists orgcode int references organisation"
+            )
+            if not does_foreignkey_exist(
+                    eng,
+                    "unitofmeasurement",
+                    "unitofmeasurement_orgcode_fkey"
+            ):
+                con.execute(
+                    "alter table unitofmeasurement add foreign key (orgcode) references organisation(orgcode)"
+                )
+            if does_unique_constraint_exist(
+                    eng,
+                    "unitofmeasurement",
+                    "unitofmeasurement_unitname_key"
+            ):
+                con.execute(
+                    "alter table unitofmeasurement drop constraint unitofmeasurement_unitname_key"
+                )
+            if not does_unique_constraint_exist(
+                    eng,
+                    "unitofmeasurement",
+                    "unitofmeasurement_orgcode_unitname_key"
+            ):
+                con.execute(
+                    "alter table unitofmeasurement add constraint unitofmeasurement_orgcode_unitname_key unique (orgcode, unitname)"
+                )
 
         print("Database migration successful")
