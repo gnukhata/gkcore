@@ -169,6 +169,11 @@ class api_godownregister(object):
                     gopeningStock = gosRow["goopeningstock"]
                 else:
                     gopeningStock = 0.00
+                # inoutflag query param is used to filter entries by sales and purchases
+                # 9 -> purchase, 15 -> sales, 0 -> all.
+                inoutflag = [dataset.get("inoutflag")]
+                if not dataset.get("inoutflag"):
+                    inoutflag = [9, 15]
                 stockRecords = con.execute(
                     select([stock])
                     .where(
@@ -176,6 +181,7 @@ class api_godownregister(object):
                             stock.c.productcode == productCode,
                             stock.c.goid == godownCode,
                             stock.c.orgcode == orgcode,
+                            stock.c.inout.in_(inoutflag),
                             or_(
                                 stock.c.dcinvtnflag != 40,
                                 stock.c.dcinvtnflag != 30,
