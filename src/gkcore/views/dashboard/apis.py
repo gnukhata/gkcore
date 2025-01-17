@@ -33,10 +33,12 @@ from gkcore.views.dashboard.services import (
     datewiseinvoice,
     delchalcountbymonth,
     get_invoice_monthly_balance,
+    group_accounts_by_name_balance,
     stockonhanddashboard,
     topfivecustsup,
-    topfiveprodsev
+    topfiveprodsev,
 )
+from sqlalchemy import and_, or_
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql.expression import text
@@ -45,6 +47,8 @@ from pyramid.view import view_defaults, view_config
 from gkcore.models.meta import gk_api
 from gkcore.models.gkdb import (
     organisation,
+    groupsubgroups,
+    accounts,
 )
 from datetime import datetime
 from gkcore.views.api_gkuser import getUserRole
@@ -463,3 +467,80 @@ class api_dashboard(object):
                 else:
                     data1.append(data2[0])
         return {"gkstatus": result["gkstatus"], "gkresult": data1}
+
+
+    @view_config(
+        request_method="GET", renderer="json_extended", request_param="type=account_balances"
+    )
+    def account_balances(self):
+        """This will give response with two lists, one of account name and
+        another with account balances. The account and balance that has
+        matching indexs will be related.
+
+        This API will require "group" parameter, which will accept "cash_accounts",
+        "assets" and "liabilities".
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        auth_details = authCheck(token)
+        if auth_details["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        with eng.connect() as con:
+            account_group = self.request.params["group"]
+            groupname_accounts_map = {
+                "cash_accounts": ["Cash", "Bank"],
+                "assets": ["Current Assets"],
+                "liabilities": ["Current Liabilities"],
+            }
+            group_names = groupname_accounts_map[account_group]
+
+            group_list = con.execute(
+                select(
+                    [groupsubgroups.c.groupcode, groupsubgroups.c.groupname]
+                )
+                .where(groupsubgroups.c.groupname.in_(group_names))
+            )
+            group_codes = [group["groupcode"] for group in group_list.fetchall()]
+
+            group_subgroup_list = con.execute(
+                select(
+                    [groupsubgroups.c.groupcode, groupsubgroups.c.groupname]
+                )
+                .where(
+                    or_(
+                        groupsubgroups.c.subgroupof.in_(group_codes),
+                        groupsubgroups.c.groupcode.in_(group_codes),
+                    )
+                )
+            )
+
+            group_subgroup_codes = [
+                group["groupcode"] for group in group_subgroup_list.fetchall()
+            ]
+
+            cash_accounts = con.execute(
+                select(
+                    [
+                        accounts.c.accountcode,
+                        accounts.c.accountname,
+                        accounts.c.openingbal,
+                        accounts.c.orgcode,
+                    ]
+                )
+                .where(
+                    and_(
+                        accounts.c.orgcode == auth_details["orgcode"],
+                        accounts.c.groupcode.in_(group_subgroup_codes),
+                    )
+                )
+            )
+            names, balances = group_accounts_by_name_balance(con, cash_accounts)
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult": {
+                    "account_names": names,
+                    "account_balances": balances,
+                }
+            }
