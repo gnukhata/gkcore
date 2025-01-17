@@ -80,6 +80,23 @@ class api_dashboard(object):
                     "purchase": get_invoice_monthly_balance(9, orgcode),
                     "sale": get_invoice_monthly_balance(15, orgcode),
                 }
+                org_details = con.execute(
+                    select(
+                        [
+                            organisation.c.orgaddr,
+                            organisation.c.orgpincode,
+                        ]
+                    )
+                    .where(
+                        organisation.c.orgcode == orgcode
+                    )
+                ).fetchone()
+                org_contact_list = []
+                if org_details["orgaddr"]:
+                    org_contact_list.append(org_details["orgaddr"])
+                if org_details["orgpincode"]:
+                    org_contact_list.append(org_details["orgpincode"])
+                org_contact = ", ".join(org_contact_list)
                 # for admin & manager
                 if userrole == -1 or userrole == 0:
                     amountwiise_purchaseinv = amountwiseinvoice(9, orgcode)
@@ -111,6 +128,7 @@ class api_dashboard(object):
                             "mostboughtprodsev": mostbought_prodsev["prodinfolist"],
                             "stockonhanddata": stockonhanddata,
                             "balancedata": balancedata["balancedata"],
+                            "contact": org_contact,
                         },
                     }
                 if userrole == 1:
@@ -147,6 +165,7 @@ class api_dashboard(object):
                             "mostboughtprodsev": mostbought_prodsev["prodinfolist"],
                             "stockonhanddata": stockonhanddata,
                             "balancedata": balancedata["balancedata"],
+                            "contact": org_contact,
                         },
                     }
                 if userrole == 2:
@@ -159,6 +178,7 @@ class api_dashboard(object):
                             "monthly_balance": monthly_balance,
                             "delchalout": delchal_out["totalamount"],
                             "delchalin": delchal_in["totalamount"],
+                            "contact": org_contact,
                         },
                     }
                 if userrole == 3:
@@ -170,6 +190,7 @@ class api_dashboard(object):
                         "gkresult": {
                             "delchalout": delchal_out["totalamount"],
                             "delchalin": delchal_in["totalamount"],
+                            "contact": org_contact,
                         },
                     }
 
