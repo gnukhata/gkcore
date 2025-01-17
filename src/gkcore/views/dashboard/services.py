@@ -1,8 +1,11 @@
+from typing import Tuple
 from gkcore import eng, enumdict
 from gkcore.utils import generate_month_start_end_dates
 from gkcore.views.helpers.invoice import get_business_item_invoice_data, get_invoice_details
 from sqlalchemy.sql import select
 from sqlalchemy import and_, desc
+from sqlalchemy.engine import ResultProxy
+from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql.expression import text
 from gkcore.models.gkdb import (
     invoice,
@@ -14,7 +17,7 @@ from gkcore.models.gkdb import (
 from datetime import datetime, date
 from monthdelta import monthdelta
 import calendar
-from gkcore.views.reports.helpers.balance import calculateBalance
+from gkcore.views.reports.helpers.balance import calculateBalance, get_current_balance
 
 
 # This function is use to show amount wise top five unpaid invoice list at dashboard
@@ -447,3 +450,25 @@ def cashbankbalance(orgcode):
         return {"gkstatus": enumdict["ConnectionFailed"]}
     finally:
         con.close()
+
+def group_accounts_by_name_balance(
+        connection: Connection, accounts: ResultProxy
+) -> Tuple:
+    """Function to group accounts into two lists, one with account names and one with
+    Account balances.
+    """
+    names, balances = [], []
+    accounts_list = [
+        {
+            **dict(account),
+            "current_balance": get_current_balance(connection, account)
+        } for account in accounts
+    ]
+    sorted_accounts_list = sorted(
+        accounts_list, key=lambda account: account["current_balance"], reverse=True
+    )
+    for account in sorted_accounts_list[:5]:
+        if account["current_balance"]:
+            names.append(account["accountname"])
+            balances.append(account["current_balance"])
+    return names, balances
