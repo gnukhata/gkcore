@@ -136,6 +136,7 @@ class api_account(object):
                 if "accountname" in newdataset:
                     dataset = newdataset
                 dataset["orgcode"] = authDetails["orgcode"]
+                dataset["openingbal"] = dataset.get("openingbal", 0.00) or 0.00
                 if "defaultflag" in dataset:
                     dflag = dataset["defaultflag"]
                     grpnames = con.execute(
