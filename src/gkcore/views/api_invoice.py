@@ -2703,6 +2703,45 @@ class api_invoice(object):
             if "pricedetails" in invdataset:
                 pricedetails = invdataset["pricedetails"]
                 invdataset.pop("pricedetails", pricedetails)
+
+            godown_id = dtset["stock"]["goid"]
+            godown_details = con.execute(
+                select([godown])
+                .where(godown.c.goid==godown_id)
+            ).fetchone()
+            contact_id = invdataset["custid"]
+            contact_details = con.execute(
+                select([customerandsupplier])
+                .where(customerandsupplier.c.custid == contact_id)
+            ).fetchone()
+            product_id_values = list(items.keys())
+            products = con.execute(
+                select([product.c.productcode, product.c.productdesc, product.c.gscode])
+                .where(product.c.productcode.in_(product_id_values))
+            ).fetchall()
+            product_details = {
+                id: {
+                    "productcode": id,
+                    "productdesc": name,
+                    "gscode": hsn,
+                }
+                for id, name, hsn in products
+            }
+            transaction_details = {
+                "godown": dict(godown_details),
+                "contact": dict(contact_details),
+                "products": product_details,
+            }
+            immutable_data_id = con.execute(
+                select([invoice.c.immutable_data_id])
+                .where(invoice.c.invid == invid)
+            ).scalar()
+            con.execute(
+                transaction.update()
+                .where(transaction.c.transaction_id == immutable_data_id)
+                .values(transaction_details=transaction_details)
+            )
+
             # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
             stockresult = con.execute(
                 select([stock.c.stockid]).where(and_(
