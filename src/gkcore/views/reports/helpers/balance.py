@@ -1764,6 +1764,19 @@ def get_account_vouchers_data(
     return vouchers_consolidated["voucher_total"]
 
 
+def get_current_balance(connection, account):
+    """Function to calculate current balance of the account.
+
+    This accepts database connection and account ResultProxy object as arguments.
+    """
+    account_balance = (
+        account["openingbal"] or 0 + get_account_vouchers_data(
+            connection, account["orgcode"], account["accountcode"]
+        )
+    )
+    return account_balance
+
+
 def get_groupwise_accounts_balances(
         connection, orgcode, group_name, from_date=None, to_date=None
 ):

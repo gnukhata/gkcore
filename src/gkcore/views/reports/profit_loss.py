@@ -134,6 +134,7 @@ class profit_loss(object):
                 "pnl_right": indirect_income,
             }
             if gross_pnl < 0:
+                summary = {"gross": {"label": loss_str, "value": gross_pnl}}
                 trading_right.append(
                     {
                         "name": f"Gross {loss_str} c/d to {profit_str} & {loss_str}",
@@ -153,6 +154,7 @@ class profit_loss(object):
                 )
                 totals["pnl_left"] -= gross_pnl
             else:
+                summary = {"gross": {"label": profit_str, "value": gross_pnl}}
                 trading_left.append(
                     {
                         "name": f"Gross {profit_str} c/d to {profit_str} & {loss_str}",
@@ -173,6 +175,7 @@ class profit_loss(object):
                 totals["pnl_right"] += gross_pnl
 
             if net_pnl < 0:
+                summary.update({"net": {"label": loss_str, "value": net_pnl}})
                 pnl_right.append(
                     {
                         "name": f"Net {loss_str} c/f",
@@ -183,6 +186,7 @@ class profit_loss(object):
                 )
                 totals["pnl_right"] -= net_pnl
             else:
+                summary.update({"net": {"label": profit_str, "value": net_pnl}})
                 pnl_left.append(
                     {
                         "name": f"Net {profit_str} c/f",
@@ -209,6 +213,7 @@ class profit_loss(object):
                 "trading_right": trading_right,
                 "pnl_left": pnl_left,
                 "pnl_right": pnl_right,
+                "summary": summary,
             }
 
         return {"gkstatus": enumdict["Success"], "gkresult": response}
