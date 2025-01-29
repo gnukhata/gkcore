@@ -83,6 +83,8 @@ class api_delchal(object):
                 delchal.c.dcno,
                 delchal.c.custid,
                 delchal.c.dcdate,
+                delchal.c.delchaltotal,
+                delchal.c.roundoffflag,
                 delchal.c.noofpackages,
                 delchal.c.modeoftransport,
                 delchal.c.attachmentcount,
@@ -164,10 +166,14 @@ class api_delchal(object):
                         ).where(customerandsupplier.c.custid == row["custid"])
                     )
                     custrow = custdata.fetchone()
+                    delchaltotal = float(row["delchaltotal"])
+                    if row["roundoffflag"]:
+                        delchaltotal = round(delchaltotal)
                     delchals.append(
                         {
                             "dcid": row["dcid"],
                             "dcno": row["dcno"],
+                            "total": delchaltotal,
                             "custname": custrow["custname"],
                             "csflag": custrow["csflag"],
                             "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
