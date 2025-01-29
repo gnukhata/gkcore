@@ -273,8 +273,10 @@ class api_cashflow(object):
 
                 return {
                     "gkstatus": enumdict["Success"],
-                    "rcgkresult": receiptcf,
-                    "pygkresult": paymentcf,
+                    "gkresult":{
+                        "rcgkresult": receiptcf,
+                        "pygkresult": paymentcf,
+                    }
                 }
             except:
                 self.con.close()
