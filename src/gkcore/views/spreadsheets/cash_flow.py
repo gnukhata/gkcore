@@ -67,8 +67,8 @@ def print_cash_flow(self):
             header,
             self.request,
         )
-        receipt = result["rcgkresult"]
-        payment = result["pygkresult"]
+        receipt = result["gkresult"]["rcgkresult"]
+        payment = result["gkresult"]["pygkresult"]
         fystart = datetime.strptime(
             self.request.params["fystart"], "%Y-%m-%d"
         ).strftime("%d-%m-%Y")
