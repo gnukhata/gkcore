@@ -29,7 +29,7 @@ def view_register_xlsx_generator(request):
         headers=header,
     )
 
-    response = json.loads(request.invoke_subrequest(req).text)
+    response = json.loads(request.invoke_subrequest(req).text)["gkresult"]
 
     vouchers = response["vouchers"]
 

@@ -91,7 +91,7 @@ class api_stock_register(object):
             )
         return {
             "gkstatus": enumdict["Success"],
-            **vouchers_consolidated,
+            "gkresult": vouchers_consolidated,
         }
 
 
