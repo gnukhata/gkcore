@@ -190,6 +190,8 @@ class api_transfernote(object):
                                 "transfernotedate": datetime.strftime(
                                     row["transfernotedate"], "%d-%m-%Y"
                                 ),
+                                "fromgodown": row["fromgodown"],
+                                "togodown": row["togodown"],
                             }
                         )
             else:
@@ -201,6 +203,8 @@ class api_transfernote(object):
                             "transfernotedate": datetime.strftime(
                                 row["transfernotedate"], "%d-%m-%Y"
                             ),
+                            "fromgodown": row["fromgodown"],
+                            "togodown": row["togodown"],
                         }
                     )
             return {"gkstatus": enumdict["Success"], "gkresult": tn}
@@ -222,6 +226,8 @@ class api_transfernote(object):
                         transfernote.c.transfernotedate,
                         transfernote.c.transfernoteid,
                         transfernote.c.transfernoteno,
+                        transfernote.c.fromgodown,
+                        transfernote.c.togodown,
                     ]
                 )
                 .where(transfernote.c.orgcode == authDetails["orgcode"])
@@ -229,6 +235,14 @@ class api_transfernote(object):
             )
             tn = []
             for row in result:
+                fromgodown = con.execute(
+                    select([godown.c.goname])
+                    .where(godown.c.goid == row["fromgodown"])
+                ).scalar()
+                togodown = con.execute(
+                    select([godown.c.goname])
+                    .where(godown.c.goid == row["togodown"])
+                ).scalar()
                 tn.append(
                     {
                         "transfernoteno": row["transfernoteno"],
@@ -236,6 +250,8 @@ class api_transfernote(object):
                         "transfernotedate": datetime.strftime(
                             row["transfernotedate"], "%d-%m-%Y"
                         ),
+                        "fromgodown": fromgodown,
+                        "togodown": togodown,
                     }
                 )
             return {"gkstatus": enumdict["Success"], "gkresult": tn}
