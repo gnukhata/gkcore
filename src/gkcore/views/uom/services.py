@@ -22,6 +22,6 @@ def unit_name_exists(unitname: str, orgcode: int, uomid: int|None = None) -> boo
             )
         )
         if uomid:
-            statement = statement.where(unitofmeasurement.c.uomid == uomid)
+            statement = statement.where(unitofmeasurement.c.uomid != uomid)
 
         return con.execute(select([statement])).scalar()
