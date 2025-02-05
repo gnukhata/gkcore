@@ -26,6 +26,7 @@ Contributors:
 """
 
 
+from sqlalchemy import desc
 from requests import request
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
@@ -181,7 +182,7 @@ class api_unitOfMeasurement(object):
                         gkdb.unitofmeasurement.c.orgcode == None,
                     )
                 )
-                .order_by(gkdb.unitofmeasurement.c.unitname)
+                .order_by(desc(gkdb.unitofmeasurement.c.uomid))
             )
             unitofmeasurements = []
             for row in result:
