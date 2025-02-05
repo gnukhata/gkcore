@@ -154,7 +154,7 @@ class api_unitOfMeasurement(object):
             return {"gkstatus": enumdict["Success"]}
 
 
-    @view_config(request_method="GET", renderer="json")
+    @view_config(request_method="GET", renderer="json_extended")
     def getAllunitofmeasurements(self):
         try:
             token = self.request.headers["gktoken"]
@@ -174,6 +174,7 @@ class api_unitOfMeasurement(object):
                         gkdb.unitofmeasurement.c.subunitof,
                         gkdb.unitofmeasurement.c.sysunit,
                         gkdb.unitofmeasurement.c.uqc,
+                        gkdb.unitofmeasurement.c.conversionrate,
                     ]
                 )
                 .where(
@@ -194,6 +195,7 @@ class api_unitOfMeasurement(object):
                         "subunitof": row["subunitof"],
                         "sysunit": row["sysunit"],
                         "uqc": row["uqc"],
+                        "conversionrate": row["conversionrate"],
                     }
                 )
             return {
