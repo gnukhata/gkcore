@@ -39,7 +39,7 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.sql.expression import text
 from gkcore.models.gkdb import goprod, product, accounts
 from gkcore.views.api_gkuser import getUserRole
-from gkcore.views.api_godown import getusergodowns
+from gkcore.views.godown.services import getusergodowns
 from datetime import datetime
 
 
@@ -82,7 +82,7 @@ class api_product(object):
             ).where(gkdb.product.c.orgcode == authDetails["orgcode"])
 
             if gorole["userrole"] == 3:
-                uId = getusergodowns(authDetails["userid"])
+                uId = getusergodowns(con, authDetails["userid"])
                 gid = []
                 for record1 in uId["gkresult"]:
                     gid.append(record1["goid"])
@@ -569,7 +569,7 @@ class api_product(object):
                         godowns = godownswithstock.fetchone()
                         numberofgodowns = godowns["numberofgodowns"]
                     else:
-                        usergodowmns = getusergodowns(authDetails["userid"])
+                        usergodowmns = getusergodowns(con, authDetails["userid"])
                         numberofgodowns = 0
                         for usergodown in usergodowmns["gkresult"]:
                             godownswithstock = con.execute(
@@ -687,7 +687,7 @@ class api_product(object):
                         }
                         godowns.append(goDownDetails)
                 else:
-                    usergodowns = getusergodowns(authDetails["userid"])
+                    usergodowns = getusergodowns(con, authDetails["userid"])
                     godowns = []
                     for usergodown in usergodowns["gkresult"]:
                         thisgodown = con.execute(
@@ -816,7 +816,7 @@ class api_product(object):
                 userrole = getUserRole(authDetails["userid"], authDetails["orgcode"])
                 gorole = userrole["gkresult"]
                 if gorole["userrole"] == 3:
-                    uId = getusergodowns(authDetails["userid"])
+                    uId = getusergodowns(con, authDetails["userid"])
                     gid = []
                     for record1 in uId["gkresult"]:
                         gid.append(record1["goid"])

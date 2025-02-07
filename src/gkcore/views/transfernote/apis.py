@@ -28,6 +28,7 @@ Contributors:
 
 
 from gkcore.views.transfernote.schemas import ApproveTransferNote, TransfernoteDetails
+from gkcore.views.godown.services import getusergodowns
 from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck
 from gkcore import eng, enumdict
@@ -48,7 +49,6 @@ from sqlalchemy import and_, exc, or_
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.views.api_godown import getusergodowns
 
 
 @view_defaults(route_name="transfernote")
@@ -171,7 +171,7 @@ class api_transfernote(object):
             A list of all godowns assigned to a user is retreived from API for godowns using the method usergodowmns.
             If user is not a godown keeper this list will be empty.
             """
-            usergodowmns = getusergodowns(authDetails["userid"])["gkresult"]
+            usergodowmns = getusergodowns(con, authDetails["userid"])["gkresult"]
             """
             If user has godowns assigned only those unreceived transfernotes for moving goods into those godowns are returned.
             Otherwise all transfernotes that have not been received are returned.

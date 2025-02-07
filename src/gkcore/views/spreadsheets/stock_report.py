@@ -48,7 +48,6 @@ from pyramid.response import Response
 from datetime import datetime
 
 # from gkcore.views.api_user import getUserRole
-# from gkcore.views.api_godown import getusergodowns
 # import requests
 import json
 
