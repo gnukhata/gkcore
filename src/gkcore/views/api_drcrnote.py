@@ -505,6 +505,11 @@ class api_drcr(object):
         if authDetails["auth"] == False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         with eng.connect() as con:
+            # inoutflag query param is used to filter entries by sales and purchases
+            # 9 -> purchase, 15 -> sales, 0 -> all.
+            inoutflag = [self.request.params.get("inoutflag")]
+            if self.request.params.get("inoutflag") == "0":
+                inoutflag = ["9", "15"]
             result = con.execute(
                 select(
                     [
@@ -524,11 +529,14 @@ class api_drcr(object):
             for row in result:
                 # invoice,cust
                 inv = con.execute(
-                    select([invoice.c.custid]).where(
-                        invoice.c.invid == row["invid"]
-                    )
+                    select([invoice.c.custid]).where(and_(
+                        invoice.c.invid == row["invid"],
+                        invoice.c.inoutflag.in_(inoutflag)
+                    ))
                 )
                 invdata = inv.fetchone()
+                if not invdata:
+                    continue
                 custsupp = con.execute(
                     select(
                         [
