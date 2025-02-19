@@ -1,6 +1,12 @@
 import os
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.views.user.schemas import (
+    UserSchema,
+    UserNameSchema,
+    ResetPassword,
+    ChangePassword,
+)
 from sqlalchemy.sql import select, delete
 from sqlalchemy import and_
 from sqlalchemy.sql.expression import text
@@ -12,32 +18,7 @@ from gkcore.models.meta import (
 )
 from gkcore.utils import authCheck, gk_log, userAuthCheck, generateAuthToken, getUserRole
 from datetime import datetime
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-# the user payload schema
-class UserSchema(BaseModel):
-    username: str = Field(min_length=5, max_length=50, pattern=r"^[a-zA-Z][a-zA-Z\d]*(?:_?[a-zA-Z\d]+)?$")
-    userpassword: str = Field(min_length=3)
-    userquestion: str = Field(min_length=3, max_length=2000)
-    useranswer: str = Field(min_length=1, max_length=2000)
-    # godown in-charge will have orgs
-    orgs: dict = Field(default=dict())
-
-# the username payload schema
-class UserNameSchema(BaseModel):
-    username: str = Field(min_length=5, max_length=50, pattern=r"^[a-zA-Z][a-zA-Z\d]*(?:_?[a-zA-Z\d]+)?$")
-
-# uses password reset model
-class ResetPassword(BaseModel):
-    userid: int
-    userpassword: str = Field(min_length=3)
-
-class ChangePassword(BaseModel):
-    userid: int
-    userpassword: str = Field(min_length=3)
-    useranswer: str = Field(min_length=1, max_length=2000)
+from pydantic import ValidationError
 
 
 @view_defaults(route_name="gkuser")
