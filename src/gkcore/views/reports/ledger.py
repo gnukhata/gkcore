@@ -1,5 +1,5 @@
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.models.gkdb import (
     accounts,
     projects,
@@ -8,7 +8,6 @@ from gkcore.models.gkdb import (
 from sqlalchemy.sql import select
 from sqlalchemy.sql.expression import text
 from pyramid.view import view_defaults, view_config
-from gkcore.views.api_gkuser import getUserRole
 from datetime import datetime, date
 import calendar
 from monthdelta import monthdelta

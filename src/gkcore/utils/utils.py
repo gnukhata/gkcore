@@ -2,10 +2,12 @@ import logging
 import jwt
 import traceback
 from gkcore.models import eng, gkdb
+from sqlalchemy.sql.expression import text
 from sqlalchemy.sql import select, and_
 from Crypto.PublicKey import RSA
 from datetime import date, timedelta
 import calendar
+from gkcore import enumdict
 
 
 def gk_log(name: str = __name__):
@@ -122,3 +124,21 @@ def generate_month_start_end_dates(start_date, end_date):
             )
         start_date = next_month_start_date
     return month_start_end_dates
+
+def getUserRole(userid, orgcode):
+    with eng.connect() as con:
+        roleQuery = con.execute(
+            text("select u.orgs#>'{:orgcode,userrole}' as userrole from gkusers u where userid = :userid;"),
+            orgcode = orgcode,
+            userid = userid,
+        )
+
+        if roleQuery.rowcount == 1:
+            row = roleQuery.fetchone()
+            User = {"userrole": row["userrole"]}
+            return {"gkstatus": enumdict["Success"], "gkresult": User}
+        else:
+            return {
+                "gkstatus": enumdict["ConnectionFailed"],
+                "gkmessage": "User may not be part of the Org. Contact admin",
+            }

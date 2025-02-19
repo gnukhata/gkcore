@@ -30,7 +30,7 @@ Contributors:
 
 from gkcore.views.product.schemas import ProductGodown, ProductGodownUpdate
 from pyramid.view import view_defaults, view_config
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.views.api_tax import calTax
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
@@ -38,7 +38,6 @@ from sqlalchemy.sql import select
 from sqlalchemy import and_, func, or_
 from sqlalchemy.sql.expression import text
 from gkcore.models.gkdb import goprod, product, accounts
-from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.godown.services import getusergodowns
 from datetime import datetime
 

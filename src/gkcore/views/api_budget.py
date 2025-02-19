@@ -41,10 +41,9 @@ from pyramid.view import view_defaults, view_config
 from datetime import datetime, date, timedelta
 import jwt
 import gkcore
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.models import gkdb
 from gkcore.views.reports.helpers.balance import calculateBalance
-from gkcore.views.api_gkuser import getUserRole
 
 
 @view_defaults(route_name="budget")

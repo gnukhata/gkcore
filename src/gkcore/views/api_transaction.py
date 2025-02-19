@@ -29,7 +29,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.models.gkdb import (
     vouchers,
     accounts,
@@ -41,7 +41,6 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy import func
-from gkcore.views.api_gkuser import getUserRole
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, between
 from pyramid.request import Request

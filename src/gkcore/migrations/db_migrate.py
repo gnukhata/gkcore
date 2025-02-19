@@ -32,6 +32,8 @@ from gkcore.models.meta import (
     uniqueConstraintExists,
 )
 from gkcore.models.gkdb import state
+from datetime import datetime, timedelta
+import traceback
 
 
 def migrate():

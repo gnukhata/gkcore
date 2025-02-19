@@ -10,7 +10,7 @@ import gkcore
 from gkcore.models.meta import (
     tableExists,
 )
-from gkcore.utils import authCheck, gk_log, userAuthCheck, generateAuthToken
+from gkcore.utils import authCheck, gk_log, userAuthCheck, generateAuthToken, getUserRole
 from datetime import datetime
 
 from pydantic import BaseModel, Field, ValidationError
@@ -38,24 +38,6 @@ class ChangePassword(BaseModel):
     userid: int
     userpassword: str = Field(min_length=3)
     useranswer: str = Field(min_length=1, max_length=2000)
-
-def getUserRole(userid, orgcode):
-    with eng.connect() as con:
-        roleQuery = con.execute(
-            text("select u.orgs#>'{:orgcode,userrole}' as userrole from gkusers u where userid = :userid;"),
-            orgcode = orgcode,
-            userid = userid,
-        )
-
-        if roleQuery.rowcount == 1:
-            row = roleQuery.fetchone()
-            User = {"userrole": row["userrole"]}
-            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": User}
-        else:
-            return {
-                "gkstatus": gkcore.enumdict["ConnectionFailed"],
-                "gkmessage": "User may not be part of the Org. Contact admin",
-            }
 
 
 @view_defaults(route_name="gkuser")

@@ -1,10 +1,9 @@
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.models.gkdb import voucherbin
 from sqlalchemy.sql import select
 from sqlalchemy import desc
 from pyramid.view import view_config, view_defaults
-from gkcore.views.api_gkuser import getUserRole
 from datetime import datetime
 from sqlalchemy.engine.base import Connection
 

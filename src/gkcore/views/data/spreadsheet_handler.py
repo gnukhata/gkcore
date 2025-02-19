@@ -14,8 +14,7 @@ from gkcore.models.gkdb import groupsubgroups
 from gkcore.models.gkdb import accounts as accounts_table
 from gkcore.models.gkdb import organisation as org_table
 from gkcore.models.meta import gk_api
-from gkcore.views.api_gkuser import authCheck, getUserRole
-
+from gkcore.utils import authCheck, getUserRole
 
 def export_ledger(self):
     """Export organisation's accounts & vouchers
