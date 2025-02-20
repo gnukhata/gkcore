@@ -457,20 +457,12 @@ class api_gkuser(object):
             # we now validate the incoming payload
             # and throw an error when it fails
             # Validate against the regex pattern
-            user_to_validate = {
-                "username": self.request.matchdict["username"]
-            }
-            try:
-                user_data = UserNameSchema(**user_to_validate)
-            except ValidationError as e:
-                return {
-                    "gkstatus": enumdict["ConnectionFailed"],
-                    "gkresult": e.errors(),
-                }
+            validated_data = UserNameSchema.model_validate(self.request.json_body)
+            dataset = validated_data.model_dump(exclude_none=True)
 
             # there is only one possibility for a catch which is failed connection to db.
             # Retrieve data of that user whose userid is sent
-            uname = self.request.matchdict["username"]
+            uname = dataset["username"]
             query = con.execute(
                 select(
                     [
