@@ -794,6 +794,8 @@ def getDefaultAcc(con, queryParams, orgcode):
                                 "vouchercode": int(vouchercode["vcode"]),
                                 "accountcode": drkeys,
                                 "orgcode": orgcode,
+                                "amount": float(drs[drkeys]),
+                                "entry_type": "Dr",
                             }
                         ],
                     )
@@ -823,6 +825,8 @@ def getDefaultAcc(con, queryParams, orgcode):
                                 "vouchercode": int(vouchercode["vcode"]),
                                 "accountcode": crkeys,
                                 "orgcode": orgcode,
+                                "amount": float(crs[crkeys]),
+                                "entry_type": "Cr",
                             }
                         ],
                     )
