@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 """
 This file is part of GNUKhata:A modular,robust and Free Accounting System.
 
@@ -17,36 +16,21 @@ Contributors:
 
 """
 
-# from pyramid.view import view_defaults, view_config
-from requests import request
 from gkcore import eng
 from gkcore.data.uoms import UQC_LIST
-from pyramid.request import Request
-from gkcore.models import gkdb
-from sqlalchemy.sql import select
-from sqlalchemy import func, desc, MetaData, inspect
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from gkcore.views.api_invoice import rename_inv_no_uniquely
 from sqlalchemy.exc import IntegrityError
-import jwt
-import gkcore
-import json
-from Crypto.PublicKey import RSA
+from gkcore.models import gkdb
+from sqlalchemy import and_, func, select
 from gkcore.models.meta import (
     does_foreignkey_exist,
     does_unique_constraint_exist,
     does_primarykey_exist,
-    inventoryMigration,
-    addFields,
     columnExists,
-    columnTypeMatches,
     tableExists,
     getOnDelete,
     uniqueConstraintExists,
 )
-from datetime import datetime, timedelta
-import traceback
-from gkcore.views.api_gkuser import getUserRole
 
 
 def migrate():
@@ -139,6 +123,17 @@ def migrate():
                                             )
                                 except:
                                     pass
+    with eng.connect() as con:
+        if not does_foreignkey_exist(
+                eng,
+                "unitofmeasurement",
+                "unitofmeasurement_subunitof_fkey"
+        ):
+            con.execute(
+                "alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)"
+            )
+
+
         if not columnExists("unitofmeasurement", "description"):
             con.execute("alter table unitofmeasurement add description text")
             con.execute(
@@ -167,6 +162,25 @@ def migrate():
         if not columnExists("unitofmeasurement", "uqc"):
             con.execute("alter table unitofmeasurement add uqc integer")
 
+    with eng.connect() as con:
+        if not does_foreignkey_exist(
+                eng,
+                "groupsubgroups",
+                "groupsubgroups_subgroupof_fkey"
+        ):
+            con.execute(
+                "alter table groupsubgroups add  foreign key (subgroupof) references groupsubgroups(groupcode)"
+            )
+        if not does_foreignkey_exist(
+                eng,
+                "categorysubcategories",
+                "categorysubcategories_subcategoryof_fkey"
+        ):
+            con.execute(
+                "alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)"
+            )
+
+    with eng.connect() as con:
         # discount flag is use to check whether discount is in percent or in amount.
         # 1 = discount in amount, 16 = discount in percent.
         if not columnExists("delchal", "discflag"):
@@ -187,6 +201,7 @@ def migrate():
                 "alter table product add column amountdiscount numeric(13,2) default 0.00"
             )
 
+    with eng.connect() as con:
         # Round off is use to detect that total amount of invoice is rounded off or not.
         # If the field is not exist then it will create field.
         if not columnExists("purchaseorder", "roundoffflag"):
@@ -199,6 +214,8 @@ def migrate():
             con.execute(
                 "alter table drcr add column roundoffflag integer default 0"
             )
+
+    with eng.connect() as con:
         # remove goid if present
         if columnExists("purchaseorder", "goid"):
             con.execute("alter table purchaseorder drop column goid")
@@ -209,6 +226,7 @@ def migrate():
             con.execute("alter table invoice drop column goid")
             con.execute("alter table delchal drop column goid")
 
+    with eng.connect() as con:
         # Round off is use to detect that total amount of invoice is rounded off or not.
         # If the field is not exist then it will create field.
         # Round Off Paid and Round Off Received account will genrate which is use while creating voucher for that invoice.
@@ -270,6 +288,7 @@ def migrate():
                         ],
                     )
 
+    with eng.connect() as con:
         # In Below query we are adding field pincode to invoice table
         if not columnExists("invoice", "pincode"):
             con.execute("alter table invoice add pincode text")
@@ -279,6 +298,11 @@ def migrate():
         # In Below query we are adding field pincode to customersupplier table
         if not columnExists("customerandsupplier", "pincode"):
             con.execute("alter table customerandsupplier add pincode text")
+        # In Below query we are adding field pincode to purchaseorder table
+        if not columnExists("purchaseorder", "pincode"):
+            con.execute("alter table purchaseorder add pincode text")
+
+    with eng.connect() as con:
         if not columnExists("customerandsupplier", "gst_reg_type"):
             con.execute(
                 "alter table customerandsupplier add gst_reg_type integer"
@@ -287,29 +311,18 @@ def migrate():
             con.execute(
                 "alter table customerandsupplier add gst_party_type integer"
             )
+
+    with eng.connect() as con:
         # Below query is to remove gbflag if it exists.
         if columnExists("godown", "gbflag"):
             con.execute("alter table godown drop column gbflag")
-        # In Below query we are adding field pincode to purchaseorder table
-        if not columnExists("purchaseorder", "pincode"):
-            con.execute("alter table purchaseorder add pincode text")
 
-        # In Below query we are adding field invnarration to invoicebin table
-        if not columnExists("invoicebin", "invnarration"):
-            con.execute("alter table invoicebin add invnarration text")
-
+    with eng.connect() as con:
         # In Below query we are adding field dcinfo to invoicebin table
         if not columnExists("invoicebin", "dcinfo"):
             con.execute("alter table invoicebin add dcinfo jsonb")
 
-        # In Below query we are adding field dcnarration to delchal table
-        if not columnExists("delchal", "dcnarration"):
-            con.execute("alter table delchal add dcnarration text")
-
-        # In Below query we are adding field dcnarration to delchalbin table
-        if not columnExists("delchalbin", "dcnarration"):
-            con.execute("alter table delchalbin add dcnarration text")
-
+    with eng.connect() as con:
         if not columnExists("organisation", "avnoflag"):
             con.execute(
                 "alter table organisation add avnoflag integer default 0"
@@ -330,6 +343,8 @@ def migrate():
             con.execute(
                 "alter table organisation add maflag integer default 0"
             )
+
+    with eng.connect() as con:
         if not columnExists("accounts", "sysaccount"):
             con.execute(
                 "alter table accounts add sysaccount integer default 0"
@@ -945,8 +960,12 @@ def migrate():
                             )
                 except:
                     continue
+
+    with eng.connect() as con:
         if not columnExists("organisation", "bankdetails"):
             con.execute("alter table organisation add bankdetails json")
+
+    with eng.connect() as con:
         if not columnExists("purchaseorder", "purchaseordertotal"):
             con.execute("drop table purchaseorder cascade")
             con.execute(
@@ -961,13 +980,18 @@ def migrate():
             con.execute(
                 "create index purchaseorder_togodown on purchaseorder using btree(togodown)"
             )
+
+    with eng.connect() as con:
         if not columnExists("invoice", "invoicetotalword"):
             con.execute("alter table invoice add invoicetotalword text")
+
+    with eng.connect() as con:
         if not columnExists("delchal", "taxflag"):
             con.execute(
                 "alter table delchal add taxflag integer, add contents jsonb, add tax jsonb, add cess jsonb, add taxstate text, add sourcestate text, add orgstategstin text, add freeqty jsonb, add discount jsonb, add delchaltotal numeric(13,2), add dateofsupply timestamp, add vehicleno text"
             )
 
+    with eng.connect() as con:
         if not columnExists("delchal", "inoutflag"):
             con.execute("alter table delchal add inoutflag integer")
             # This code will assign inoutflag for delivery chalan where inoutflag is blank.
@@ -994,6 +1018,8 @@ def migrate():
                     "update delchal set inoutflag = %d where dcid=%d"
                     % (int(inoutflag), int(delchalid))
                 )
+
+    with eng.connect() as con:
         if not columnExists("invoice", "inoutflag"):
             con.execute("alter table invoice add inoutflag integer")
             # This code will assign inoutflag for invoice or cashmemo where inoutflag is blank.
@@ -1038,12 +1064,18 @@ def migrate():
                                 "update invoice set inoutflag = 15 where invid=%d"
                                 % int(invid)
                             )
+
+    with eng.connect() as con:
         if not columnExists("invoice", "address"):
             con.execute("alter table invoice add address text")
+
+    with eng.connect() as con:
         if not columnExists("customerandsupplier", "bankdetails"):
             con.execute(
                 "alter table customerandsupplier add bankdetails jsonb"
             )
+
+    with eng.connect() as con:
         if not columnExists("invoice", "paymentmode"):
             con.execute("alter table invoice add paymentmode integer")
             # Code for assinging paymentmode where paymentmode is blank and bank details are present.
@@ -1070,229 +1102,146 @@ def migrate():
                         "update invoice set paymentmode=2 where invid = %d"
                         % int(invoid)
                     )
+
+    with eng.connect() as con:
         if not columnExists("delchal", "consignee"):
             con.execute("alter table delchal add consignee jsonb")
+
+    with eng.connect() as con:
         if not columnExists("invoice", "orgstategstin"):
             con.execute("alter table invoice add orgstategstin text")
         if not columnExists("invoice", "cess"):
             con.execute("alter table invoice add cess jsonb")
+
+    with eng.connect() as con:
         if not tableExists("state"):
             con.execute(
                 "create table state( statecode integer,statename text,primary key (statecode))"
             )
-            con.execute(
-                "insert into state( statecode, statename)values(1, 'Jammu and Kashmir')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(2, 'Himachal Pradesh')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(3, 'Punjab')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(4, 'Chandigarh')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(5, 'Uttranchal')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(6, 'Haryana')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(7, 'Delhi')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(8, 'Rajasthan')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(9, 'Uttar Pradesh')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(10, 'Bihar')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(11, 'Sikkim')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(12, 'Arunachal Pradesh')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(13, 'Nagaland')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(14, 'Manipur')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(15, 'Mizoram')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(16, 'Tripura')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(17, 'Meghalaya')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(18, 'Assam')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(19, 'West Bengal')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(20, 'Jharkhand')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(21, 'Odisha')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(22, 'Chhattisgarh')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(23, 'Madhya Pradesh')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(24, 'Gujarat')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(25, 'Daman and Diu (Old)')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(26, 'Daman and Diu & Dadra and Nagar Haveli (New)')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(27, 'Maharashtra')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(28, 'Andhra Pradesh')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(29, 'Karnataka')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(30, 'Goa')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(31, 'Lakshdweep')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(32, 'Kerala')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(33, 'Tamil Nadu')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(34, 'Pondicherry')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(35, 'Andaman and Nicobar Islands')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(36, 'Telangana')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(37, 'Andhra Pradesh (New)')"
-            )
-            con.execute(
-                "insert into state( statecode, statename)values(38, 'Ladakh')"
-            )
         if not columnExists("state", "abbreviation"):
             con.execute("alter table state add abbreviation text")
-            con.execute("update state set abbreviation='JK' where statecode=1")
-            con.execute("update state set abbreviation='HP' where statecode=2")
-            con.execute("update state set abbreviation='PB' where statecode=3")
-            con.execute("update state set abbreviation='CH' where statecode=4")
-            con.execute("update state set abbreviation='UK' where statecode=5")
-            con.execute("update state set abbreviation='HR' where statecode=6")
-            con.execute("update state set abbreviation='DL' where statecode=7")
-            con.execute("update state set abbreviation='RJ' where statecode=8")
-            con.execute("update state set abbreviation='UP' where statecode=9")
 
+        statescount = con.execute(
+            select([func.count(gkdb.state.c.statecode).label("numberofstates")])
+        )
+        numberofstates = statescount.fetchone()
+        if int(numberofstates["numberofstates"]) == 0:
             con.execute(
-                "update state set abbreviation='BR' where statecode=10"
+                "insert into state( statecode, statename, abbreviation)values(1, 'Jammu and Kashmir', 'JK')"
             )
             con.execute(
-                "update state set abbreviation='SK' where statecode=11"
+                "insert into state( statecode, statename, abbreviation)values(2, 'Himachal Pradesh', 'HP')"
             )
             con.execute(
-                "update state set abbreviation='AR' where statecode=12"
+                "insert into state( statecode, statename, abbreviation)values(3, 'Punjab', 'PB')"
             )
             con.execute(
-                "update state set abbreviation='NL' where statecode=13"
+                "insert into state( statecode, statename, abbreviation)values(4, 'Chandigarh', 'CH')"
             )
             con.execute(
-                "update state set abbreviation='MN' where statecode=14"
+                "insert into state( statecode, statename, abbreviation)values(5, 'Uttarakhand', 'UK')"
             )
             con.execute(
-                "update state set abbreviation='MZ' where statecode=15"
+                "insert into state( statecode, statename, abbreviation)values(6, 'Haryana', 'HR')"
             )
             con.execute(
-                "update state set abbreviation='TR' where statecode=16"
+                "insert into state( statecode, statename, abbreviation)values(7, 'Delhi', 'DL')"
             )
             con.execute(
-                "update state set abbreviation='ML' where statecode=17"
+                "insert into state( statecode, statename, abbreviation)values(8, 'Rajasthan', 'RJ')"
             )
             con.execute(
-                "update state set abbreviation='AS' where statecode=18"
+                "insert into state( statecode, statename, abbreviation)values(9, 'Uttar Pradesh', 'UP')"
             )
             con.execute(
-                "update state set abbreviation='WB' where statecode=19"
+                "insert into state( statecode, statename, abbreviation)values(10, 'Bihar', 'BR')"
             )
             con.execute(
-                "update state set abbreviation='JH' where statecode=20"
+                "insert into state( statecode, statename, abbreviation)values(11, 'Sikkim', 'SK')"
             )
             con.execute(
-                "update state set abbreviation='OR' where statecode=21"
+                "insert into state( statecode, statename, abbreviation)values(12, 'Arunachal Pradesh', 'AR')"
             )
             con.execute(
-                "update state set abbreviation='CG' where statecode=22"
+                "insert into state( statecode, statename, abbreviation)values(13, 'Nagaland', 'NL')"
             )
             con.execute(
-                "update state set abbreviation='MP' where statecode=23"
+                "insert into state( statecode, statename, abbreviation)values(14, 'Manipur', 'MN')"
             )
             con.execute(
-                "update state set abbreviation='GJ' where statecode=24"
+                "insert into state( statecode, statename, abbreviation)values(15, 'Mizoram', 'MZ')"
             )
             con.execute(
-                "update state set abbreviation='DD' where statecode=25"
+                "insert into state( statecode, statename, abbreviation)values(16, 'Tripura', 'TR')"
             )
             con.execute(
-                "update state set abbreviation='DH' where statecode=26"
+                "insert into state( statecode, statename, abbreviation)values(17, 'Meghalaya', 'ML')"
             )
             con.execute(
-                "update state set abbreviation='MH' where statecode=27"
+                "insert into state( statecode, statename, abbreviation)values(18, 'Assam', 'AS')"
             )
             con.execute(
-                "update state set abbreviation='AP' where statecode=28"
+                "insert into state( statecode, statename, abbreviation)values(19, 'West Bcon.l', 'WB')"
             )
             con.execute(
-                "update state set abbreviation='KA' where statecode=29"
+                "insert into state( statecode, statename, abbreviation)values(20, 'Jharkhand', 'JH')"
             )
             con.execute(
-                "update state set abbreviation='GA' where statecode=30"
+                "insert into state( statecode, statename, abbreviation)values(21, 'Odisha', 'OR')"
             )
             con.execute(
-                "update state set abbreviation='LD' where statecode=31"
+                "insert into state( statecode, statename, abbreviation)values(22, 'Chhattisgarh', 'CG')"
             )
             con.execute(
-                "update state set abbreviation='KL' where statecode=32"
+                "insert into state( statecode, statename, abbreviation)values(23, 'Madhya Pradesh', 'MP')"
             )
             con.execute(
-                "update state set abbreviation='TN' where statecode=33"
+                "insert into state( statecode, statename, abbreviation)values(24, 'Gujarat', 'GJ')"
             )
             con.execute(
-                "update state set abbreviation='PY' where statecode=34"
+                "insert into state( statecode, statename, abbreviation)values(25, 'Daman and Diu (Old)', 'DD')"
             )
             con.execute(
-                "update state set abbreviation='AN' where statecode=35"
+                "insert into state( statecode, statename, abbreviation)values(26, 'Daman and Diu & Dadra and Nagar Haveli (New)', 'DH')"
             )
             con.execute(
-                "update state set abbreviation='TS' where statecode=36"
+                "insert into state( statecode, statename, abbreviation)values(27, 'Maharashtra', 'MH')"
             )
             con.execute(
-                "update state set abbreviation='AP' where statecode=37"
+                "insert into state( statecode, statename, abbreviation)values(28, 'Andhra Pradesh', 'AP')"
             )
             con.execute(
-                "update state set abbreviation='LA' where statecode=38"
+                "insert into state( statecode, statename, abbreviation)values(29, 'Karnataka', 'KA')"
             )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(30, 'Goa', 'GA')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(31, 'Lakshdweep', 'LD')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(32, 'Kerala', 'KL')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(33, 'Tamil Nadu', 'TN')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(34, 'Pondicherry', 'PY')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(35, 'Andaman and Nicobar Islands', 'AN')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(36, 'Telangana', 'TS')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(37, 'Andhra Pradesh (New)', 'AP')"
+            )
+            con.execute(
+                "insert into state( statecode, statename, abbreviation)values(38, 'Ladakh', 'LA')"
+            )
+
+    with eng.connect() as con:
         if columnExists("invoice", "reversecharge"):
             countResult = con.execute(
                 select([func.count(gkdb.invoice.c.reversecharge).label("revcount")])
@@ -1302,6 +1251,8 @@ def migrate():
                 con.execute(
                     "update invoice set reversecharge = '0' where reversecharge=null"
                 )
+
+    with eng.connect() as con:
         if columnExists("invoice", "cancelflag"):
             con.execute("alter table invoice drop column cancelflag")
         if columnExists("invoice", "canceldate"):
@@ -1316,25 +1267,37 @@ def migrate():
             )
         if columnExists("invoice", "taxflag"):
             con.execute("update invoice set taxflag = 22 where taxflag=null")
+
+    with eng.connect() as con:
         if columnExists("delchal", "issuerid"):
             con.execute("alter table delchal drop column issuerid")
+
+    with eng.connect() as con:
         if not columnExists("organisation", "gstin"):
             con.execute("alter table organisation add gstin jsonb")
         if not columnExists("customerandsupplier", "gstin"):
             con.execute("alter table customerandsupplier add gstin jsonb")
+
+    with eng.connect() as con:
         if not columnExists("product", "gscode"):
             con.execute("alter table product add gscode text")
         if not columnExists("product", "gsflag"):
             con.execute("alter table product add gsflag integer")
             con.execute("update product set gsflag = 7 where gsflag=null")
+
+    with eng.connect() as con:
         if not columnExists("product", "prodsp"):
             con.execute("alter table product add prodsp numeric(13,2)")
         if not columnExists("product", "prodmrp"):
             con.execute("alter table product add prodmrp numeric(13,2)")
+
+    with eng.connect() as con:
         if not tableExists("billwise"):
             con.execute(
                 "create table billwise(billid serial, vouchercode integer, invid integer, adjdate timestamp, adjamount numeric (12,2), orgcode integer, primary key (billid), foreign key (vouchercode) references vouchers(vouchercode), foreign key(invid) references invoice(invid), foreign key (orgcode) references organisation (orgcode))"
             )
+
+    with eng.connect() as con:
         if not tableExists("rejectionnote"):
             con.execute(
                 "create table rejectionnote(rnid serial, rnno text not null, rndate timestamp not null, rejprods jsonb not null ,inout integer not null, dcid integer, invid integer, issuerid integer, orgcode integer not null, rejnarration text, primary key(rnid), foreign key (dcid) references delchal(dcid) ON DELETE CASCADE, foreign key (invid) references invoice(invid) ON DELETE CASCADE, foreign key (issuerid) references users(userid) ON DELETE CASCADE, foreign key (orgcode) references organisation(orgcode) ON DELETE CASCADE, unique(rnno, inout, orgcode))"
@@ -1343,6 +1306,8 @@ def migrate():
             con.execute(
                 "alter table rejectionnote add rejprods jsonb, add rejectedtotal numeric(13,2)"
             )
+
+    with eng.connect() as con:
         if not tableExists("drcr"):
             con.execute(
                 "create table drcr(drcrid serial,drcrno text NOT NULL, drcrdate timestamp NOT NULL, dctypeflag integer default 3, totreduct numeric(13,2), reductionval jsonb, reference jsonb, attachment jsonb, drcrnarration text, attachmentcount integer default 0, userid integer,invid integer, rnid integer,orgcode integer NOT NULL, primary key (drcrid), constraint drcr_orgcode_fkey FOREIGN KEY (orgcode) REFERENCES organisation(orgcode), constraint drcr_userid_fkey FOREIGN KEY (userid) REFERENCES users(userid),constraint drcr_invid_fkey FOREIGN KEY (invid) REFERENCES invoice(invid), constraint drcr_rnid_fkey FOREIGN KEY (rnid) REFERENCES rejectionnote(rnid),CONSTRAINT drcr_orgcode_drcrno_dctypeflag UNIQUE(orgcode,drcrno,dctypeflag), CONSTRAINT drcr_orgcode_invid_dctypeflag UNIQUE(orgcode,invid,dctypeflag), CONSTRAINT drcr_orgcode_rnid_dctypeflag UNIQUE(orgcode,rnid,dctypeflag))"
@@ -1354,6 +1319,8 @@ def migrate():
             con.execute(
                 "alter table vouchers add foreign key(drcrid) references drcr(drcrid)"
             )
+
+    with eng.connect() as con:
         if not columnExists("organisation", "invsflag"):
             con.execute(
                 "alter table organisation add invsflag integer default 1"
@@ -1362,6 +1329,8 @@ def migrate():
             con.execute(
                 "alter table organisation add billflag integer default 1"
             )
+
+    with eng.connect() as con:
         if not columnExists("vouchers", "instrumentno"):
             con.execute("alter table vouchers add instrumentno text")
         if not columnExists("vouchers", "branchname"):
@@ -1370,38 +1339,56 @@ def migrate():
             con.execute("alter table vouchers add bankname text")
         if not columnExists("vouchers", "instrumentdate"):
             con.execute("alter table vouchers add instrumentdate timestamp")
+
+    with eng.connect() as con:
         if not columnExists("organisation", "logo"):
             con.execute("alter table organisation add logo json")
+
+    with eng.connect() as con:
         if not columnExists("dcinv", "invprods"):
             con.execute("alter table dcinv add invprods jsonb")
+
+    with eng.connect() as con:
         if not columnExists("transfernote", "duedate"):
             con.execute("alter table transfernote add duedate timestamp")
         if not columnExists("transfernote", "grace"):
             con.execute("alter table transfernote add grace integer")
         if not columnExists("transfernote", "fromgodown"):
             con.execute("alter table transfernote add fromgodown integer")
+
+    with eng.connect() as con:
         if columnExists("product", "specs"):
             con.execute("alter table product alter specs drop not null")
         if columnExists("product", "uomid"):
             con.execute("alter table product alter uomid drop not null")
+
+    with eng.connect() as con:
         if columnExists("transfernote", "canceldate"):
             con.execute("alter table transfernote drop column canceldate")
         if columnExists("transfernote", "cancelflag"):
             con.execute("alter table transfernote drop column cancelflag")
+
+    with eng.connect() as con:
         if not columnExists("invoice", "freeqty"):
             con.execute("alter table invoice add freeqty jsonb")
         if not columnExists("invoice", "amountpaid"):
             con.execute(
                 "alter table invoice add amountpaid numeric default 0.00"
             )
+
+    with eng.connect() as con:
         if not columnExists("stock", "stockdate"):
             con.execute("alter table stock add stockdate timestamp")
+
+    with eng.connect() as con:
         if not columnExists("delchal", "attachment"):
             con.execute("alter table delchal add attachment json")
         if not columnExists("delchal", "attachmentcount"):
             con.execute(
                 "alter table delchal add attachmentcount integer default 0"
             )
+
+    with eng.connect() as con:
         if not columnExists("invoice", "attachment"):
             con.execute("alter table invoice add attachment json")
         if not columnExists("invoice", "attachmentcount"):
@@ -1410,6 +1397,8 @@ def migrate():
             )
         if not columnExists("invoice", "ewaybillno"):
             con.execute("alter table invoice add ewaybillno text")
+
+    with eng.connect() as con:
         if not columnExists("drcr", "drcrnarration"):
             con.execute("alter table drcr add drcrnarration text")
         if not columnExists("invoice", "invnarration"):
@@ -1424,30 +1413,83 @@ def migrate():
             con.execute("alter table delchalbin add totalinword text")
         if not columnExists("rejectionnote", "rejnarration"):
             con.execute("alter table rejectionnote add rejnarration text")
+        # In Below query we are adding field invnarration to invoicebin table
+        if not columnExists("invoicebin", "invnarration"):
+            con.execute("alter table invoicebin add invnarration text")
+        # In Below query we are adding field dcnarration to delchal table
+        if not columnExists("delchal", "dcnarration"):
+            con.execute("alter table delchal add dcnarration text")
+        # In Below query we are adding field dcnarration to delchalbin table
+        if not columnExists("delchalbin", "dcnarration"):
+            con.execute("alter table delchalbin add dcnarration text")
+
+    with eng.connect() as con:
         if not tableExists("usergodown"):
             con.execute(
                 "create table usergodown(ugid serial, goid integer, userid integer, orgcode integer, primary key(ugid), foreign key (goid) references godown(goid),  foreign key (userid) references users(userid), foreign key (orgcode) references organisation(orgcode))"
             )
+
+    with eng.connect() as con:
         if not tableExists("log"):
             con.execute(
                 "create table log(logid serial, time timestamp, activity text, userid integer, orgcode integer,  primary key (logid), foreign key(userid) references users(userid), foreign key (orgcode) references organisation(orgcode))"
             )
+
+    with eng.connect() as con:
+        if does_foreignkey_exist(
+                eng,
+                "delchal",
+                "delchal_custid_fkey"
+        ):
             con.execute(
                 "ALTER TABLE delchal DROP CONSTRAINT delchal_custid_fkey, ADD CONSTRAINT delchal_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)"
             )
+        if does_foreignkey_exist(
+                eng,
+                "invoice",
+                "invoice_custid_fkey"
+        ):
             con.execute(
                 "ALTER TABLE invoice DROP CONSTRAINT invoice_custid_fkey, ADD CONSTRAINT invoice_custid_fkey FOREIGN KEY (custid) REFERENCES customerandsupplier(custid)"
             )
+
+    with eng.connect() as con:
+        if not does_unique_constraint_exist(
+                eng,
+                "goprod",
+                "goprod_goid_productcode_orgcode_key"
+        ):
             con.execute(
                 "alter table goprod add UNIQUE(goid,productcode,orgcode)"
             )
+        if not does_unique_constraint_exist(
+                eng,
+                "product",
+                "product_productdesc_orgcode_key"
+        ):
             con.execute("alter table product add UNIQUE(productdesc,orgcode)")
+
+    with eng.connect() as con:
+        if not does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custname_gstin_key"
+        ):
             con.execute(
                 "alter table customerandsupplier add UNIQUE(orgcode,custname,gstin)"
             )
+
+    with eng.connect() as con:
+        if not does_foreignkey_exist(
+                eng,
+                "transfernote",
+                "transfernote_fromgodown_fkey"
+        ):
             con.execute(
                 "alter table transfernote add foreign key(fromgodown) references godown(goid)"
             )
+
+    with eng.connect() as con:
         if not tableExists("budget"):
             con.execute(
                 "create table budget (budid serial, budname text not null,budtype int not null, startdate timestamp not null,enddate timestamp not null,contents jsonb not null,gaflag int not null,projectcode int, orgcode int not null, primary key(budid),foreign key(projectcode) references projects(projectcode) , foreign key(orgcode) references organisation(orgcode) ON DELETE CASCADE)"
@@ -1457,6 +1499,8 @@ def migrate():
                 "update organisation set billflag=1 where invflag=0 and invsflag=1 and billflag=0"
             )
 
+
+    with eng.connect() as con:
             # Below query is to create a new table to store cancelled deliverynotes.
         if not tableExists("delchalbin"):
             con.execute(
@@ -1469,6 +1513,8 @@ def migrate():
                 "create index delchalbin_dcnoindex on delchalbin using btree(dcno)"
             )
 
+
+    with eng.connect() as con:
             # In Below queries we are creating new table invoivebin which is act as bin for cancelled invoices.
         if not tableExists("invoicebin"):
             con.execute(
@@ -1498,14 +1544,19 @@ def migrate():
                 )
             if fkeyavlb == "CASCADE":
                 pass
+
+    with eng.connect() as con:
         # Add config columns for user and organisation if not present and init to {}
         if not columnExists("users", "userconf"):
             con.execute("alter table users add userconf jsonb default '{}'")
+
+    with eng.connect() as con:
         if not columnExists("organisation", "orgconf"):
             con.execute(
                 "alter table organisation add orgconf jsonb default '{}'"
             )
 
+    with eng.connect() as con:
         if tableExists("tax2"):
             # A table called tax2 was created for dev purpose and was in use for a while, so rename this table if it exists
             if tableExists("tax"):
@@ -1569,11 +1620,15 @@ def migrate():
                     "insert into tax(taxfromdate)values('%s')" % (str(from_date),)
                 )
 
+
+    with eng.connect() as con:
         if not columnExists("invoice", "supinvno"):
             con.execute("alter table invoice add supinvno text")
         if not columnExists("invoice", "supinvdate"):
             con.execute("alter table invoice add supinvdate date")
 
+
+    with eng.connect() as con:
         if uniqueConstraintExists(
             "invoice", ["orgcode", "invoiceno", "custid", "icflag"]
         ):
@@ -1598,6 +1653,8 @@ def migrate():
                     "ALTER TABLE invoice ADD CONSTRAINT invoice_orgcode_invoiceno_key UNIQUE(orgcode, invoiceno)"
                 )
 
+
+    with eng.connect() as con:
         if not columnExists("stock", "rate"):
             con.execute(
                 "alter table stock add rate numeric(13,2) default 0.00"
@@ -1605,6 +1662,8 @@ def migrate():
 
         # return 0
 
+
+    with eng.connect() as con:
         # Migration for users -> gkusers
         # Decoupling users and organisations
         gkusersExist = tableExists("gkusers")
@@ -1614,18 +1673,18 @@ def migrate():
         if usersExist:
             oldUsersLength = con.execute(
                 "select COUNT(userid) as count from users"
-            ).fetchone()
+            ).scalar()
             # print("Old users length = %d"%(oldUsersLength["count"]))
         if gkusersExist:
             gkusersLength = con.execute(
                 select([func.count(gkdb.gkusers.c.userid).label("count")])
-            ).fetchone()
+            ).scalar()
             # print("GK users length = %d"%(gkusersLength["count"]))
         if (not gkusersExist and usersExist) or (
             gkusersExist
             and usersExist
-            and oldUsersLength["count"] > 0
-            and gkusersLength["count"] == 0
+            and oldUsersLength > 0
+            and gkusersLength == 0
         ):
             con.execute(
                 "create table if not exists gkusers(userid serial, username text NOT NULL, userpassword text NOT NULL, userquestion text NOT NULL, useranswer text NOT NULL, orgs jsonb default '{}', primary key (userid), unique(username))"
@@ -1873,187 +1932,180 @@ def migrate():
 
         # End of Migration for users -> gkusers
 
+    with eng.connect() as con:
         # Add opening stock value that corresponds to the product opening stock qty that has been entered
         if not columnExists("goprod", "openingstockvalue"):
             con.execute(
                 "alter table goprod add openingstockvalue numeric(13,2) default 0.00"
             )
 
-        try:
+    with eng.connect() as con:
+        orgDatum = con.execute(
+            "select orgcode, orgstate from organisation"
+        ).fetchall()
+        for orgData in orgDatum:
+            if not orgData["orgstate"]:
+                con.execute(
+                    "update organisation set orgstate = '0'  where orgcode = %d"
+                    % (orgData["orgcode"])
+                )
+        con.execute(
+            "alter table organisation alter column orgstate set NOT NULL"
+        )
+
+    with eng.connect() as con:
+        counter = 0
+        con.execute("update product set gsflag = 7  where gsflag = NULL")
+        prodDatum = con.execute(
+            "select productcode, productdesc from product"
+        ).fetchall()
+        for prodData in prodDatum:
+            if not prodData["productdesc"]:
+                con.execute(
+                    "update product set productdesc = 'gk-product-%s'  where productcode = %d"
+                    % (str(counter), prodData["productcode"])
+                )
+                counter = counter + 1
+        con.execute(
+            "alter table product alter column gsflag set NOT NULL, alter column productdesc set NOT NULL"
+        )
+
+    with eng.begin() as con:
+        con.execute("alter table bankrecon drop constraint if exists bankrecon_vouchercode_accountcode_key")
+        con.execute("alter table bankrecon add column if not exists entry_type text")
+        con.execute("alter table bankrecon add column if not exists amount float")
+
+    with eng.begin() as con:
+        con.execute("alter table customerandsupplier add column if not exists country text")
+        con.execute("alter table customerandsupplier add column if not exists tin text")
+
+    with eng.begin() as con:
+        con.execute("alter table organisation add column if not exists tin text")
+
+    with eng.begin() as con:
+        if not does_foreignkey_exist(
+                eng,
+                "categorysubcategories",
+                "categorysubcategories_subcategoryof_fkey"
+        ):
             con.execute(
-                "alter table organisation alter column orgstate set NOT NULL"
+                "alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)"
             )
-        except:
-            print("exception ", 2)
-            orgDatum = con.execute(
-                "select orgcode, orgstate from organisation"
-            ).fetchall()
-            for orgData in orgDatum:
-                if not orgData["orgstate"]:
-                    con.execute(
-                        "update organisation set orgstate = '0'  where orgcode = %d"
-                        % (orgData["orgcode"])
-                    )
+        if not does_foreignkey_exist(
+                eng,
+                "unitofmeasurement",
+                "unitofmeasurement_subunitof_fkey"
+        ):
             con.execute(
-                "alter table organisation alter column orgstate set NOT NULL"
+            "alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)"
             )
-        try:
+        con.execute("alter table organisation add column if not exists invflag Integer default 0 ")
+        con.execute("alter table vouchers add column if not exists invid Integer")
+        if not does_foreignkey_exist(
+                eng,
+                "vouchers",
+                "vouchers_invid_fkey"
+        ):
             con.execute(
-                "alter table product alter column gsflag set NOT NULL, alter column productdesc set NOT NULL"
+                "alter table vouchers add foreign key (invid) references invoice(invid)"
             )
-        except:
-            print("exception ", 3)
-            counter = 0
-            con.execute("update product set gsflag = 7  where gsflag = NULL")
-            prodDatum = con.execute(
-                "select productcode, productdesc from product"
-            ).fetchall()
-            for prodData in prodDatum:
-                if not prodData["productdesc"]:
-                    con.execute(
-                        "update product set productdesc = 'gk-product-%s'  where productcode = %d"
-                        % (str(counter), prodData["productcode"])
-                    )
-                    counter = counter + 1
+        con.execute("alter table users add column if not exists themename text default 'Default'")
+
+    with eng.begin() as con:
+        con.execute("alter table transfernote add column if not exists recieveddate date")
+        con.execute("alter table delchal add column if not exists noofpackages int")
+        con.execute("alter table delchal add column if not exists modeoftransport text")
+
+    with eng.begin() as con:
+        if does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custname_custemail_csflag_key"
+        ):
             con.execute(
-                "alter table product alter column gsflag set NOT NULL, alter column productdesc set NOT NULL"
+                "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custemail_csflag_key"
             )
-        with eng.begin() as conn:
-            conn.execute("alter table bankrecon drop constraint if exists bankrecon_vouchercode_accountcode_key")
-            conn.execute("alter table bankrecon add column if not exists entry_type text")
-            conn.execute("alter table bankrecon add column if not exists amount float")
+        if does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custname_custpan_csflag_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custpan_csflag_key"
+            )
+        if does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custname_custtan_csflag_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custtan_csflag_key"
+            )
+        if does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custname_gstin_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_gstin_key"
+            )
+        if does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custname_tin_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_tin_key"
+            )
 
-        with eng.begin() as conn:
-            conn.execute("alter table customerandsupplier add column if not exists country text")
-            conn.execute("alter table customerandsupplier add column if not exists tin text")
-
-        with eng.begin() as conn:
-            conn.execute("alter table organisation add column if not exists tin text")
-
-        with eng.begin() as conn:
-            if not does_foreignkey_exist(
-                    eng,
-                    "categorysubcategories",
-                    "categorysubcategories_subcategoryof_fkey"
-            ):
-                conn.execute(
-                    "alter table categorysubcategories add  foreign key (subcategoryof) references categorysubcategories(categorycode)"
+        if not does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custemail_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier add constraint customerandsupplier_orgcode_custemail_key unique (orgcode, custemail)"
+            )
+        if not does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custpan_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier add constraint customerandsupplier_orgcode_custpan_key unique (orgcode, custpan)"
+            )
+        if not does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_custtan_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier add constraint customerandsupplier_orgcode_custtan_key unique (orgcode, custtan)"
+            )
+        if not does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_gstin_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier add constraint customerandsupplier_orgcode_gstin_key unique (orgcode, gstin)"
+            )
+        if not does_unique_constraint_exist(
+                eng,
+                "customerandsupplier",
+                "customerandsupplier_orgcode_tin_key"
+        ):
+            con.execute(
+                "alter table customerandsupplier add constraint customerandsupplier_orgcode_tin_key unique (orgcode, tin)"
+            )
+        if not does_primarykey_exist(
+                eng,
+                "state",
+                "state_pkey"
+        ):
+                con.execute(
+                    "alter table state add primary key (statecode)"
                 )
-            if not does_foreignkey_exist(
-                    eng,
-                    "unitofmeasurement",
-                    "unitofmeasurement_subunitof_fkey"
-            ):
-                conn.execute(
-                "alter table unitofmeasurement add  foreign key (subunitof) references unitofmeasurement(uomid)"
-                )
-            conn.execute("alter table organisation add column if not exists invflag Integer default 0 ")
-            conn.execute("alter table vouchers add column if not exists invid Integer")
-            if not does_foreignkey_exist(
-                    eng,
-                    "vouchers",
-                    "vouchers_invid_fkey"
-            ):
-                conn.execute(
-                    "alter table vouchers add foreign key (invid) references invoice(invid)"
-                )
-            conn.execute("alter table users add column if not exists themename text default 'Default'")
-
-        with eng.begin() as conn:
-            conn.execute("alter table transfernote add column if not exists recieveddate date")
-            conn.execute("alter table delchal add column if not exists noofpackages int")
-            conn.execute("alter table delchal add column if not exists modeoftransport text")
-
-        with eng.begin() as conn:
-            if does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custname_custemail_csflag_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custemail_csflag_key"
-                )
-            if does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custname_custpan_csflag_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custpan_csflag_key"
-                )
-            if does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custname_custtan_csflag_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_custtan_csflag_key"
-                )
-            if does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custname_gstin_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_gstin_key"
-                )
-            if does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custname_tin_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier drop constraint customerandsupplier_orgcode_custname_tin_key"
-                )
-
-            if not does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custemail_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier add constraint customerandsupplier_orgcode_custemail_key unique (orgcode, custemail)"
-                )
-            if not does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custpan_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier add constraint customerandsupplier_orgcode_custpan_key unique (orgcode, custpan)"
-                )
-            if not does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_custtan_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier add constraint customerandsupplier_orgcode_custtan_key unique (orgcode, custtan)"
-                )
-            if not does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_gstin_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier add constraint customerandsupplier_orgcode_gstin_key unique (orgcode, gstin)"
-                )
-            if not does_unique_constraint_exist(
-                    eng,
-                    "customerandsupplier",
-                    "customerandsupplier_orgcode_tin_key"
-            ):
-                conn.execute(
-                    "alter table customerandsupplier add constraint customerandsupplier_orgcode_tin_key unique (orgcode, tin)"
-                )
-            if not does_primarykey_exist(
-                    eng,
-                    "state",
-                    "state_pkey"
-            ):
-                    conn.execute(
-                        "alter table state add primary key (statecode)"
-                    )
 
 
         with eng.begin() as con:
