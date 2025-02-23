@@ -34,17 +34,12 @@ from gkcore.models import gkdb
 from gkcore.views.account.services import reset_acc_defaults
 from gkcore.views.reports.helpers.balance import get_account_vouchers_data, get_current_balance
 from sqlalchemy.sql import select
-import json
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, alias, or_, func
+from sqlalchemy import and_, or_, func
 from sqlalchemy.sql.expression import text
-from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import accounts
-from datetime import datetime, date
+from datetime import datetime
 from gkcore.views.api_gkuser import getUserRole
 
 """
@@ -69,10 +64,7 @@ refer to the __init__.py of main gkcore package for details on routing url
 class api_account(object):
     # constructor will initialise request.
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
-        print("accounts initialized")
 
     @view_config(request_method="POST", renderer="json")
     def addAccount(self):
