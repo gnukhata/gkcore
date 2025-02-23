@@ -31,6 +31,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from gkcore.models import gkdb
+from gkcore.views.account.schemas import AccountDetails
 from gkcore.views.account.services import reset_acc_defaults
 from gkcore.views.reports.helpers.balance import get_account_vouchers_data, get_current_balance
 from sqlalchemy.sql import select
@@ -220,8 +221,9 @@ class api_account(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        accountcode = self.request.params.get("accountcode")
-        accountname = self.request.params.get("accountname")
+        dataset = AccountDetails(**self.request.params).model_dump()
+        accountcode = dataset["accountcode"]
+        accountname = dataset["accountname"]
         with eng.connect() as con:
             if accountcode:
                 query = select([gkdb.accounts]).where(
@@ -239,9 +241,9 @@ class api_account(object):
                 )
             result = con.execute(query)
             row = result.fetchone()
-
             if not row:
                 return {"gkstatus": enumdict["ActionDisallowed"]}
+
             account = {
                 "accountcode": row["accountcode"],
                 "accountname": row["accountname"],
