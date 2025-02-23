@@ -798,5 +798,5 @@ defaultflag '16' or '19' set to the '0'.
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             with eng.connect() as con:
-                reset_acc_defaults(self.con, self.request.params["orgcode"])
+                reset_acc_defaults(con, self.request.params["orgcode"])
                 return {"gkstatus": enumdict["Success"]}
