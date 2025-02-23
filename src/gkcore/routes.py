@@ -92,6 +92,7 @@ def includeme(config):
     config.add_route("accounts", "/accounts")
     config.add_route("accounts-xlsx", "/accounts/spreadsheet")
     config.add_route("account", "/account/{accountcode}")
+    config.add_route("account_details", "/account-details")
     config.add_route("projects", "/projects")
     config.add_route("project", "/project/{projectcode}")
     config.add_route("accountsbyrule", "/accountsbyrule")
