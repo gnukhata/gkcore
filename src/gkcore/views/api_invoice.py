@@ -37,6 +37,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     invoice,
+    transaction,
     dcinv,
     delchal,
     stock,
@@ -1259,9 +1260,19 @@ def getInvoiceData(con, orgcode, params):
     )
     vCount = voucherCount.fetchone()
     inv["vouchercount"] = vCount[0]
+    immutable_data = con.execute(
+        select([transaction.c.transaction_details])
+        .where(transaction.c.transaction_id == invrow["immutable_data_id"])
+    ).scalar()
+    inv["immutable_data"] = immutable_data
     return inv
 
 def getInvoiceList(con, orgcode, reqParams):
+    invoices = []
+    # flag 0=all, 1=sales, 2=purchase, others are invalid
+    if (int(reqParams["flag"]) not in [0, 1, 2]):
+        return invoices
+
     query = select([invoice]).where(and_(
         invoice.c.orgcode == orgcode,
         invoice.c.icflag == 9,
@@ -1275,10 +1286,17 @@ def getInvoiceList(con, orgcode, reqParams):
         query = query.order_by(invoice.c.invoicedate)
 
     result = con.execute(query)
-    invoices = []
     srno = 1
     # for each invoice
     for row in result:
+        # when flag is 1, inoutflag should be 15 to return only sales invoices
+        if reqParams["flag"] == "1" and row["inoutflag"] != 15:
+            continue
+
+        # when flag is 2, inoutflag should be 9 to return only purchase invoices
+        if reqParams["flag"] == "2" and row["inoutflag"] != 9:
+            continue
+
         if row["sourcestate"]:
             sourceStateCode = getStateCode(row["sourcestate"], con)["statecode"]
         if row["taxstate"]:
@@ -1457,81 +1475,33 @@ def getInvoiceList(con, orgcode, reqParams):
         if existDrcr["invcount"] > 0:
             cancelinv = 0
 
-        # flag=0, all invoices.
-        if reqParams["flag"] == "0":
-            invoices.append(
-                {
-                    "srno": srno,
-                    "invoiceno": row["invoiceno"],
-                    "invid": row["invid"],
-                    "dcno": dcno,
-                    "dcdate": dcdate,
-                    "netamt": "%.2f" % netamt,
-                    "taxamt": "%.2f" % taxamt,
-                    "godown": godowns,
-                    "custname": customerdetails["custname"],
-                    "csflag": customerdetails["csflag"],
-                    "custtin": custtin,
-                    "invoicedate": datetime.strftime(
-                        row["invoicedate"], "%d-%m-%Y"
-                    ),
-                    "grossamt": "%.2f" % float(row["invoicetotal"]),
-                    "cancelflag": cancelinv,
-                    "billentryflag": billentryflag,
-                    "inoutflag": row["inoutflag"],
-                }
-            )
-            srno += 1
-        # flag=1, sales invoices
-        elif reqParams["flag"] == "1" and row["inoutflag"] == 15:
-            invoices.append(
-                {
-                    "srno": srno,
-                    "invoiceno": row["invoiceno"],
-                    "invid": row["invid"],
-                    "dcno": dcno,
-                    "dcdate": dcdate,
-                    "netamt": "%.2f" % netamt,
-                    "taxamt": "%.2f" % taxamt,
-                    "godown": godowns,
-                    "custname": customerdetails["custname"],
-                    "csflag": customerdetails["csflag"],
-                    "custtin": custtin,
-                    "invoicedate": datetime.strftime(
-                        row["invoicedate"], "%d-%m-%Y"
-                    ),
-                    "grossamt": "%.2f" % float(row["invoicetotal"]),
-                    "cancelflag": cancelinv,
-                    "billentryflag": billentryflag,
-                    "inoutflag": row["inoutflag"],
-                }
-            )
-            srno += 1
-        # flag=2, purchase invoices.
-        elif reqParams["flag"] == "2" and row["inoutflag"] == 9:
-            invoices.append(
-                {
-                    "srno": srno,
-                    "invoiceno": row["invoiceno"],
-                    "invid": row["invid"],
-                    "dcno": dcno,
-                    "dcdate": dcdate,
-                    "netamt": "%.2f" % netamt,
-                    "taxamt": "%.2f" % taxamt,
-                    "godown": godowns,
-                    "custname": customerdetails["custname"],
-                    "csflag": customerdetails["csflag"],
-                    "custtin": custtin,
-                    "invoicedate": datetime.strftime(
-                        row["invoicedate"], "%d-%m-%Y"
-                    ),
-                    "grossamt": "%.2f" % float(row["invoicetotal"]),
-                    "cancelflag": cancelinv,
-                    "billentryflag": billentryflag,
-                    "inoutflag": row["inoutflag"],
-                }
-            )
-            srno += 1
+        immutable_data = con.execute(
+            select([transaction.c.transaction_details])
+            .where(transaction.c.transaction_id == row["immutable_data_id"])
+        ).scalar()
+
+        invoices.append({
+            "srno": srno,
+            "invoiceno": row["invoiceno"],
+            "invid": row["invid"],
+            "dcno": dcno,
+            "dcdate": dcdate,
+            "netamt": "%.2f" % netamt,
+            "taxamt": "%.2f" % taxamt,
+            "godown": godowns,
+            "custname": customerdetails["custname"],
+            "csflag": customerdetails["csflag"],
+            "custtin": custtin,
+            "invoicedate": datetime.strftime(
+                row["invoicedate"], "%d-%m-%Y"
+            ),
+            "grossamt": "%.2f" % float(row["invoicetotal"]),
+            "cancelflag": cancelinv,
+            "billentryflag": billentryflag,
+            "inoutflag": row["inoutflag"],
+            "immutable_data": immutable_data,
+        })
+        srno += 1
     return invoices
 
 """
@@ -1618,6 +1588,39 @@ class api_invoice(object):
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
                     invdataset.pop("pricedetails", pricedetails)
+                godown_id = dtset["delchalPayload"]["stockdata"]["goid"]
+                godown_details = con.execute(
+                    select([godown])
+                    .where(godown.c.goid==godown_id)
+                ).fetchone()
+                contact_id = invdataset["custid"]
+                contact_details = con.execute(
+                    select([customerandsupplier])
+                    .where(customerandsupplier.c.custid == contact_id)
+                ).fetchone()
+                product_id_values = list(items.keys())
+                products = con.execute(
+                    select([product.c.productcode, product.c.productdesc, product.c.gscode])
+                    .where(product.c.productcode.in_(product_id_values))
+                ).fetchall()
+                product_details = {
+                    id: {
+                        "productcode": id,
+                        "productdesc": name,
+                        "gscode": hsn,
+                    }
+                    for id, name, hsn in products
+                }
+                transaction_details = {
+                    "godown": dict(godown_details),
+                    "contact": dict(contact_details),
+                    "products": product_details,
+                }
+                transaction_id = con.execute(
+                    transaction.insert()
+                    .values(transaction_details=transaction_details)
+                ).inserted_primary_key
+                invdataset["immutable_data_id"] = transaction_id[0]
                 result = con.execute(invoice.insert(), [invdataset])
                 if len(pricedetails) > 0:
                     for price in pricedetails:
@@ -2700,6 +2703,45 @@ class api_invoice(object):
             if "pricedetails" in invdataset:
                 pricedetails = invdataset["pricedetails"]
                 invdataset.pop("pricedetails", pricedetails)
+
+            godown_id = dtset["stock"]["goid"]
+            godown_details = con.execute(
+                select([godown])
+                .where(godown.c.goid==godown_id)
+            ).fetchone()
+            contact_id = invdataset["custid"]
+            contact_details = con.execute(
+                select([customerandsupplier])
+                .where(customerandsupplier.c.custid == contact_id)
+            ).fetchone()
+            product_id_values = list(items.keys())
+            products = con.execute(
+                select([product.c.productcode, product.c.productdesc, product.c.gscode])
+                .where(product.c.productcode.in_(product_id_values))
+            ).fetchall()
+            product_details = {
+                id: {
+                    "productcode": id,
+                    "productdesc": name,
+                    "gscode": hsn,
+                }
+                for id, name, hsn in products
+            }
+            transaction_details = {
+                "godown": dict(godown_details),
+                "contact": dict(contact_details),
+                "products": product_details,
+            }
+            immutable_data_id = con.execute(
+                select([invoice.c.immutable_data_id])
+                .where(invoice.c.invid == invid)
+            ).scalar()
+            con.execute(
+                transaction.update()
+                .where(transaction.c.transaction_id == immutable_data_id)
+                .values(transaction_details=transaction_details)
+            )
+
             # Entries in dcinv and stock tables are deleted to avoid duplicate entries.
             stockresult = con.execute(
                 select([stock.c.stockid]).where(and_(

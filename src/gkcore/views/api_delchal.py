@@ -32,6 +32,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     delchal,
+    transaction,
     stock,
     customerandsupplier,
     godown,
@@ -819,6 +820,19 @@ class api_delchal(object):
                 singledelchal["taxname"] = taxname
                 singledelchal["delchalContents"] = delchalContents
                 singledelchal["discflag"] = delchaldata["discflag"]
+            invoice_id = con.execute(
+                select([dcinv.c.invid])
+                .where(dcinv.c.dcid == dcid)
+            ).scalar()
+            immutable_data_id = con.execute(
+                select([invoice.c.immutable_data_id])
+                .where(invoice.c.invid == invoice_id)
+            ).scalar()
+            immutable_data = con.execute(
+                select([transaction.c.transaction_details])
+                .where(transaction.c.transaction_id == immutable_data_id)
+            ).scalar()
+            singledelchal["immutable_data"] = immutable_data
             return {
                 "gkstatus": gkcore.enumdict["Success"],
                 "gkresult": singledelchal,

@@ -2138,4 +2138,44 @@ def migrate():
                     "alter table unitofmeasurement add constraint unitofmeasurement_orgcode_unitname_key unique (orgcode, unitname)"
                 )
 
+        with eng.begin() as conn:
+            if not tableExists("transaction"):
+                query = """create table transaction(
+                    transaction_id serial,
+                    transaction_details jsonb,
+                    primary key (transaction_id)
+                )"""
+                conn.execute(query)
+                conn.execute("alter table invoice add column if not exists immutable_data_id Integer")
+                if not does_foreignkey_exist(
+                    eng,
+                    "invoice",
+                    "invoice_transaction_id_fkey"
+                ):
+                    conn.execute("""
+                        alter table invoice add foreign key (immutable_data_id)
+                        references transaction(transaction_id)
+                    """)
+                conn.execute("alter table purchaseorder add column if not exists immutable_data_id Integer")
+                if not does_foreignkey_exist(
+                    eng,
+                    "purchaseorder",
+                    "purchaseorder_transaction_id_fkey"
+                ):
+                    conn.execute("""
+                        alter table purchaseorder add foreign key (immutable_data_id)
+                        references transaction(transaction_id)
+                    """)
+                conn.execute("alter table transfernote add column if not exists immutable_data_id Integer")
+                if not does_foreignkey_exist(
+                    eng,
+                    "transfernote",
+                    "transfernote_transaction_id_fkey"
+                ):
+                    conn.execute("""
+                        alter table transfernote add foreign key (immutable_data_id)
+                        references transaction(transaction_id)
+                    """)
+
+
         print("Database migration successful")

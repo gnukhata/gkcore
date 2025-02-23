@@ -32,6 +32,7 @@ from gkcore.utils import authCheck
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     purchaseorder,
+    transaction,
     stock,
     product,
     customerandsupplier,
@@ -76,6 +77,39 @@ class api_purchaseorder(object):
         with eng.begin() as con:
             dataset = self.request.json_body
             dataset["orgcode"] = authDetails["orgcode"]
+            godown_id = dataset["togodown"]
+            godown_details = con.execute(
+                select([godown])
+                .where(godown.c.goid==godown_id)
+            ).fetchone()
+            contact_id = dataset["csid"]
+            contact_details = con.execute(
+                select([customerandsupplier])
+                .where(customerandsupplier.c.custid == contact_id)
+            ).fetchone()
+            product_id_values = list(dataset["schedule"].keys())
+            products = con.execute(
+                select([product.c.productcode, product.c.productdesc, product.c.gscode])
+                .where(product.c.productcode.in_(product_id_values))
+            ).fetchall()
+            product_details = {
+                id: {
+                    "productcode": id,
+                    "productdesc": name,
+                    "gscode": hsn,
+                }
+                for id, name, hsn in products
+            }
+            transaction_details = {
+                "godown": dict(godown_details),
+                "contact": dict(contact_details),
+                "products": product_details,
+            }
+            transaction_id = con.execute(
+                transaction.insert()
+                .values(transaction_details=transaction_details)
+            ).inserted_primary_key
+            dataset["immutable_data_id"] = transaction_id[0]
             con.execute(purchaseorder.insert(), [dataset])
             orderIdData = con.execute(
                 select([purchaseorder.c.orderid]).where(
@@ -418,6 +452,11 @@ class api_purchaseorder(object):
             purchaseorderdetails["taxname"] = taxname
             purchaseorderdetails["schedule"] = details
             purchaseorderdetails["psnarration"] = podata["psnarration"]
+            immutable_data = con.execute(
+                select([transaction.c.transaction_details])
+                .where(transaction.c.transaction_id == podata["immutable_data_id"])
+            ).scalar()
+            purchaseorderdetails["immutable_data"] = immutable_data
             return {
                 "gkstatus": enumdict["Success"],
                 "gkresult": purchaseorderdetails,

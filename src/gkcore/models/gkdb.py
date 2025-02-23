@@ -470,6 +470,87 @@ vouchers = Table(
     info={"key_related_json_fields": {"drs": "accounts", "crs": "accounts"}},
 )
 
+"""
+Table for storing immutable details of transactions. The following tables represent
+different types of transactions at the time of writing:
+- invoice (Both Invoices and Cash Memos)
+- delchal (Delivery Notes)
+- drcr (Debit/Credit Notes)
+- transfernote (Tranfer Notes)
+- purchaseorder (Purchase/Sales Orders).
+The `transaction_details` field of this table will store the transaction related
+details in textual form in addition to their IDs so that even if those details,
+like that of customers or products, change in future the data in the transaction
+records remain unchanged. This is necessary to keep the transaction records
+immutable.
+
+Sample structure of `transaction_details` JSONB field:
+{
+    "godown": {
+        // Same as the godown table structure
+        "goid": 1,
+        "goname": "Primary Godown",
+        "state": "Kerala",
+        "gocontact": "9876543210", // Phone number
+        "contactname": "Jane Doe", // Name of the contact person
+        "designation": "Godown Manager", // Designation of the contact person
+        "orgcode": 1
+    },
+    "contact": {
+        // Same as the customerandsupplier table structure
+        "custid": 1,
+        "custname": "Retail Customer",
+        "gstin": { // JSONB with state code as key and GSTIN as value
+            "22": "22AAAAA0000A1Z5"
+        },
+        "gst_reg_type": 0, // Check enum.py for possible values
+        "gst_party_type": 0, // Check enum.py for possible values
+        "tin": "22XXXXC0001",
+        "custaddr": "Primary Address",
+        "pincode": "495115",
+        "custphone": "9876543211",
+        "custemail": "customer@example.com",
+        "custfax": "1234567890",
+        "custpan": "AAAAA0000A",
+        "custtan": "AAAA00000A",
+        "state": "Chattisgarh",
+        "country": "India",
+        "csflag": 3, // 3 -> Customer, 19 -> Supplier
+        "bankdetails": {
+            "ifsc": "ABCD1234567",
+            "accountno": "00123456789",
+            "branchname": "Raipur"
+        },
+        "orgcode": 1
+    },
+    "products": {
+        // Object with product ID as key
+        "1": {
+            "productcode": 1,
+            "productdesc": "Pencil", // Name of product/service
+            "gscode": {
+                "hsn_code": 9609,
+                "hsn_desc": "Pencils"
+            }
+        }
+    },
+    "godowns": {
+        // Object with godown ID as key (only applicable for transfer notes).
+        "1": {
+            from_godown_details // Same as the godown structure above
+        },
+        "2": {
+            to_godown_details // Same as the godown structure above
+        }
+     }
+}
+"""
+transaction = Table(
+    "transaction",
+    metadata,
+    Column("transaction_id", Integer, primary_key=True),
+    Column("transaction_details", JSONB),
+)
 
 """
 Table for storing invoice records.
@@ -542,6 +623,7 @@ invoice = Table(
     Column("pincode", UnicodeText),
     Column("inoutflag", Integer),
     Column("invoicetotalword", UnicodeText),
+    Column("immutable_data_id", Integer, ForeignKey("transaction.transaction_id")),
     UniqueConstraint("orgcode", "invoiceno", name="invoice_orgcode_invoiceno_key"),
     Index("invoice_orgcodeindex", "orgcode"),
     Index("invoice_invoicenoindex", "invoiceno"),
@@ -1011,6 +1093,7 @@ purchaseorder = Table(
     Column("address", Text),
     Column("pincode", UnicodeText),
     Column("roundoffflag", Integer, default=0),
+    Column("immutable_data_id", Integer, ForeignKey("transaction.transaction_id")),
     Index("purchaseorder_orgcodeindex", "orgcode"),
     Index("purchaseorder_date", "orderdate"),
     Index("purchaseorder_togodown", "togodown"),
@@ -1158,6 +1241,7 @@ transfernote = Table(
         ForeignKey("organisation.orgcode", ondelete="CASCADE"),
         nullable=False,
     ),
+    Column("immutable_data_id", Integer, ForeignKey("transaction.transaction_id")),
     UniqueConstraint("transfernoteno", "orgcode"),
     Index("transfernote_date", "transfernotedate"),
     Index("transfernote_togodown", "togodown"),
