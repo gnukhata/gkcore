@@ -31,7 +31,7 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from gkcore.models import gkdb
-from gkcore.views.reports.helpers.balance import get_account_vouchers_data
+from gkcore.views.reports.helpers.balance import get_account_vouchers_data, get_current_balance
 from sqlalchemy.sql import select
 import json
 from sqlalchemy.engine.base import Connection
@@ -237,6 +237,52 @@ class api_account(object):
                     "defaultflag": row["defaultflag"],
                 }
                 return {"gkstatus": enumdict["Success"], "gkresult": acc}
+
+
+    @view_config(route_name="account_details", request_method="GET", renderer="json")
+    def getAccountDetails(self):
+        """API to get account details based on accountcode or accounts names.
+
+        Accepts accountname and accountcode as parameters.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        accountcode = self.request.params.get("accountcode")
+        accountname = self.request.params.get("accountname")
+        with eng.connect() as con:
+            if accountcode:
+                query = select([gkdb.accounts]).where(
+                    and_(
+                        gkdb.accounts.c.accountcode == accountcode,
+                        gkdb.accounts.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+            elif accountname:
+                query = select([gkdb.accounts]).where(
+                    and_(
+                        gkdb.accounts.c.accountname == accountname,
+                        gkdb.accounts.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+            result = con.execute(query)
+            row = result.fetchone()
+
+            if not row:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+            account = {
+                "accountcode": row["accountcode"],
+                "accountname": row["accountname"],
+                "openingbal": "%.2f" % float(row["openingbal"]),
+                "currentbal": "%.2f" % float(get_current_balance(con, row)),
+                "groupcode": row["groupcode"],
+                "defaultflag": row["defaultflag"],
+            }
+            return {"gkstatus": enumdict["Success"], "gkresult": account}
 
 
     @view_config(request_param="type=getAccCode", request_method="GET", renderer="json")
