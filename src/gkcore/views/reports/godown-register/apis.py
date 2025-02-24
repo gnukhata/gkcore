@@ -194,13 +194,6 @@ class api_godownregister(object):
                 )
                 ysRow = ysData.fetchone()
                 yearStart = datetime.strptime(str(ysRow["yearstart"]), "%Y-%m-%d")
-                enData = con.execute(
-                    select([organisation.c.yearend]).where(
-                        organisation.c.orgcode == orgcode
-                    )
-                )
-                enRow = enData.fetchone()
-                yearend = datetime.strptime(str(enRow["yearend"]), "%Y-%m-%d")
                 if startDate > yearStart:
                     for stockRow in stockData:
                         if stockRow["dcinvtnflag"] == 4:
