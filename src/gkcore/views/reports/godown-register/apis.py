@@ -164,11 +164,7 @@ class api_godownregister(object):
                         )
                     )
                 )
-                gosRow = goopeningStockResult.fetchone()
-                if gosRow != None:
-                    gopeningStock = gosRow["goopeningstock"]
-                else:
-                    gopeningStock = 0.00
+                gopeningStock = goopeningStockResult.scalar() or 0.00
                 # inoutflag query param is used to filter entries by sales and purchases
                 # 9 -> purchase, 15 -> sales, 0 -> all.
                 inoutflag = [dataset.get("inoutflag")]
