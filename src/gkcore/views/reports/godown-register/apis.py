@@ -196,92 +196,23 @@ class api_godownregister(object):
                 yearStart = datetime.strptime(str(ysRow["yearstart"]), "%Y-%m-%d")
                 if startDate > yearStart:
                     for stockRow in stockData:
-                        if stockRow["dcinvtnflag"] == 4:
-                            # delivery note
-                            countresult = con.execute(
-                                select([func.count(delchal.c.dcid).label("dc")]).where(
-                                    and_(
-                                        delchal.c.dcdate >= yearStart,
-                                        delchal.c.dcdate < startDate,
-                                        delchal.c.dcid == stockRow["dcinvtnid"],
-                                    )
-                                )
+                        if stockRow["inout"] == 9:
+                            gopeningStock = float(gopeningStock) + float(
+                                stockRow["qty"]
                             )
-                            countrow = countresult.fetchone()
-                            if countrow["dc"] == 1:
-                                if stockRow["inout"] == 9:
-                                    gopeningStock = float(gopeningStock) + float(
-                                        stockRow["qty"]
-                                    )
-                                if stockRow["inout"] == 15:
-                                    gopeningStock = float(gopeningStock) - float(
-                                        stockRow["qty"]
-                                    )
-                        if stockRow["dcinvtnflag"] == 20:
-                            # transfer note
-                            countresult = con.execute(
-                                select(
-                                    [
-                                        func.count(transfernote.c.transfernoteid).label(
-                                            "tn"
-                                        )
-                                    ]
-                                ).where(
-                                    and_(
-                                        transfernote.c.transfernotedate >= yearStart,
-                                        transfernote.c.transfernotedate < startDate,
-                                        transfernote.c.transfernoteid
-                                        == stockRow["dcinvtnid"],
-                                    )
-                                )
+                        if stockRow["inout"] == 15:
+                            gopeningStock = float(gopeningStock) - float(
+                                stockRow["qty"]
                             )
-                            countrow = countresult.fetchone()
-                            if countrow["tn"] == 1:
-                                if stockRow["inout"] == 9:
-                                    gopeningStock = float(gopeningStock) + float(
-                                        stockRow["qty"]
-                                    )
-                                if stockRow["inout"] == 15:
-                                    gopeningStock = float(gopeningStock) - float(
-                                        stockRow["qty"]
-                                    )
-                        if stockRow["dcinvtnflag"] == 18:
-                            # Rejection Note
+                        if stockRow["dcinvtnflag"] in [2, 18]:
                             if stockRow["inout"] == 9:
-                                gopeningstock = float(gopeningstock) + float(
-                                    stockRow["qty"]
-                                )
                                 totalinward = float(totalinward) + float(
                                     stockRow["qty"]
                                 )
                             if stockRow["inout"] == 15:
-                                gopeningstock = float(gopeningstock) - float(
-                                    stockRow["qty"]
-                                )
                                 totaloutward = float(totaloutward) + float(
                                     stockRow["qty"]
                                 )
-                        if stockRow["dcinvtnflag"] == 7:
-                            # Debit Credit Note
-                            countresult = con.execute(
-                                select([func.count(drcr.c.drcrid).label("dc")]).where(
-                                    and_(
-                                        drcr.c.drcrdate >= yearStart,
-                                        drcr.c.drcrdate < startDate,
-                                        drcr.c.drcrid == stockRow["dcinvtnid"],
-                                    )
-                                )
-                            )
-                            countrow = countresult.fetchone()
-                            if countrow["dc"] == 1:
-                                if stockRow["inout"] == 9:
-                                    gopeningStock = float(gopeningStock) + float(
-                                        stockRow["qty"]
-                                    )
-                                if stockRow["inout"] == 15:
-                                    gopeningStock = float(gopeningStock) - float(
-                                        stockRow["qty"]
-                                    )
                 stockReport.append(
                     {
                         "date": "",
