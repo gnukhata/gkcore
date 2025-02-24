@@ -182,11 +182,6 @@ class api_godownregister(object):
                             stock.c.goid == godownCode,
                             stock.c.orgcode == orgcode,
                             stock.c.inout.in_(inoutflag),
-                            or_(
-                                stock.c.dcinvtnflag != 40,
-                                stock.c.dcinvtnflag != 30,
-                                stock.c.dcinvtnflag != 90,
-                            ),
                         )
                     )
                     .order_by(stock.c.stockdate)
