@@ -42,6 +42,7 @@ from gkcore.models.gkdb import (
     unitofmeasurement,
     goprod,
 )
+from gkcore.views.organisation.services import get_organisation_profile
 from sqlalchemy.sql import select, distinct
 from sqlalchemy import func, desc, func
 import json
@@ -124,9 +125,11 @@ class api_transfernote(object):
                 }
                 for id, name, hsn in products
             }
+            org_details = get_organisation_profile(authDetails["orgcode"])
             transaction_details = {
                 "godowns": godowns,
                 "products": product_details,
+                "organisation": org_details,
             }
             transaction_id = con.execute(
                 transaction.insert()
