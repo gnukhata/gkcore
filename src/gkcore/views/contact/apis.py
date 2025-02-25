@@ -28,7 +28,9 @@ Contributors:
 
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.models.gkdb import accounts
 from gkcore.views.contact.schemas import ContactDetails, ContactDetailsUpdate
+from gkcore.views.reports.helpers.balance import get_current_balance
 from sqlalchemy.sql import select
 from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_
@@ -255,8 +257,25 @@ class api_customer(object):
                 )
                 customers = []
                 for row in result:
+                    account = con.execute(
+                        select([accounts])
+                        .where(
+                            and_(
+                                accounts.c.accountname == row["custname"],
+                                accounts.c.orgcode == authDetails["orgcode"],
+                            )
+                        )
+                    ).fetchone()
+                    balance = ""
+                    if account:
+                        balance = "%.2f" % float(get_current_balance(con, account))
+
                     customers.append(
-                        {"custid": row["custid"], "custname": row["custname"]}
+                        {
+                            "custid": row["custid"],
+                            "custname": row["custname"],
+                            "balance": balance,
+                        }
                     )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": customers}
 
