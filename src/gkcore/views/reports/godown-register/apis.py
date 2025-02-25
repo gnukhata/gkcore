@@ -40,6 +40,7 @@ from gkcore.models.gkdb import (
     dcinv,
     rejectionnote,
     drcr,
+    godown,
 )
 from sqlalchemy.sql import select, and_, or_
 from datetime import datetime
@@ -50,7 +51,7 @@ from gkcore.views.reports.helpers.stock import (
     godownwisestockonhandfun,
 )
 
-@view_defaults(request_method="GET", renderer="json")
+@view_defaults(request_method="GET", renderer="json_extended")
 class api_godownregister(object):
     def __init__(self, request):
         self.request = request
@@ -154,17 +155,24 @@ class api_godownregister(object):
                 stockReport = []
                 totalinward = 0.00
                 totaloutward = 0.00
-                openingStock = 0.00
+                gopeningStock = 0.00
+                godown_stock_value = 0.00
                 goopeningStockResult = con.execute(
-                    select([goprod.c.goopeningstock]).where(
+                    select([goprod.c.goopeningstock, goprod.c.openingstockvalue]).where(
                         and_(
                             goprod.c.productcode == productCode,
                             goprod.c.goid == godownCode,
                             goprod.c.orgcode == orgcode,
                         )
                     )
-                )
-                gopeningStock = goopeningStockResult.scalar() or 0.00
+                ).fetchone()
+                if goopeningStockResult:
+                    gopeningStock = goopeningStockResult["goopeningstock"]
+                    godown_stock_value = goopeningStockResult["openingstockvalue"]
+
+                gopeningStock = float(gopeningStock)
+                godown_stock_value = float(godown_stock_value)
+
                 # inoutflag query param is used to filter entries by sales and purchases
                 # 9 -> purchase, 15 -> sales, 0 -> all.
                 inoutflag = [dataset.get("inoutflag")]
@@ -193,13 +201,11 @@ class api_godownregister(object):
                 if startDate > yearStart:
                     for stockRow in stockData:
                         if stockRow["inout"] == 9:
-                            gopeningStock = float(gopeningStock) + float(
-                                stockRow["qty"]
-                            )
+                            gopeningStock += float(stockRow["qty"])
+                            godown_stock_value += float(stockRow["qty"] * stockRow["rate"])
                         if stockRow["inout"] == 15:
-                            gopeningStock = float(gopeningStock) - float(
-                                stockRow["qty"]
-                            )
+                            gopeningStock -= float(stockRow["qty"])
+                            godown_stock_value -= float(stockRow["qty"] * stockRow["rate"])
                         if stockRow["dcinvtnflag"] in [2, 18]:
                             if stockRow["inout"] == 9:
                                 totalinward = float(totalinward) + float(
@@ -223,11 +229,42 @@ class api_godownregister(object):
                         "rnid": "",
                         "rnno": "",
                         "inward": "%.2f" % float(gopeningStock),
+                        "balance_value": godown_stock_value,
                     }
                 )
                 totalinward = totalinward + float(gopeningStock)
 
                 for finalRow in stockData:
+                    date = ""
+                    particulars = ""
+                    trntype = ""
+                    dcid = ""
+                    dcno = ""
+                    rnid = ""
+                    rnno = ""
+                    invid = ""
+                    invno = ""
+                    drcrid = ""
+                    drcrno = ""
+                    icflag = ""
+                    tnid = ""
+                    tnno = ""
+                    inwardqty = ""
+                    outwardqty = ""
+                    balance = ""
+                    balance_value = ""
+                    if finalRow["inout"] == 9:
+                        gopeningStock += float(finalRow["qty"])
+                        godown_stock_value += float(finalRow["qty"] * finalRow["rate"])
+                        inwardqty = finalRow["qty"]
+                        totalinward += float(inwardqty)
+                    if finalRow["inout"] == 15:
+                        gopeningStock -= float(finalRow["qty"])
+                        godown_stock_value -= float(finalRow["qty"] * finalRow["rate"])
+                        outwardqty = finalRow["qty"]
+                        totaloutward += float(outwardqty)
+                    balance = "%.2f" % float(gopeningStock)
+                    balance_value = "%.2f" % float(godown_stock_value)
                     if finalRow["dcinvtnflag"] == 4:
                         countresult = con.execute(
                             select(
@@ -253,6 +290,10 @@ class api_godownregister(object):
                                     dcinv.c.dcid == finalRow["dcinvtnid"]
                                 )
                             )
+                            date = countrow["dcdate"]
+                            particulars = custrow["custname"]
+                            dcid = finalRow["dcinvtnid"]
+                            dcno = countrow["dcno"]
                             if dcinvresult.rowcount == 1:
                                 dcinvrow = dcinvresult.fetchone()
                                 invresult = con.execute(
@@ -262,84 +303,21 @@ class api_godownregister(object):
                                 )
                                 """ No need to check if invresult has rowcount 1 since it must be 1 """
                                 invrow = invresult.fetchone()
+                                invid = dcinvrow["invid"]
+                                invno = invrow["invoiceno"]
+                                icflag = invrow["icflag"]
                                 trntype = "delchal&invoice"
                             else:
-                                dcinvrow = {"invid": ""}
-                                invrow = {"invoiceno": "", "icflag": ""}
                                 trntype = "delchal"
 
-                            if finalRow["inout"] == 9:
-                                gopeningStock = float(gopeningStock) + float(
-                                    finalRow["qty"]
-                                )
-                                totalinward = float(totalinward) + float(
-                                    finalRow["qty"]
-                                )
-
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(countrow["dcdate"].date()),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": custrow["custname"],
-                                        "trntype": trntype,
-                                        "dcid": finalRow["dcinvtnid"],
-                                        "dcno": countrow["dcno"],
-                                        "rnid": "",
-                                        "rnno": "",
-                                        "invid": dcinvrow["invid"],
-                                        "invno": invrow["invoiceno"],
-                                        "icflag": invrow["icflag"],
-                                        "tnid": "",
-                                        "tnno": "",
-                                        "inwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "outwardqty": "",
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
-                            if finalRow["inout"] == 15:
-                                gopeningStock = float(gopeningStock) - float(
-                                    finalRow["qty"]
-                                )
-                                totaloutward = float(totaloutward) + float(
-                                    finalRow["qty"]
-                                )
-
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(countrow["dcdate"].date()),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": custrow["custname"],
-                                        "trntype": trntype,
-                                        "dcid": finalRow["dcinvtnid"],
-                                        "dcno": countrow["dcno"],
-                                        "rnid": "",
-                                        "rnno": "",
-                                        "invid": dcinvrow["invid"],
-                                        "invno": invrow["invoiceno"],
-                                        "icflag": invrow["icflag"],
-                                        "tnid": "",
-                                        "tnno": "",
-                                        "inwardqty": "",
-                                        "outwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
                     if finalRow["dcinvtnflag"] == 20:
                         countresult = con.execute(
                             select(
                                 [
                                     transfernote.c.transfernotedate,
                                     transfernote.c.transfernoteno,
+                                    transfernote.c.fromgodown,
+                                    transfernote.c.togodown,
                                 ]
                             ).where(
                                 and_(
@@ -350,74 +328,24 @@ class api_godownregister(object):
                                 )
                             )
                         )
+                        trntype = "transfer note"
+                        tnid = finalRow["dcinvtnid"]
                         if countresult.rowcount == 1:
                             countrow = countresult.fetchone()
-                            if finalRow["inout"] == 9:
-                                gopeningStock = float(gopeningStock) + float(
-                                    finalRow["qty"]
-                                )
-                                totalinward = float(totalinward) + float(
-                                    finalRow["qty"]
-                                )
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(
-                                                    countrow["transfernotedate"].date()
-                                                ),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": "",
-                                        "trntype": "transfer note",
-                                        "dcid": "",
-                                        "dcno": "",
-                                        "invid": "",
-                                        "invno": "",
-                                        "rnid": "",
-                                        "rnno": "",
-                                        "tnid": finalRow["dcinvtnid"],
-                                        "tnno": countrow["transfernoteno"],
-                                        "inwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "outwardqty": "",
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
-                            if finalRow["inout"] == 15:
-                                gopeningStock = float(gopeningStock) - float(
-                                    finalRow["qty"]
-                                )
-                                totaloutward = float(totaloutward) + float(
-                                    finalRow["qty"]
-                                )
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(
-                                                    countrow["transfernotedate"].date()
-                                                ),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": "",
-                                        "trntype": "transfer note",
-                                        "dcid": "",
-                                        "dcno": "",
-                                        "invid": "",
-                                        "invno": "",
-                                        "rnid": "",
-                                        "rnno": "",
-                                        "tnid": finalRow["dcinvtnid"],
-                                        "tnno": countrow["transfernoteno"],
-                                        "inwardqty": "",
-                                        "outwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
+
+                            from_godown_id = countrow["fromgodown"]
+                            to_godown_id = countrow["togodown"]
+                            from_godown, to_godown = con.execute(
+                                    select([godown.c.goname])
+                                    .where(godown.c.goid.in_([from_godown_id, to_godown_id]))
+                                ).fetchall()
+
+                            particulars = (
+                                f"Transfer from {from_godown['goname']} to {to_godown['goname']}"
+                            )
+
+                            tnno = countrow["transfernoteno"]
+                            date = countrow["transfernotedate"]
 
                     if finalRow["dcinvtnflag"] == 18:
                         countresult = con.execute(
@@ -461,66 +389,11 @@ class api_godownregister(object):
                                     )
                                 )
                             custrow = custdata.fetchone()
-                            if finalRow["inout"] == 9:
-                                gopeningStock = float(gopeningStock) + float(
-                                    finalRow["qty"]
-                                )
-                                totalinward = float(totalinward) + float(
-                                    finalRow["qty"]
-                                )
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(countrow["rndate"].date()),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": custrow["custname"],
-                                        "trntype": "Rejection Note",
-                                        "rnid": finalRow["dcinvtnid"],
-                                        "rnno": countrow["rnno"],
-                                        "dcno": "",
-                                        "invid": "",
-                                        "invno": "",
-                                        "tnid": "",
-                                        "tnno": "",
-                                        "inwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "outwardqty": "",
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
-                            if finalRow["inout"] == 15:
-                                gopeningStock = float(gopeningStock) - float(
-                                    finalRow["qty"]
-                                )
-                                totaloutward = float(totaloutward) + float(
-                                    finalRow["qty"]
-                                )
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(countrow["rndate"].date()),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": custrow["custname"],
-                                        "trntype": "Rejection Note",
-                                        "rnid": finalRow["dcinvtnid"],
-                                        "rnno": countrow["rnno"],
-                                        "dcno": "",
-                                        "invid": "",
-                                        "invno": "",
-                                        "tnid": "",
-                                        "tnno": "",
-                                        "inwardqty": "",
-                                        "outwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
+                            date = countrow["rndate"]
+                            particulars = custrow["custname"]
+                            trntype = "Rejection Note"
+                            rnid = finalRow["dcinvtnid"]
+                            rnno = countrow["rnno"]
                     if finalRow["dcinvtnflag"] == 7:
                         countresult = con.execute(
                             select(
@@ -556,71 +429,36 @@ class api_godownregister(object):
                                 trntype = "Credit Note"
                             else:
                                 trntype = "Debit Note"
-                            if finalRow["inout"] == 9:
-                                gopeningStock = float(gopeningStock) + float(
-                                    finalRow["qty"]
-                                )
-                                totalinward = float(totalinward) + float(
-                                    finalRow["qty"]
-                                )
-
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(countrow["drcrdate"].date()),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": custrow["custname"],
-                                        "trntype": trntype,
-                                        "drcrid": finalRow["dcinvtnid"],
-                                        "drcrno": countrow["drcrno"],
-                                        "dcno": "",
-                                        "dcid": "",
-                                        "rnid": "",
-                                        "rnno": "",
-                                        "invid": "",
-                                        "invno": "",
-                                        "inwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "outwardqty": "",
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
-                            if finalRow["inout"] == 15:
-                                gopeningStock = float(gopeningStock) - float(
-                                    finalRow["qty"]
-                                )
-                                totaloutward = float(totaloutward) + float(
-                                    finalRow["qty"]
-                                )
-
-                                stockReport.append(
-                                    {
-                                        "date": datetime.strftime(
-                                            datetime.strptime(
-                                                str(countrow["drcrdate"].date()),
-                                                "%Y-%m-%d",
-                                            ).date(),
-                                            "%d-%m-%Y",
-                                        ),
-                                        "particulars": custrow["custname"],
-                                        "trntype": trntype,
-                                        "drcrid": finalRow["dcinvtnid"],
-                                        "drcrno": countrow["drcrno"],
-                                        "dcid": "",
-                                        "dcno": "",
-                                        "invid": "",
-                                        "invno": "",
-                                        "rnid": "",
-                                        "rnno": "",
-                                        "inwardqty": "",
-                                        "outwardqty": "%.2f" % float(finalRow["qty"]),
-                                        "balance": "%.2f" % float(gopeningStock),
-                                    }
-                                )
-
+                            particulars = custrow["custname"]
+                            drcrid = finalRow["dcinvtnid"]
+                            drcrno = countrow["drcrno"]
+                            date = countrow["drcrdate"]
+                    stockReport.append(
+                        {
+                            "date": date,
+                            "particulars": particulars,
+                            "trntype": trntype,
+                            "dcid": dcid,
+                            "dcno": dcno,
+                            "rnid": rnid,
+                            "rnno": rnno,
+                            "invid": invid,
+                            "invno": invno,
+                            "icflag": icflag,
+                            "tnid": tnid,
+                            "tnno": tnno,
+                            "drcrid": drcrid,
+                            "drcrno": drcrno,
+                            "inwardqty": "%.2f" % float(inwardqty) if inwardqty else "",
+                            "outwardqty": (
+                                "%.2f" % float(outwardqty) if outwardqty else ""
+                            ),
+                            "balance": "%.2f" % float(balance) if balance else "",
+                            "balance_value": (
+                                "%.2f" % float(balance_value) if balance_value else ""
+                            ),
+                        }
+                    )
                 stockReport.append(
                     {
                         "date": "",
