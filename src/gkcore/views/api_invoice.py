@@ -74,6 +74,7 @@ from datetime import datetime, date
 import jwt
 import gkcore
 from gkcore.utils import authCheck
+from gkcore.views.organisation.services import get_organisation_profile
 from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.helpers.delivery_note import create_delivery_note, cancel_delivery_note
 from gkcore.views.helpers.voucher import cancel_voucher
@@ -1611,10 +1612,12 @@ class api_invoice(object):
                     }
                     for id, name, hsn in products
                 }
+                org_details = get_organisation_profile(authDetails["orgcode"]),
                 transaction_details = {
                     "godown": dict(godown_details),
                     "contact": dict(contact_details),
                     "products": product_details,
+                    "organisation": org_details,
                 }
                 transaction_id = con.execute(
                     transaction.insert()
