@@ -147,6 +147,7 @@ class api_purchaseorder(object):
                 purchaseorder.c.csid,
                 purchaseorder.c.attachmentcount,
                 purchaseorder.c.purchaseordertotal,
+                purchaseorder.c.immutable_data_id,
             ])
             if "psflag" in self.request.params:
                 query = query.where(and_(
@@ -167,6 +168,10 @@ class api_purchaseorder(object):
                     )
                 )
                 custrow = custdata.fetchone()
+                immutable_data = con.execute(
+                    select([transaction.c.transaction_details])
+                    .where(transaction.c.transaction_id == row["immutable_data_id"])
+                ).scalar()
                 allposo.append(
                     {
                         "orderid": row["orderid"],
@@ -175,6 +180,7 @@ class api_purchaseorder(object):
                             row["orderdate"], "%d-%m-%Y"
                         ),
                         "attachmentcount": row["attachmentcount"],
+                        "immutable_data": immutable_data,
                         "customer": custrow["custname"],
                         "ordertotal": float(row["purchaseordertotal"]),
                         "csflag":  custrow["csflag"],
