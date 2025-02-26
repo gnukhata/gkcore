@@ -3683,6 +3683,7 @@ class api_invoice(object):
                             invoice.c.invid,
                             invoice.c.invoicedate,
                             invoice.c.invoicetotal,
+                            invoice.c.immutable_data_id,
                         ]
                     )
                     .where(
@@ -3696,6 +3697,10 @@ class api_invoice(object):
                 )
                 invoices = []
                 for row in result:
+                    immutable_data = con.execute(
+                        select([transaction.c.transaction_details])
+                        .where(transaction.c.transaction_id == row["immutable_data_id"])
+                    ).scalar()
                     invoices.append(
                         {
                             "invoiceno": row["invoiceno"],
@@ -3704,6 +3709,7 @@ class api_invoice(object):
                                 row["invoicedate"], "%d-%m-%Y"
                             ),
                             "invoicetotal": float(row["invoicetotal"]),
+                            "immutable_data": immutable_data,
                         }
                     )
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": invoices}
