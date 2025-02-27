@@ -1770,7 +1770,7 @@ def get_current_balance(connection, account):
     This accepts database connection and account ResultProxy object as arguments.
     """
     account_balance = (
-        account["openingbal"] or 0 + get_account_vouchers_data(
+        (float(account["openingbal"]) or 0) + get_account_vouchers_data(
             connection, account["orgcode"], account["accountcode"]
         )
     )

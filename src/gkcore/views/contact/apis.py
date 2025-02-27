@@ -227,8 +227,8 @@ class api_customer(object):
                     }
 
 
-    @view_config(request_param="qty=custall", request_method="GET", renderer="json")
-    def getAllCustomers(self):
+    @view_config(request_method="GET", renderer="json")
+    def getAllContacts(self):
         try:
             token = self.request.headers["gktoken"]
         except:
@@ -238,7 +238,8 @@ class api_customer(object):
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             with eng.connect() as con:
-                # there is only one possibility for a catch which is failed connection to db.
+                contact_type_flag = self.request.params.get("qty", "custall")
+                contact_type_flag_map = {"custall": 3, "supall": 19}
                 result = con.execute(
                     select(
                         [
@@ -250,12 +251,13 @@ class api_customer(object):
                         and_(
                             gkdb.customerandsupplier.c.orgcode
                             == authDetails["orgcode"],
-                            gkdb.customerandsupplier.c.csflag == 3,
+                            gkdb.customerandsupplier.c.csflag
+                            == contact_type_flag_map[contact_type_flag],
                         )
                     )
                     .order_by(gkdb.customerandsupplier.c.custname)
                 )
-                customers = []
+                contact_list = []
                 for row in result:
                     account = con.execute(
                         select([accounts])
@@ -270,50 +272,14 @@ class api_customer(object):
                     if account:
                         balance = "%.2f" % float(get_current_balance(con, account))
 
-                    customers.append(
+                    contact_list.append(
                         {
                             "custid": row["custid"],
                             "custname": row["custname"],
                             "balance": balance,
                         }
                     )
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": customers}
-
-
-    @view_config(request_param="qty=supall", request_method="GET", renderer="json")
-    def getAllSuppliers(self):
-        try:
-            token = self.request.headers["gktoken"]
-        except:
-            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
-        if authDetails["auth"] == False:
-            return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        else:
-            with eng.connect() as con:
-                # there is only one possibility for a catch which is failed connection to db.
-                result = con.execute(
-                    select(
-                        [
-                            gkdb.customerandsupplier.c.custname,
-                            gkdb.customerandsupplier.c.custid,
-                        ]
-                    )
-                    .where(
-                        and_(
-                            gkdb.customerandsupplier.c.orgcode
-                            == authDetails["orgcode"],
-                            gkdb.customerandsupplier.c.csflag == 19,
-                        )
-                    )
-                    .order_by(gkdb.customerandsupplier.c.custname)
-                )
-                suppliers = []
-                for row in result:
-                    suppliers.append(
-                        {"custid": row["custid"], "custname": row["custname"]}
-                    )
-                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": suppliers}
+                return {"gkstatus": gkcore.enumdict["Success"], "gkresult": contact_list}
 
 
     @view_config(route_name="customer_custid", request_method="DELETE", renderer="json")
