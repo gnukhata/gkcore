@@ -48,7 +48,7 @@ class api_product(object):
     def __init__(self, request):
         self.request = request
 
-    @view_config(request_method="GET", renderer="json")
+    @view_config(request_method="GET", renderer="json_extended")
     def getAllProducts(self):
         """ This API is to fetch product list based on user role and item type (all or
         product only). If the user is the godown incharge, it will be filtering the
@@ -176,6 +176,7 @@ class api_product(object):
                         "categoryname": categoryname,
                         "productcode": row["productcode"],
                         "productdesc": row["productdesc"],
+                        "productmrp": row["prodmrp"],
                         "categorycode": row["categorycode"],
                         "productquantity": "%.2f" % float(openingStock),
                         "gsflag": row["gsflag"],
