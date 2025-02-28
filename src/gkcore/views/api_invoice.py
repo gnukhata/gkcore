@@ -1149,7 +1149,7 @@ def getInvoiceData(con, orgcode, params):
             ).where(product.c.productcode == pc)
         )
         prodrow = prod.fetchone()
-        if int(prodrow["gsflag"]) == 7:
+        if int(prodrow["gsflag"]) == 7 and prodrow["uomid"] is not None:
             um = con.execute(
                 select([unitofmeasurement.c.unitname]).where(
                     unitofmeasurement.c.uomid == int(prodrow["uomid"])
@@ -1161,7 +1161,7 @@ def getInvoiceData(con, orgcode, params):
                 (float(contentsData[pc][list(contentsData[pc].keys())[0]]))
                 * float(list(contentsData[pc].keys())[0])
             ) - float(discount)
-        else:
+        if int(prodrow["gsflag"]) != 7:
             unitofMeasurement = ""
             taxableAmount = float(list(contentsData[pc].keys())[0]) - float(
                 discount
@@ -3397,7 +3397,7 @@ class api_invoice(object):
                         ).where(product.c.productcode == pc)
                     )
                     prodrow = prod.fetchone()
-                    if int(prodrow["gsflag"]) == 7:
+                    if int(prodrow["gsflag"]) == 7 and prodrow["uomid"] is not None:
                         um = con.execute(
                             select([unitofmeasurement.c.unitname]).where(
                                 unitofmeasurement.c.uomid == int(prodrow["uomid"])
@@ -3409,7 +3409,7 @@ class api_invoice(object):
                             (float(contentsData[pc][list(contentsData[pc].keys())[0]]))
                             * float(list(contentsData[pc].keys())[0])
                         ) - float(discount)
-                    else:
+                    if int(prodrow["gsflag"]) != 7:
                         unitofMeasurement = ""
                         taxableAmount = float(list(contentsData[pc].keys())[0]) - float(
                             discount
@@ -4186,13 +4186,15 @@ class api_invoice(object):
                     productdesc = productdata.fetchone()
                     if productdesc == None:
                         continue
-                    uomresult = self.con.execute(
-                        select([unitofmeasurement.c.unitname]).where(
-                            unitofmeasurement.c.uomid == productdesc["uomid"]
+                    uom = None
+                    if int(productdesc["uomid"]) is not None:
+                        uomresult = self.con.execute(
+                            select([unitofmeasurement.c.unitname]).where(
+                                unitofmeasurement.c.uomid == productdesc["uomid"]
+                            )
                         )
-                    )
-                    unitnamrrow = uomresult.fetchone()
-                    uom = unitnamrrow["unitname"]
+                        unitnamrrow = uomresult.fetchone()
+                        uom = unitnamrrow["unitname"]
                     freeqtys = invData["freeqty"]
                     if discounts != None:
                         # discflag is for discount type. Percent=16/Amount=1
