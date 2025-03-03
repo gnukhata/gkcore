@@ -31,19 +31,16 @@ Contributors:
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
 from gkcore.models import gkdb
-from gkcore.views.reports.helpers.balance import get_account_vouchers_data
+from gkcore.views.account.schemas import AccountDetails
+from gkcore.views.account.services import reset_acc_defaults
+from gkcore.views.reports.helpers.balance import get_account_vouchers_data, get_current_balance
 from sqlalchemy.sql import select
-import json
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc, alias, or_, func
+from sqlalchemy import and_, or_, func
 from sqlalchemy.sql.expression import text
-from pyramid.request import Request
-from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
-from sqlalchemy.ext.baked import Result
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import accounts
-from datetime import datetime, date
+from datetime import datetime
 from gkcore.views.api_gkuser import getUserRole
 
 """
@@ -64,39 +61,11 @@ refer to the __init__.py of main gkcore package for details on routing url
 """
 
 
-def reset_acc_defaults(con, orgcode):
-    acc_list = con.execute(
-        select([accounts.c.accountcode, accounts.c.accountname]).where(
-            accounts.c.orgcode == orgcode
-        )
-    ).fetchall()
-    default_acc = {
-        "Bank A/C": 2,
-        "Cash in hand": 3,
-        "Purchase A/C": 16,
-        "Sale A/C": 19,
-        "Round Off Paid": 180,
-        "Round Off Received": 181,
-    }
-    for acc in acc_list:
-        default_code = 0
-        if acc["accountname"] in default_acc:
-            default_code = default_acc[acc["accountname"]]
-        con.execute(
-            accounts.update()
-            .where(accounts.c.accountcode == acc["accountcode"])
-            .values(defaultflag=default_code)
-        )
-
-
 @view_defaults(route_name="accounts")
 class api_account(object):
     # constructor will initialise request.
     def __init__(self, request):
-        self.request = Request
         self.request = request
-        self.con = Connection
-        print("accounts initialized")
 
     @view_config(request_method="POST", renderer="json")
     def addAccount(self):
@@ -237,6 +206,53 @@ class api_account(object):
                     "defaultflag": row["defaultflag"],
                 }
                 return {"gkstatus": enumdict["Success"], "gkresult": acc}
+
+
+    @view_config(route_name="account_details", request_method="GET", renderer="json")
+    def getAccountDetails(self):
+        """API to get account details based on accountcode or accounts names.
+
+        Accepts accountname and accountcode as parameters.
+        """
+        try:
+            token = self.request.headers["gktoken"]
+        except:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        authDetails = authCheck(token)
+        if authDetails["auth"] == False:
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+        dataset = AccountDetails(**self.request.params).model_dump()
+        accountcode = dataset["accountcode"]
+        accountname = dataset["accountname"]
+        with eng.connect() as con:
+            if accountcode:
+                query = select([gkdb.accounts]).where(
+                    and_(
+                        gkdb.accounts.c.accountcode == accountcode,
+                        gkdb.accounts.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+            elif accountname:
+                query = select([gkdb.accounts]).where(
+                    and_(
+                        gkdb.accounts.c.accountname == accountname,
+                        gkdb.accounts.c.orgcode == authDetails["orgcode"],
+                    )
+                )
+            result = con.execute(query)
+            row = result.fetchone()
+            if not row:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+
+            account = {
+                "accountcode": row["accountcode"],
+                "accountname": row["accountname"],
+                "openingbal": "%.2f" % float(row["openingbal"]),
+                "currentbal": "%.2f" % float(get_current_balance(con, row)),
+                "groupcode": row["groupcode"],
+                "defaultflag": row["defaultflag"],
+            }
+            return {"gkstatus": enumdict["Success"], "gkresult": account}
 
 
     @view_config(request_param="type=getAccCode", request_method="GET", renderer="json")
@@ -776,5 +792,5 @@ defaultflag '16' or '19' set to the '0'.
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
             with eng.connect() as con:
-                reset_acc_defaults(self.con, self.request.params["orgcode"])
+                reset_acc_defaults(con, self.request.params["orgcode"])
                 return {"gkstatus": enumdict["Success"]}
