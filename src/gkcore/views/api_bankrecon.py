@@ -74,7 +74,7 @@ def get_bank_transactions(
                 vouchers.c.voucherdate <= calculateTo,
             )
         )
-        .order_by(vouchers.c.voucherdate)
+        .order_by(bankrecon.c.reconcode)
         .select_from(
             bankrecon.join(
                 vouchers, bankrecon.c.vouchercode == vouchers.c.vouchercode
