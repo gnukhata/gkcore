@@ -263,6 +263,7 @@ class api_transfernote(object):
                         transfernote.c.transfernoteno,
                         transfernote.c.fromgodown,
                         transfernote.c.togodown,
+                        transfernote.c.immutable_data_id,
                     ]
                 )
                 .where(transfernote.c.orgcode == authDetails["orgcode"])
@@ -278,6 +279,10 @@ class api_transfernote(object):
                     select([godown.c.goname])
                     .where(godown.c.goid == row["togodown"])
                 ).scalar()
+                immutable_data = con.execute(
+                    select([transaction.c.transaction_details])
+                    .where(transaction.c.transaction_id == row["immutable_data_id"])
+                ).scalar()
                 tn.append(
                     {
                         "transfernoteno": row["transfernoteno"],
@@ -287,6 +292,7 @@ class api_transfernote(object):
                         ),
                         "fromgodown": fromgodown,
                         "togodown": togodown,
+                        "immutable_data": immutable_data,
                     }
                 )
             return {"gkstatus": enumdict["Success"], "gkresult": tn}

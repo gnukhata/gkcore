@@ -535,7 +535,7 @@ class api_drcr(object):
             for row in result:
                 # invoice,cust
                 inv = con.execute(
-                    select([invoice.c.custid]).where(and_(
+                    select([invoice.c.custid, invoice.c.immutable_data_id]).where(and_(
                         invoice.c.invid == row["invid"],
                         invoice.c.inoutflag.in_(inoutflag)
                     ))
@@ -552,6 +552,10 @@ class api_drcr(object):
                     ).where(customerandsupplier.c.custid == invdata["custid"])
                 )
                 custsuppdata = custsupp.fetchone()
+                immutable_data = con.execute(
+                    select([transaction.c.transaction_details])
+                    .where(transaction.c.transaction_id == invdata["immutable_data_id"])
+                ).scalar()
                 rowdata = {
                     "drcrid": row["drcrid"],
                     "drcrno": row["drcrno"],
@@ -562,6 +566,7 @@ class api_drcr(object):
                     "totreduct": "%.2f" % float(row["totreduct"]),
                     "invid": row["invid"],
                     "attachmentcount": row["attachmentcount"],
+                    "immutable_data": immutable_data,
                     "custid": invdata["custid"],
                     "custname": custsuppdata["custname"],
                     "csflag": custsuppdata["csflag"],

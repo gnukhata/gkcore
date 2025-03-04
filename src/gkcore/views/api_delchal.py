@@ -131,13 +131,24 @@ class api_delchal(object):
             for row in result:
                 # if delchal is linked to invoice, it shouldn't be cancelled. canceldelchal = 1 (if cancellable), 0 (if uncancellable)
                 canceldelchal = 1
-                exist_dcinv = con.execute(
-                    "select count(dcid) as dccount from dcinv where dcid=%d and orgcode=%d"
-                    % (row["dcid"], authDetails["orgcode"])
-                )
-                existDcinv = exist_dcinv.fetchone()
-                if existDcinv["dccount"] > 0:
+                invid = con.execute(
+                    select([dcinv.c.invid])
+                    .where(and_(
+                        dcinv.c.dcid == row["dcid"],
+                        dcinv.c.orgcode == authDetails["orgcode"],
+                    ))
+                ).scalar()
+                immutable_data = {}
+                if invid:
                     canceldelchal = 0
+                    immutable_data_id = con.execute(
+                        select([invoice.c.immutable_data_id])
+                        .where(invoice.c.invid == invid)
+                    ).scalar()
+                    immutable_data = con.execute(
+                        select([transaction.c.transaction_details])
+                        .where(transaction.c.transaction_id == immutable_data_id)
+                    ).scalar()
 
                 delchalgodown = con.execute(
                     select([stock.c.goid]).where(
@@ -181,6 +192,7 @@ class api_delchal(object):
                             "attachmentcount": row["attachmentcount"],
                             "goname": godownMap[delchalgoid]["goname"] or "",
                             "canceldelchal": canceldelchal,
+                            "immutable_data": immutable_data,
                         }
                     )
             return {"gkstatus": gkcore.enumdict["Success"], "gkresult": delchals}
@@ -1223,6 +1235,23 @@ class api_delchal(object):
             dcdata = []
             srno = 1
             for row in alldcids:
+                invid = con.execute(
+                    select([dcinv.c.invid])
+                    .where(and_(
+                        dcinv.c.dcid == row["dcid"],
+                        dcinv.c.orgcode == authDetails["orgcode"],
+                    ))
+                ).scalar()
+                immutable_data = {}
+                if invid:
+                    immutable_data_id = con.execute(
+                        select([invoice.c.immutable_data_id])
+                        .where(invoice.c.invid == invid)
+                    ).scalar()
+                    immutable_data = con.execute(
+                        select([transaction.c.transaction_details])
+                        .where(transaction.c.transaction_id == immutable_data_id)
+                    ).scalar()
                 godown = ""
                 cresult = con.execute(
                     select(
@@ -1272,6 +1301,7 @@ class api_delchal(object):
                     "custname": customerdetails["custname"],
                     "goname": godown,
                     "srno": srno,
+                    "immutable_data": immutable_data,
                 }
                 dcdata.append(singledcdata)
                 srno += 1
