@@ -17,7 +17,7 @@ import traceback  # for printing detailed exception logs
 
 
 
-def taxable_value(inv, productcode, con, drcr=False):
+def taxable_value(con, inv, productcode, drcr=False):
     """
     Returns taxable value of product given invoice/drcr note and productcode
     If dr/cr is due to change in quantity(drcrmode=18) then taxable value is
@@ -46,7 +46,7 @@ def taxable_value(inv, productcode, con, drcr=False):
         return 0
 
 
-def cess_amount(inv, productcode, con, drcr=False):
+def cess_amount(con, inv, productcode, drcr=False):
     """
     Returns cess amount of product given invoice/drcr note and productcode
     """
@@ -56,7 +56,7 @@ def cess_amount(inv, productcode, con, drcr=False):
         else:
             cess_rate = float(inv["cess"][productcode])
 
-            t_value = taxable_value(inv, productcode, con, drcr=drcr)
+            t_value = taxable_value(con, inv, productcode, drcr=drcr)
             cess_amount = t_value * cess_rate / 100
 
             return float(cess_amount)
@@ -91,7 +91,7 @@ def normalise_state_code(statecode, gstin):
     return statecode
 
 
-def product_level(inv, con, drcr=False):
+def product_level(con, inv, drcr=False):
     """
     Invoices/drcr notes can contain multiple products with different tax rates
     this function adds taxable value and cess amount of all products with same
@@ -115,17 +115,17 @@ def product_level(inv, con, drcr=False):
     for prod in products:
         rate = float(inv["tax"][prod])
         if data.get(rate, None):
-            data[rate]["taxable_value"] += taxable_value(inv, prod, con, drcr)
-            data[rate]["cess"] += cess_amount(inv, prod, con, drcr)
+            data[rate]["taxable_value"] += taxable_value(con, inv, prod, drcr)
+            data[rate]["cess"] += cess_amount(con, inv, prod, drcr)
         else:
             data[rate] = {}
-            data[rate]["taxable_value"] = taxable_value(inv, prod, con, drcr)
-            data[rate]["cess"] = cess_amount(inv, prod, con, drcr)
+            data[rate]["taxable_value"] = taxable_value(con, inv, prod, drcr)
+            data[rate]["cess"] = cess_amount(con, inv, prod, drcr)
 
     return data
 
 
-def b2b_r1(invoices, con):
+def b2b_r1(con, invoices):
     """
     Collects and formats data about invoices made to other registered taxpayers
     """
@@ -179,7 +179,7 @@ def b2b_r1(invoices, con):
                 "inv_type": "R",  # Need to handle other gst types
                 "itms": [],
             }
-            for rate, tax_cess in list(product_level(inv, con).items()):
+            for rate, tax_cess in list(product_level(con, inv).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -234,7 +234,7 @@ def b2b_r1(invoices, con):
         return {"status": 3}
 
 
-def b2cl_r1(invoices, con):
+def b2cl_r1(con, invoices):
     """
     Collects and formats data about invoices for taxable outward supplies to
     consumers where:
@@ -285,7 +285,7 @@ def b2cl_r1(invoices, con):
                 "itms": [],
             }
 
-            for rate, tax_cess in list(product_level(inv, con).items()):
+            for rate, tax_cess in list(product_level(con, inv).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -338,7 +338,7 @@ def b2cl_r1(invoices, con):
         return {"status": 3}
 
 
-def b2cs_r1(invoices, con, drcr):
+def b2cs_r1(con, invoices, drcr):
     """
     Collects and formats data about supplies made to consumers
     of the following nature:
@@ -395,11 +395,11 @@ def b2cs_r1(invoices, con, drcr):
             row["ecommerce_gstin"] = ""
             for prod in inv["contents"]:
                 prod_row = deepcopy(row)
-                prod_row["taxable_value"] = taxable_value(inv, prod, con, drcr)
+                prod_row["taxable_value"] = taxable_value(con, inv, prod, drcr)
                 prod_row["rate"] = "%.2f" % float(inv["tax"][prod])
-                cess = cess_amount(inv, prod, con, drcr)
+                cess = cess_amount(con, inv, prod, drcr)
                 prod_row["cess"] = (
-                    cess_amount(inv, prod, con, drcr) if cess != "" else 0
+                    cess_amount(con, inv, prod, drcr) if cess != "" else 0
                 )
 
                 # for existing in b2cs:
@@ -459,7 +459,7 @@ def b2cs_r1(invoices, con, drcr):
         return {"status": 3, "data": []}
 
 
-def cdnr_r1(drcr_all, con):
+def cdnr_r1(con, drcr_all):
     """
     Collects and formats data about Credit/Debit Notes issued
     to the registered taxpayers
@@ -519,7 +519,7 @@ def cdnr_r1(drcr_all, con):
                 "inv_typ": "R",  # Need to handle other gst types
                 "itms": [],
             }
-            for rate, tax_cess in list(product_level(note, con, drcr=True).items()):
+            for rate, tax_cess in list(product_level(con, note, drcr=True).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -574,7 +574,7 @@ def cdnr_r1(drcr_all, con):
         return {"status": 3}
 
 
-def cdnur_r1(drcr_all, con):
+def cdnur_r1(con, drcr_all):
     """
     Collects and formats data about Credit/Debit Notes issued to
     unregistered person for interstate supplies
@@ -631,7 +631,7 @@ def cdnur_r1(drcr_all, con):
                 "typ": "R",
                 "itms": [],
             }
-            for rate, tax_cess in list(product_level(note, con, drcr=True).items()):
+            for rate, tax_cess in list(product_level(con, note, drcr=True).items()):
                 prod_row = deepcopy(row)
                 prod_row["taxable_value"] = "%.2f" % tax_cess["taxable_value"]
                 prod_row["rate"] = "%.2f" % rate
@@ -671,7 +671,7 @@ def cdnur_r1(drcr_all, con):
         return {"status": 3}
 
 
-def hsn_r1(orgcode, start, end, con):
+def hsn_r1(con, orgcode, start, end):
     """
     Retrieve all products data including product code,product description , hsn code, UOM.
     Loop through product code and retrive all sale invoice related data[ppu,tax,taxtype,sourceState,destinationState] for that particular product code.
