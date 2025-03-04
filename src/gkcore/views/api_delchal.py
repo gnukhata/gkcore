@@ -1365,8 +1365,8 @@ class api_delchal(object):
                     dcinv.c.dcid == dcid
                 )
             )
-            deliveryinfo = delchalresult.fetchone()
-            return {"gkstatus": 0, "data": deliveryinfo[0]}
+            deliveryinfo = delchalresult.scalar()
+            return {"gkstatus": 0, "data": deliveryinfo}
 
     @view_config(route_name="delchal_attachment")
     def getdelchalattachment(self):
