@@ -2177,5 +2177,8 @@ def migrate():
                         references transaction(transaction_id)
                     """)
 
+        with eng.begin() as con:
+            con.execute("alter table organisation add column if not exists cin text")
+
 
         print("Database migration successful")
