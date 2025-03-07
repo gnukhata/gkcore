@@ -89,62 +89,43 @@ class GstReturn(object):
             orgcode = authDetails["orgcode"]
 
             # All Sale Invoices
-            inv_all_query = select([invoice]).where(
-                and_(
-                    invoice.c.invoicedate.between(
-                        start_period.strftime("%Y-%m-%d"),
-                        end_period.strftime("%Y-%m-%d"),
-                    ),
-                    invoice.c.inoutflag == 15,
-                    invoice.c.taxflag == 7,
-                    invoice.c.orgcode == orgcode,
+            invoices = con.execute(
+               select(
+                    [
+                        invoice.c.invid,
+                        invoice.c.invoiceno,
+                        invoice.c.reversecharge,
+                        invoice.c.discount,
+                        invoice.c.invoicedate,
+                        invoice.c.invoicetotal,
+                        invoice.c.taxstate,
+                        invoice.c.sourcestate,
+                        invoice.c.tax,
+                        invoice.c.cess,
+                        invoice.c.taxflag,
+                        invoice.c.contents,
+                        customerandsupplier.c.gstin,
+                        customerandsupplier.c.custname,
+                        customerandsupplier.c.gst_reg_type,
+                        customerandsupplier.c.gst_party_type,
+                    ]
                 )
-            )
-            inv_all = con.execute(inv_all_query).fetchall()
-            invoices = []
-            inv_map = {}
-
-            counter = 0
-            for inv in inv_all:
-                invoices.append(dict(inv))
-                invoices[counter]["gstin"] = {}
-                invoices[counter]["custname"] = ""
-                inv_map[inv["invid"]] = counter
-                counter += 1
-
-            # All sale invoices that have customers
-            cust_inv_query = select(
-                [
-                    invoice,
-                    customerandsupplier.c.gstin,
-                    customerandsupplier.c.custname,
-                    customerandsupplier.c.gst_reg_type,
-                    customerandsupplier.c.gst_party_type,
-                ]
-            ).where(
-                and_(
-                    invoice.c.invoicedate.between(
-                        start_period.strftime("%Y-%m-%d"),
-                        end_period.strftime("%Y-%m-%d"),
-                    ),
-                    invoice.c.inoutflag == 15,
-                    invoice.c.taxflag == 7,
-                    invoice.c.orgcode == orgcode,
-                    invoice.c.custid == customerandsupplier.c.custid,
+                .select_from(invoice.join(customerandsupplier))
+                .where(
+                    and_(
+                        invoice.c.invoicedate.between(
+                            start_period.strftime("%Y-%m-%d"),
+                            end_period.strftime("%Y-%m-%d"),
+                        ),
+                        invoice.c.inoutflag == 15,
+                        invoice.c.taxflag == 7,
+                        invoice.c.orgcode == orgcode,
+                    )
                 )
-            )
-            cust_invoices = con.execute(cust_inv_query).fetchall()
+            ).fetchall()
 
-            for inv in cust_invoices:
-                id = inv["invid"]
-                index = inv_map[id]
-                invoices[index]["gstin"] = inv["gstin"]
-                invoices[index]["custname"] = inv["custname"]
-                invoices[index]["gst_reg_type"] = inv["gst_reg_type"]
-                invoices[index]["gst_party_type"] = inv["gst_party_type"]
-
-            # debit/credit notes
-            query1 = (
+            # Debit/credit notes
+            drcrs_all = con.execute(
                 select(
                     [
                         drcr,
@@ -174,9 +155,7 @@ class GstReturn(object):
                         drcr.c.orgcode == orgcode,
                     )
                 )
-            )
-
-            drcrs_all = con.execute(query1).fetchall()
+            ).fetchall()
 
             gkdata = {}
             b2b = b2b_r1(con, invoices)
