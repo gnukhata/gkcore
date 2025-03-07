@@ -176,7 +176,7 @@ def b2b_r1(con, invoices):
                 "val": "%.2f" % float(inv["invoicetotal"]),
                 "pos": "%02d" % int(ts_code),
                 "rchrg": row["reverse_charge"],
-                "inv_type": "R",  # Need to handle other gst types
+                "inv_typ": "R",  # Need to handle other gst types
                 "itms": [],
             }
             for rate, tax_cess in list(product_level(con, inv).items()):
@@ -792,7 +792,7 @@ def hsn_r1(con, orgcode, start, end):
                 hsn_json["data"].append(
                     {
                         "num": prod_counter,
-                        "hsn_sc": prodHSN["hsnsac"],
+                        "hsn_sc": str(prodHSN["hsnsac"]),
                         "desc": prodHSN["prodctname"],
                         "uqc": prodHSN["uqc"],
                         "qty": prodHSN["qty"],
