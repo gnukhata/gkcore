@@ -35,7 +35,6 @@ from gkcore.views.gst.services import (
     generate_gstr_3b_data,
     hsn_r1,
 )
-from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql import select, and_
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
@@ -59,7 +58,6 @@ class GstReturn(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
-        self.con = Connection
 
     @view_config(request_method="GET", route_name="gstr1", renderer="json")
     def r1(self):
@@ -84,8 +82,7 @@ class GstReturn(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
-        try:
-            self.con = eng.connect()
+        with eng.connect() as con:
             dataset = self.request.params
             start_period = datetime.strptime(dataset["start"], "%Y-%m-%d")
             end_period = datetime.strptime(dataset["end"], "%Y-%m-%d")
@@ -103,7 +100,7 @@ class GstReturn(object):
                     invoice.c.orgcode == orgcode,
                 )
             )
-            inv_all = self.con.execute(inv_all_query).fetchall()
+            inv_all = con.execute(inv_all_query).fetchall()
             invoices = []
             inv_map = {}
 
@@ -136,7 +133,7 @@ class GstReturn(object):
                     invoice.c.custid == customerandsupplier.c.custid,
                 )
             )
-            cust_invoices = self.con.execute(cust_inv_query).fetchall()
+            cust_invoices = con.execute(cust_inv_query).fetchall()
 
             for inv in cust_invoices:
                 id = inv["invid"]
@@ -179,16 +176,16 @@ class GstReturn(object):
                 )
             )
 
-            drcrs_all = self.con.execute(query1).fetchall()
+            drcrs_all = con.execute(query1).fetchall()
 
             gkdata = {}
-            b2b = b2b_r1(self.con, invoices)
-            b2cl = b2cl_r1(self.con, invoices)
-            b2cs = b2cs_r1(self.con, invoices, False)
-            neg_b2cs = b2cs_r1(self.con, drcrs_all, True)
-            cdnr = cdnr_r1(self.con, drcrs_all)
-            cdnur = cdnur_r1(self.con, drcrs_all)
-            hsn = hsn_r1(self.con, orgcode, dataset["start"], dataset["end"])
+            b2b = b2b_r1(con, invoices)
+            b2cl = b2cl_r1(con, invoices)
+            b2cs = b2cs_r1(con, invoices, False)
+            neg_b2cs = b2cs_r1(con, drcrs_all, True)
+            cdnr = cdnr_r1(con, drcrs_all)
+            cdnur = cdnur_r1(con, drcrs_all)
+            hsn = hsn_r1(con, orgcode, dataset["start"], dataset["end"])
             gkdata["b2b"] = b2b.get("data", [])
             gkdata["b2cl"] = b2cl.get("data", [])
             gkdata["b2cs"] = b2cs.get("data", [])
@@ -199,7 +196,7 @@ class GstReturn(object):
             gkdata["hsn1"] = hsn.get("data", [])
 
             # JSON prep
-            gstin_data = self.con.execute(
+            gstin_data = con.execute(
                 select([organisation.c.gstin, organisation.c.orgstate]).where(
                     organisation.c.orgcode == orgcode
                 )
@@ -207,7 +204,7 @@ class GstReturn(object):
             gstin = ""
             print(gstin_data)
             if gstin_data["orgstate"]:
-                state_code = self.con.execute(
+                state_code = con.execute(
                     select([state.c.statecode]).where(
                         state.c.statename == gstin_data["orgstate"]
                     )
@@ -264,16 +261,12 @@ class GstReturn(object):
                 },
             }
 
-            self.con.close()
             return {
                 "gkstatus": enumdict["Success"],
                 "gkdata": gkdata,
                 "json": gstr1_json,
             }
 
-        except:
-            print(traceback.format_exc())
-            return {"gkstatus": enumdict["ConnectionFailed"]}
 
     @view_config(request_method="GET", route_name="gstr3b", renderer="json")
     def r3b(self):
@@ -286,11 +279,10 @@ class GstReturn(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
-        try:
-            self.con = eng.connect()
+        with eng.connect() as con:
 
             gst_result = generate_gstr_3b_data(
-                self.con,
+                con,
                 authDetails["orgcode"],
                 self.request.params["calculatefrom"],
                 self.request.params["calculateto"],
@@ -495,9 +487,7 @@ class GstReturn(object):
                 "gkstatus": enumdict["Success"],
                 "gkresult": {"json": gst_json, "invoice": gst_invoices},
             }
-        except:
-            # print(traceback.format_exc())
-            return {"gkstatus": enumdict["ConnectionFailed"]}
+
 
     @view_config(request_method="GET", route_name="gst-captcha", renderer="json")
     def getGstinCaptcha(self):
