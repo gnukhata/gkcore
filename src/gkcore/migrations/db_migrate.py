@@ -31,6 +31,7 @@ from gkcore.models.meta import (
     getOnDelete,
     uniqueConstraintExists,
 )
+from gkcore.models.gkdb import state
 
 
 def migrate():
@@ -1943,10 +1944,12 @@ def migrate():
         orgDatum = con.execute(
             "select orgcode, orgstate from organisation"
         ).fetchall()
+        states = con.execute(select([state.c.statename])).fetchall()
+        states = [i[0].lower() for i in list(states or [])]
         for orgData in orgDatum:
-            if not orgData["orgstate"]:
+            if str(orgData["orgstate"]).lower() not in states:
                 con.execute(
-                    "update organisation set orgstate = '0'  where orgcode = %d"
+                    "update organisation set orgstate = ''  where orgcode = %d"
                     % (orgData["orgcode"])
                 )
         con.execute(
