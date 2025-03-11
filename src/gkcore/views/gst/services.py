@@ -671,6 +671,29 @@ def cdnur_r1(con, drcr_all):
         return {"status": 3}
 
 
+def get_product_details(invoice):
+    taxable_value = 0.00
+    cgst_amt = None
+    igst_amt = None
+    content = literal_eval(invoice["content"])
+    discount = float(literal_eval(invoice["disc"]))
+    product_rate, qty = list(content.items())[0]
+    gst_rate = float(literal_eval(invoice["tax"]))
+    cess_rate = float(literal_eval(invoice["cess"]))
+    taxable_value = (float(product_rate) * float(qty)) - discount
+    # check condition for product and service
+
+    # calculate state level and center level GST
+    if invoice["sourcestate"] == invoice["taxstate"]:
+        cgst = gst_rate / 2.00
+        cgst_amt = taxable_value * (cgst / 100.00)
+    else:
+        igst_amt = taxable_value * (gst_rate / 100.00)
+
+    cess_amt = taxable_value * (cess_rate / 100.00)
+    return float(qty), taxable_value, gst_rate, cgst_amt, igst_amt, cess_amt
+
+
 def hsn_r1(con, orgcode, start, end):
     """
     Retrieve all products data including product code,product description , hsn code, UOM.
