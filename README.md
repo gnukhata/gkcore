@@ -127,7 +127,12 @@ Requirements:
 
 - `GKCORE_DB_URL`: Provide a custom database URL
 
-- `GKCORE_DISABLE_REGISTRATION`: set to "yes" to disable registrations.
+- `GKCORE_DISABLE_USER_REGISTRATION`: Default is `false`. Set to `true` to
+    disable public user registration from login page. Note that admin users can
+    still create and invite users to organisation.
+
+- `GKCORE_DISABLE_ORG_REGISTRATION`: Default is `false`. Set to `true` to
+    disable organisation registration.
 
 # After Installation
 
