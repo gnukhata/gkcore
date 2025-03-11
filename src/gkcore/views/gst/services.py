@@ -283,8 +283,7 @@ def b2cl_r1(con, invoices):
                 if inv["taxstate"] == inv["sourcestate"]:
                     b2cl_json_item["itm_det"].update(
                         {
-                            "camt": "%.2f" % (float(tax_amt) / 2.0),
-                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                            "csamt": "%.2f" % (float(tax_amt) / 2.0),
                         }
                     )
                 else:
@@ -576,7 +575,7 @@ def cdnur_r1(con, drcr_all):
                 "val": "%.2f" % float(note["totreduct"]),
                 "ntty": "D" if note["dctypeflag"] == 4 else "C",
                 "pos": "%02d" % (ts_code),
-                "typ": "R",
+                "typ": "B2CL",
                 "itms": [],
             }
             for rate, tax_cess in list(product_level(con, note, drcr=True).items()):
@@ -598,8 +597,7 @@ def cdnur_r1(con, drcr_all):
                 if note["taxstate"] == note["sourcestate"]:
                     cdnur_json_item["itm_det"].update(
                         {
-                            "camt": "%.2f" % (float(tax_amt) / 2.0),
-                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                            "csamt": "%.2f" % (float(tax_amt) / 2.0),
                         }
                     )
                 else:
