@@ -26,6 +26,7 @@ Contributors:
 """
 
 from datetime import datetime
+from .schemas import Gstr1SchemaV42
 from gkcore.views.gst.services import (
     b2b_r1,
     b2cl_r1,
@@ -239,6 +240,8 @@ class GstReturn(object):
                     ]
                 },
             }
+
+            Gstr1SchemaV42.model_validate(gstr1_json)
 
             return {
                 "gkstatus": enumdict["Success"],
