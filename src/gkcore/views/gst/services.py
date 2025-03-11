@@ -706,9 +706,16 @@ def hsn_r1(con, orgcode, start, end):
         orgcode = orgcode
         start = start
         end = end
-        Final = []
-        hsn_json = {"data": []}
-        prod_counter = 0
+        products_hsn_data = {
+            "b2b": [],
+            "b2c": []
+        }
+        hsn_json = {
+            "hsn_b2b": [],
+            "hsn_b2c": [],
+        }
+        b2b_prod_counter = 0
+        b2c_prod_counter = 0
 
         prodData = con.execute(
             select(
@@ -723,112 +730,155 @@ def hsn_r1(con, orgcode, start, end):
         )
         prodData_result = prodData.fetchall()
         for products in prodData_result:
-            hsn = products["gscode"] or ""
-            if "{" in hsn:
-                hsn = loads(hsn)
-                if type(hsn) == dict:
-                    if "hsn_code" in hsn:
-                        hsn = hsn["hsn_code"] or ""
+            hsn = ""
+            try:
+                gscode = loads(products["gscode"])
+                if type(gscode) == dict:
+                    hsn = gscode["hsn_code"]
+            except Exception:
+                pass
+
+            if products["gsflag"] == 7:
+                um = con.execute(
+                    select([unitofmeasurement.c.unitname]).where(
+                        unitofmeasurement.c.uomid == int(products["uomid"])
+                    )
+                )
+                unitrow = um.fetchone()
+                uqc = unitrow["unitname"]
+            else:
+                uqc = "OTH"
+
             prodHSN = {
                 "hsnsac": hsn,
                 "prodctname": products["productdesc"],
+                "uqc": uqc,
             }
+
             invData = con.execute(
-                text("select contents ->> ':productcode' as content ,sourcestate,taxstate,discount ->>':productcode' as disc,cess ->> ':productcode' as cess,tax ->> ':productcode' as tax from invoice where contents ? ':productcode' and orgcode = ':orgcode' and inoutflag = ':inoutflag' and taxflag = ':taxflag' and icflag = ':icflag' and invoicedate >= :start and invoicedate <= :end"),
+                text("select contents ->> ':productcode' as content ,sourcestate,taxstate,icflag,consignee,discount ->>':productcode' as disc,cess ->> ':productcode' as cess,tax ->> ':productcode' as tax from invoice where contents ? ':productcode' and orgcode = ':orgcode' and inoutflag = ':inoutflag' and taxflag = ':taxflag'  and invoicedate >= :start and invoicedate <= :end"),
                     productcode = products["productcode"],
                     orgcode = orgcode,
                     inoutflag = 15,
                     taxflag = 7,
-                    icflag = 9,
                     start = start,
                     end = end,
             )
             invoice_Data = invData.fetchall()
 
-            ttl_Value = 0.00
-            ttl_TaxableValue = 0.00
-            ttl_CGSTval = 0.00
-            ttl_IGSTval = 0.00
-            ttl_CESSval = 0.00
-            ttl_qty = 0.00
+            taxable_value_b2b_total = 0.00
+            cgst_value_b2b_total = 0.00
+            igst_value_b2b_total = 0.00
+            cess_value_b2b_total = 0.00
+            quantity_b2b_total = 0.00
+
+            taxable_value_b2c_total = 0.00
+            cgst_value_b2c_total = 0.00
+            igst_value_b2c_total = 0.00
+            cess_value_b2c_total = 0.00
+            quantity_b2c_total = 0.00
+
 
             if invoice_Data != None and len(invoice_Data) > 0:
-                taxRate = 0
                 for inv in invoice_Data:
-                    taxable_Value = 0.00
-                    cn = literal_eval(inv["content"])
-                    ds = float(literal_eval(inv["disc"]))
-                    ppu = float(list(cn.keys())[0])
-                    tx = taxRate = float(literal_eval(inv["tax"]))
-                    cs = float(literal_eval(inv["cess"]))
-                    # check condition for product and service
-                    if products["gsflag"] == 7:
-                        price = list(cn.keys())[0]
-                        qty = float(cn[price])
-                        # qty = float(cn["%.2f" % float(ppu)])
-                        ttl_qty += qty
-                        taxable_Value = (ppu * qty) - ds
-                        um = con.execute(
-                            select([unitofmeasurement.c.unitname]).where(
-                                unitofmeasurement.c.uomid == int(products["uomid"])
-                            )
-                        )
-                        unitrow = um.fetchone()
-                        prodHSN["uqc"] = unitrow["unitname"]
+                    (
+                        qty,
+                        taxable_value,
+                        gst_rate,
+                        cgst_amt,
+                        igst_amt,
+                        cess_amt
+                    ) = get_product_details(inv)
+                    if inv["consignee"] and inv["consignee"].get("gstinconsignee"):
+                        b2b_prod_counter += 1
+                        if products["gsflag"] == 7:
+                            quantity_b2b_total += qty
+                        taxable_value_b2b_total += taxable_value
+                        if cgst_amt:
+                            cgst_value_b2b_total += cgst_amt
+                        elif igst_amt:
+                            igst_value_b2b_total += igst_amt
+                        cess_value_b2b_total += cess_amt
                     else:
-                        taxable_Value = ppu - ds
-                        prodHSN["uqc"] = "OTH"
-                    ttl_TaxableValue += taxable_Value
+                        b2c_prod_counter += 1
+                        if products["gsflag"] == 7:
+                            quantity_b2c_total += qty
+                        taxable_value_b2c_total += taxable_value
+                        if cgst_amt:
+                            cgst_value_b2c_total += cgst_amt
+                        elif igst_amt:
+                            igst_value_b2c_total += igst_amt
+                        cess_value_b2c_total += cess_amt
 
-                    # calculate state level and center level GST
-                    if inv["sourcestate"] == inv["taxstate"]:
-                        cgst = tx / 2.00
-                        cgst_amt = taxable_Value * (cgst / 100.00)
-                        ttl_CGSTval += cgst_amt
-                    else:
-                        igst_amt = taxable_Value * (tx / 100.00)
-                        ttl_IGSTval += igst_amt
-
-                    cess_amount = taxable_Value * (cs / 100.00)
-                    ttl_CESSval += cess_amount
-
-                    ttl_Value = (
-                        float(taxable_Value)
-                        + float(2 * (ttl_CGSTval))
-                        + float(ttl_CESSval)
+                if quantity_b2b_total:
+                    products_hsn_data["b2b"].append(
+                        {
+                            "qty": "%.2f" % float(quantity_b2b_total),
+                            "totalvalue": "%.2f" % float(
+                                float(taxable_value_b2b_total)
+                                + (2 * cgst_value_b2b_total)
+                                + float(igst_value_b2b_total)
+                                + float(cess_value_b2b_total)
+                            ),
+                            "taxableamt": "%.2f" % float(taxable_value_b2b_total),
+                            "SGSTamt": "%.2f" % float(cgst_value_b2b_total),
+                            "IGSTamt": "%.2f" % float(igst_value_b2b_total),
+                            "CESSamt": "%.2f" % float(cess_value_b2b_total),
+                            "product_count": b2b_prod_counter,
+                            **prodHSN,
+                        }
+                    )
+                    hsn_json["hsn_b2b"].append(
+                        {
+                            "num": b2b_prod_counter,
+                            "hsn_sc": str(hsn),
+                            "desc": products["productdesc"],
+                            "uqc": uqc,
+                            "qty":  "%.2f" % float(quantity_b2b_total),
+                            "rt": gst_rate,
+                            "txval":  "%.2f" % float(taxable_value_b2b_total),
+                            "iamt":  "%.2f" % float(igst_value_b2b_total),
+                            "samt":  "%.2f" % float(cgst_value_b2b_total),
+                            "camt":  "%.2f" % float(cgst_value_b2b_total),
+                            "csamt":  "%.2f" % float(cess_value_b2b_total),
+                        }
+                    )
+                if quantity_b2c_total:
+                    products_hsn_data["b2c"].append(
+                        {
+                            "qty": "%.2f" % float(quantity_b2c_total),
+                            "totalvalue": "%.2f" % float(
+                                float(taxable_value_b2c_total)
+                                + (2 * cgst_value_b2c_total)
+                                + float(igst_value_b2c_total)
+                                + float(cess_value_b2c_total)
+                            ),
+                            "taxableamt": "%.2f" % float(taxable_value_b2c_total),
+                            "SGSTamt": "%.2f" % float(cgst_value_b2c_total),
+                            "IGSTamt": "%.2f" % float(igst_value_b2c_total),
+                            "CESSamt": "%.2f" % float(cess_value_b2c_total),
+                            "product_count": b2c_prod_counter,
+                            **prodHSN,
+                        }
+                    )
+                    hsn_json["hsn_b2c"].append(
+                        {
+                            "num": b2c_prod_counter,
+                            "hsn_sc": str(hsn),
+                            "desc": products["productdesc"],
+                            "uqc": uqc,
+                            "qty":  "%.2f" % float(quantity_b2c_total),
+                            "rt": gst_rate,
+                            "txval":  "%.2f" % float(taxable_value_b2c_total),
+                            "iamt":  "%.2f" % float(igst_value_b2c_total),
+                            "samt":  "%.2f" % float(cgst_value_b2c_total),
+                            "camt":  "%.2f" % float(cgst_value_b2c_total),
+                            "csamt":  "%.2f" % float(cess_value_b2c_total),
+                        }
                     )
 
-                prodHSN["qty"] = "%.2f" % float(ttl_qty)
-                prodHSN["totalvalue"] = "%.2f" % float(
-                    float(ttl_TaxableValue)
-                    + (2 * ttl_CGSTval)
-                    + float(ttl_IGSTval)
-                    + float(ttl_CESSval)
-                )
-                prodHSN["taxableamt"] = "%.2f" % float(ttl_TaxableValue)
-                prodHSN["SGSTamt"] = "%.2f" % float(ttl_CGSTval)
-                prodHSN["IGSTamt"] = "%.2f" % float(ttl_IGSTval)
-                prodHSN["CESSamt"] = "%.2f" % float(ttl_CESSval)
-                Final.append(prodHSN)
 
-                prod_counter += 1
-                hsn_json["data"].append(
-                    {
-                        "num": prod_counter,
-                        "hsn_sc": str(prodHSN["hsnsac"]),
-                        "desc": prodHSN["prodctname"],
-                        "uqc": prodHSN["uqc"],
-                        "qty": prodHSN["qty"],
-                        "rt": taxRate,
-                        "txval": prodHSN["taxableamt"],
-                        "iamt": prodHSN["IGSTamt"],
-                        "samt": prodHSN["SGSTamt"],
-                        "camt": prodHSN["SGSTamt"],
-                        "csamt": prodHSN["CESSamt"],
-                    }
-                )
-
-        return {"status": 0, "data": Final, "json": hsn_json}
+        return {"status": 0, "data": products_hsn_data, "json": hsn_json}
     except:
         print(traceback.format_exc())
         return {"status": 3}
