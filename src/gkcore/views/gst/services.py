@@ -545,7 +545,7 @@ def cdnur_r1(con, drcr_all):
             return check_report_properties(drcr)[0]
 
         drcrs = list(filter(cdnur_filter, drcr_all))
-        cdnur_json_arr = []
+        cdnur_json = []
         # print("drcr notes = %d" % (len(drcrs)))
         for note in drcrs:
             ts_code = state_name_code(con, statename=note["taxstate"])
@@ -615,7 +615,8 @@ def cdnur_r1(con, drcr_all):
 
                 cdnur_json_inv["itms"].append(cdnur_json_item)
 
-        return {"status": 0, "data": cdnur, "json": cdnur_json_arr}
+            cdnur_json.append(cdnur_json_inv)
+        return {"status": 0, "data": cdnur, "json": cdnur_json}
     except:
         print(traceback.format_exc())
         return {"status": 3}
