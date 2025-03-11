@@ -144,7 +144,7 @@ def b2b_r1(con, invoices):
             )
 
             row = defaultdict(dict)
-            row["gstin"] = inv["gstin"][str(ts_code)]
+            row["gstin"] = inv["consignee"].get("gstinconsignee")
             row["receiver"] = inv["custname"]
             row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
