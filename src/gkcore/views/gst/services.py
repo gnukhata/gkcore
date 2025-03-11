@@ -133,18 +133,7 @@ def b2b_r1(con, invoices):
     try:
 
         def b2b_filter(inv):
-            try:
-                ts_code = normalise_state_code(
-                    state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
-                )
-
-                if inv["gstin"] and inv["gstin"].get(str(ts_code)):
-                    return True
-                else:
-                    return False
-            except:
-                print(traceback.format_exc())
-                return False
+            return check_report_properties(inv)[0]
 
         invs = list(filter(b2b_filter, invoices))
         b2b = []
@@ -245,20 +234,8 @@ def b2cl_r1(con, invoices):
     try:
 
         def b2cl_filter(inv):
-            try:
-                ts_code = normalise_state_code(
-                    state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
-                )
-                if inv["gstin"] and inv["gstin"].get(str(ts_code)):
-                    return False
-                if inv["taxstate"] == inv["sourcestate"]:
-                    return False
-                if inv["invoicetotal"] > 250000:
-                    return True
-                return False
-            except:
-                print(traceback.format_exc())
-                return False
+            is_b2b, is_large = check_report_properties(inv)
+            return (not is_b2b and is_large)
 
         # print("Invoice count = %d" % (len(invoices)))
         invs = list(filter(b2cl_filter, invoices))
@@ -353,20 +330,8 @@ def b2cs_r1(con, invoices, drcr):
     try:
 
         def b2cs_filter(inv):
-            try:
-                ts_code = normalise_state_code(
-                    state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
-                )
-                if inv["gstin"] and inv["gstin"].get(str(ts_code)):
-                    return False
-                if inv["taxstate"] == inv["sourcestate"]:
-                    return True
-                if inv["invoicetotal"] <= 250000:
-                    return True
-                return False
-            except:
-                print(traceback.format_exc())
-                return False
+            is_b2b, is_large = check_report_properties(inv)
+            return (not is_b2b and not is_large)
 
         invs = list(filter(b2cs_filter, invoices))
         print("inv count = %d" % (len(invoices)))
@@ -467,15 +432,8 @@ def cdnr_r1(con, drcr_all):
 
     try:
 
-        def cdnr_filter(inv):
-            ts_code = normalise_state_code(
-                state_name_code(con, statename=inv["taxstate"]), inv["gstin"]
-            )
-            # print("tscode = %s, gstin = %s" % (str(ts_code), inv["gstin"]))
-            if inv["gstin"] and inv["gstin"].get(str(ts_code)):
-                return True
-            else:
-                return False
+        def cdnr_filter(drcr):
+            return check_report_properties(drcr)[0]
 
         # print("drcr notes = %d" % (len(drcr_all)))
         drcrs = list(filter(cdnr_filter, drcr_all))
@@ -584,15 +542,7 @@ def cdnur_r1(con, drcr_all):
         cdnur = []
 
         def cdnur_filter(drcr):
-            ts_code = state_name_code(con, statename=drcr["taxstate"])
-            # print("Gstin = %s, tsCode = %s, taxstate = %s, sourcestate = %s, invoicetotal = %d"%(drcr["gstin"], ts_code, drcr["taxstate"], drcr["sourcestate"], drcr["invoicetotal"]))
-            if drcr["gstin"] and drcr["gstin"].get(str(ts_code)):
-                return False
-            if drcr["taxstate"] == drcr["sourcestate"]:
-                return False
-            if drcr["invoicetotal"] <= 250000:
-                return False
-            return True
+            return check_report_properties(drcr)[0]
 
         drcrs = list(filter(cdnur_filter, drcr_all))
         cdnur_json_arr = []
