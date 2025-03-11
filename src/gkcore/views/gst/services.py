@@ -270,9 +270,7 @@ def b2cl_r1(con, invoices):
                 b2cl.append(prod_row)
 
                 b2cl_json_item = {
-                    "num": 1
-                    if not prod_row["rate"]
-                    else "%d%02d" % (prod_row["rate"], 1),
+                    "num": 1 if not rate else "%d%02d" % (rate, 1),
                     "itm_det": {
                         "txval": prod_row["taxable_value"],
                         "rt": prod_row["rate"],
@@ -280,7 +278,7 @@ def b2cl_r1(con, invoices):
                     },
                 }
                 tax_amt = "%.2f" % (
-                    float(prod_row["taxable_value"] * float(rate)) / 100.0
+                    (tax_cess["taxable_value"] * rate) / 100.0
                 )
                 if inv["taxstate"] == inv["sourcestate"]:
                     b2cl_json_item["itm_det"].update(
@@ -589,16 +587,14 @@ def cdnur_r1(con, drcr_all):
                 cdnur.append(prod_row)
 
                 cdnur_json_item = {
-                    "num": 1
-                    if not prod_row["rate"]
-                    else "%d%02d" % (prod_row["rate"], 1),
+                    "num": 1 if not rate else "%d%02d" % (rate, 1),
                     "itm_det": {
                         "txval": prod_row["taxable_value"],
                         "rt": prod_row["rate"],
                         "csamt": prod_row["cess"],
                     },
                 }
-                tax_amt = "%.2f" % (float(prod_row["taxable_value"] * rate) / 100.0)
+                tax_amt = "%.2f" % (float(tax_cess["taxable_value"] * rate) / 100.0)
                 if note["taxstate"] == note["sourcestate"]:
                     cdnur_json_item["itm_det"].update(
                         {
