@@ -566,7 +566,7 @@ def cdnr_r1(con, drcr_all):
 
         cdnr_json_arr = []
         for cdnr_gstin in cdnr_json:
-            cdnr_json_arr.append({"ctin": cdnr_gstin, "inv": cdnr_json[cdnr_gstin]})
+            cdnr_json_arr.append({"ctin": cdnr_gstin, "nt": cdnr_json[cdnr_gstin]})
 
         return {"status": 0, "data": cdnr, "json": cdnr_json_arr}
     except:
