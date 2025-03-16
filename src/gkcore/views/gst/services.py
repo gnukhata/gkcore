@@ -1151,10 +1151,13 @@ def check_report_properties(inv_cn_row):
     """ Checks if the invoice/note is b2b and of large category.
     Returns `is_b2b` and `is_large` statuses.
     """
+    is_igst = False
     is_b2b = False
     is_large = False
     if inv_cn_row["consignee"] and inv_cn_row["consignee"].get("gstinconsignee"):
         is_b2b = True
     if inv_cn_row["invoicetotal"] > 100000:
         is_large = True
-    return is_b2b, is_large
+    if inv_cn_row["taxstate"] != inv_cn_row["sourcestate"]:
+        is_igst = True
+    return is_b2b, is_large, is_igst
