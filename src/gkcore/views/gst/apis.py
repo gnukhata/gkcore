@@ -203,7 +203,7 @@ class GstReturn(object):
             fp = "%s%s" % (end_period.strftime("%m"), end_period.strftime("%Y"))
 
             gstr1_json = {
-                "version": "GST3.1.4",
+                "version": "GST4.2",
                 "hash": "hash",
                 "gstin": gstin,
                 "fp": fp,
