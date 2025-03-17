@@ -668,7 +668,7 @@ def hsn_r1(con, orgcode, start, end):
         )
         prodData_result = prodData.fetchall()
         for products in prodData_result:
-            hsn = ""
+            hsn = 0
             try:
                 gscode = loads(products["gscode"])
                 if type(gscode) == dict:
@@ -748,7 +748,7 @@ def hsn_r1(con, orgcode, start, end):
                             igst_value_b2c_total += igst_amt
                         cess_value_b2c_total += cess_amt
 
-                if quantity_b2b_total:
+                if b2b_prod_counter:
                     products_hsn_data["b2b"].append(
                         {
                             "qty": "%.2f" % float(quantity_b2b_total),
@@ -781,7 +781,7 @@ def hsn_r1(con, orgcode, start, end):
                             "csamt":  "%.2f" % float(cess_value_b2b_total),
                         }
                     )
-                if quantity_b2c_total:
+                if b2c_prod_counter:
                     products_hsn_data["b2c"].append(
                         {
                             "qty": "%.2f" % float(quantity_b2c_total),
