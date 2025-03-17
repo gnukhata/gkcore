@@ -326,78 +326,85 @@ def b2cs_r1(con, invoices, drcr):
         invs = list(filter(b2cs_filter, invoices))
         print("inv count = %d" % (len(invoices)))
         b2cs = []
-        b2cs_json_arr = []
+        b2cs_map = {}
         for inv in invs:
+            inv = dict(inv)
             ts_code = state_name_code(con, statename=inv["taxstate"])
             if int(ts_code) < 10:
                 ts_code = "0" + str(ts_code)
-            row = {}
-            row["invid"] = inv["invid"]
-            row["invoice_number"] = inv["invoiceno"]
-            if drcr:
-                row["drcrid"] = inv["drcrid"]
-                row["voucher_number"] = inv["drcrno"]
-                row["voucher_date"] = inv["drcrdate"].strftime("%d-%b-%y")
-            else:
-                row["drcrid"] = ""
-                row["voucher_number"] = ""
-                row["voucher_date"] = ""
-            # icflag = 9 -> invoice, 3 -> cash memo
-            row["icflag"] = inv["icflag"] if "icflag" in inv else 9
-            row["type"] = "OE"
-            row["place_of_supply"] = "%s-%s" % (str(ts_code), inv["taxstate"])
-            row["applicable_tax_rate"] = ""
-            row["ecommerce_gstin"] = ""
+            row = {
+                "invid": inv["invid"],
+                "invoice_number": inv["invoiceno"],
+                "drcrid": inv.get("drcrid"),
+                "voucher_number": inv.get("drcrno"),
+                "voucher_date": (
+                    inv.get("drcrdate").strftime("%d-%b-%y")
+                    if inv.get("drcrdate") else ""
+                ),
+                "icflag": inv.get("icflag", 9),
+                "type": "OE",
+                "place_of_supply": "%s-%s" % (str(ts_code), inv["taxstate"]),
+                "applicable_tax_rate": "",
+                "ecommerce_gstin": "",
+            }
+            b2cs_json_inv = {
+                "sply_ty": "INTRA"
+                if inv["taxstate"] == inv["sourcestate"]
+                else "INTER",
+                "pos": "%02d" % (int(ts_code)),
+                "typ": "OE",
+            }
+
             for prod in inv["contents"]:
-                prod_row = deepcopy(row)
-                prod_row["taxable_value"] = taxable_value(con, inv, prod, drcr)
-                prod_row["rate"] = "%.2f" % float(inv["tax"][prod])
-                cess = cess_amount(con, inv, prod, drcr)
-                prod_row["cess"] = (
-                    cess_amount(con, inv, prod, drcr) if cess != "" else 0
-                )
+                prod_taxable_value = taxable_value(con, inv, prod, drcr)
+                rate = inv["tax"][prod]
 
-                # for existing in b2cs:
-                #     if (
-                #         existing["place_of_supply"] == prod_row["place_of_supply"]
-                #         and existing["rate"] == prod_row["rate"]
-                #     ):
-
-                #         existing["taxable_value"] += prod_row["taxable_value"]
-                #         existing["cess"] += prod_row["cess"]
-                #         break
-
-                b2cs.append(prod_row)
-
-                b2cs_json_inv = {
-                    "sply_ty": "INTRA"
-                    if inv["taxstate"] == inv["sourcestate"]
-                    else "INTER",
-                    "pos": "%02d" % (int(ts_code)),
-                    "typ": "OE",
-                    "txval": prod_row["taxable_value"],
-                    "rt": prod_row["rate"],
-                    "csamt": prod_row["cess"],
+                prod_row = {
+                    "taxable_value": prod_taxable_value,
+                    "rate": "%.2f" % float(rate),
+                    "cess": cess_amount(con, inv, prod, drcr) or 0,
+                    **row
                 }
+                b2cs.append(prod_row)
+                tax_amt = float(prod_row["taxable_value"]) * float(rate) / 100
 
-                tax_amt = "%.2f" % (
-                    (float(prod_row["taxable_value"]) * float(inv["tax"][prod])) / 100.0
+                samt = iamt = 0
+                if inv["taxstate"] == inv["sourcestate"]:
+                    samt = tax_amt/2
+                else:
+                    iamt = tax_amt
+                tax_rate_string = f"{rate}{ts_code}"
+                tax_rate_group = b2cs_map.get(tax_rate_string)
+
+                if tax_rate_group:
+                    samt += tax_rate_group.get("samt", 0)
+                    iamt += tax_rate_group.get("iamt", 0)
+                    prod_taxable_value += tax_rate_group.get("txval", 0)
+                else:
+                    tax_rate_group = b2cs_map[tax_rate_string] = {
+                        **b2cs_json_inv,
+                        "rt": prod_row["rate"],
+                    }
+                tax_rate_group.update(
+                    {
+                        "samt": samt,
+                        "camt": samt,
+                        "iamt": iamt,
+                        "txval": prod_taxable_value,
+                    }
                 )
 
-                if inv["taxstate"] == inv["sourcestate"]:
-                    b2cs_json_inv.update(
-                        {
-                            "camt": "%.2f" % (float(tax_amt) / 2.0),
-                            "samt": "%.2f" % (float(tax_amt) / 2.0),
-                        }
-                    )
-                else:
-                    b2cs_json_inv.update(
-                        {
-                            "iamt": tax_amt,
-                        }
-                    )
-                b2cs_json_arr.append(b2cs_json_inv)
+        def format_b2cs_values(b2cs_entry):
+            b2cs_entry.update(
+                {
+                    "samt": "%.2f" % float(b2cs_entry["samt"]),
+                    "camt": "%.2f" % float(b2cs_entry["samt"]),
+                    "iamt": "%.2f" % float(b2cs_entry["iamt"]),
+                    "txval": "%.2f" % float(b2cs_entry["txval"]),
+                }
+            )
+            return b2cs_entry
+        b2cs_json = list(map(format_b2cs_values, b2cs_map.values()))
 
         for row in b2cs:
             # row["drcr_flag"] = 1 if drcr else 0
@@ -408,7 +415,7 @@ def b2cs_r1(con, invoices, drcr):
                 row["cess"] = "0.00"
             else:
                 row["cess"] = "%.2f" % row["cess"]
-        return {"status": 0, "data": b2cs, "json": b2cs_json_arr}
+        return {"status": 0, "json": b2cs_json, "data": b2cs}
     except:
         print(traceback.format_exc())
         return {"status": 3, "data": []}
