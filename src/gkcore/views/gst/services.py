@@ -234,8 +234,8 @@ def b2cl_r1(con, invoices):
     try:
 
         def b2cl_filter(inv):
-            is_b2b, is_large = check_report_properties(inv)
-            return (not is_b2b and is_large)
+            is_b2b, is_large, is_igst = check_report_properties(inv)
+            return (not is_b2b and is_large and is_igst)
 
         # print("Invoice count = %d" % (len(invoices)))
         invs = list(filter(b2cl_filter, invoices))
@@ -268,6 +268,9 @@ def b2cl_r1(con, invoices):
                 prod_row["rate"] = "%.2f" % rate
                 prod_row["cess"] = "%.2f" % tax_cess["cess"]
                 b2cl.append(prod_row)
+                tax_amt = "%.2f" % (
+                    (tax_cess["taxable_value"] * rate) / 100.0
+                )
 
                 b2cl_json_item = {
                     "num": 1 if not rate else "%d%02d" % (rate, 1),
@@ -275,23 +278,9 @@ def b2cl_r1(con, invoices):
                         "txval": prod_row["taxable_value"],
                         "rt": prod_row["rate"],
                         "csamt": prod_row["cess"],
+                        "iamt": tax_amt,
                     },
                 }
-                tax_amt = "%.2f" % (
-                    (tax_cess["taxable_value"] * rate) / 100.0
-                )
-                if inv["taxstate"] == inv["sourcestate"]:
-                    b2cl_json_item["itm_det"].update(
-                        {
-                            "csamt": "%.2f" % (float(tax_amt) / 2.0),
-                        }
-                    )
-                else:
-                    b2cl_json_item["itm_det"].update(
-                        {
-                            "iamt": tax_amt,
-                        }
-                    )
 
                 b2cl_json_inv["itms"].append(b2cl_json_item)
 
@@ -327,8 +316,12 @@ def b2cs_r1(con, invoices, drcr):
     try:
 
         def b2cs_filter(inv):
-            is_b2b, is_large = check_report_properties(inv)
-            return (not is_b2b and not is_large)
+            is_b2b, is_large, is_igst = check_report_properties(inv)
+            return (
+                not is_b2b and (
+                    (is_large and not is_igst) or not is_large
+                )
+            )
 
         invs = list(filter(b2cs_filter, invoices))
         print("inv count = %d" % (len(invoices)))
