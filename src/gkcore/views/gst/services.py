@@ -458,7 +458,7 @@ def cdnr_r1(con, drcr_all):
                 row["pregst"] = "Y"
 
             cdnr_json_inv = {
-                "nt_num": note["invoiceno"],
+                "nt_num": note["drcrno"],
                 "nt_dt": note["invoicedate"].strftime("%d-%m-%Y"),
                 "val": "%.2f" % float(note["totreduct"]),
                 "ntty": "D" if note["dctypeflag"] == 4 else "C",
@@ -563,7 +563,7 @@ def cdnur_r1(con, drcr_all):
                 row["pregst"] = "Y"
 
             cdnur_json_inv = {
-                "nt_num": note["invoiceno"],
+                "nt_num": note["drcrno"],
                 "nt_dt": note["invoicedate"].strftime("%d-%m-%Y"),
                 "val": "%.2f" % float(note["totreduct"]),
                 "ntty": "D" if note["dctypeflag"] == 4 else "C",
