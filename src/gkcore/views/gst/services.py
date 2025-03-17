@@ -421,7 +421,6 @@ def cdnr_r1(con, drcr_all):
     """
 
     try:
-
         def cdnr_filter(drcr):
             return check_report_properties(drcr)[0]
 
@@ -532,7 +531,7 @@ def cdnur_r1(con, drcr_all):
         cdnur = []
 
         def cdnur_filter(drcr):
-            return check_report_properties(drcr)[0]
+            return not check_report_properties(drcr)[0]
 
         drcrs = list(filter(cdnur_filter, drcr_all))
         cdnur_json = []
@@ -590,7 +589,8 @@ def cdnur_r1(con, drcr_all):
                 if note["taxstate"] == note["sourcestate"]:
                     cdnur_json_item["itm_det"].update(
                         {
-                            "csamt": "%.2f" % (float(tax_amt) / 2.0),
+                            "samt": "%.2f" % (float(tax_amt) / 2.0),
+                            "camt": "%.2f" % (float(tax_amt) / 2.0),
                         }
                     )
                 else:
