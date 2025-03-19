@@ -37,10 +37,9 @@ from sqlalchemy import and_, or_
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
 import gkcore
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import groupsubgroups
-from gkcore.views.api_gkuser import getUserRole
 
 
 @view_defaults(route_name="groups_subgroups", renderer="json_extended")

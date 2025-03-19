@@ -26,7 +26,7 @@ Contributors:
 "Abhijith Balan" <abhijithb21@openmailbox.org>
 """
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.views.dashboard.services import (
     amountwiseinvoice,
     cashbankbalance,
@@ -51,7 +51,6 @@ from gkcore.models.gkdb import (
     accounts,
 )
 from datetime import datetime
-from gkcore.views.api_gkuser import getUserRole
 from gkcore.views.reports.helpers.balance import calculateBalance, get_groupwise_accounts_balances
 
 

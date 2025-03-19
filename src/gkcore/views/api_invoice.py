@@ -75,7 +75,7 @@ import jwt
 import gkcore
 from gkcore.utils import authCheck
 from gkcore.views.organisation.services import get_organisation_profile
-from gkcore.views.api_gkuser import getUserRole
+from gkcore.utils import authCheck, getUserRole
 from gkcore.views.helpers.delivery_note import create_delivery_note, cancel_delivery_note
 from gkcore.views.helpers.voucher import cancel_voucher
 import traceback  # for printing detailed exception logs

@@ -32,7 +32,7 @@ Contributors:
 # view_default for setting default route
 # view_config for per method configurations predicates etc.
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
 import json
@@ -42,7 +42,6 @@ from pyramid.request import Request
 from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
-from gkcore.views.api_gkuser import getUserRole
 
 """
 purpose:

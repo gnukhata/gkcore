@@ -53,8 +53,7 @@ from pyramid.view import view_defaults, view_config
 from datetime import datetime, date
 import jwt
 import gkcore
-from gkcore.utils import authCheck
-from gkcore.views.api_gkuser import getUserRole
+from gkcore.utils import authCheck, getUserRole
 from gkcore.views.godown.services import getusergodowns
 from gkcore.views.api_invoice import getStateCode
 

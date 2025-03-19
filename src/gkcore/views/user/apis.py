@@ -1,9 +1,14 @@
 import os
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.views.user.schemas import (
+    UserSchema,
+    UserNameSchema,
+    ResetPassword,
+    ChangePassword,
+)
 from sqlalchemy.sql import select, delete
-from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_, exc
+from sqlalchemy import and_
 from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
@@ -11,61 +16,9 @@ import gkcore
 from gkcore.models.meta import (
     tableExists,
 )
-from gkcore.utils import authCheck, gk_log, userAuthCheck, generateAuthToken
+from gkcore.utils import authCheck, gk_log, userAuthCheck, generateAuthToken, getUserRole
 from datetime import datetime
-import traceback
-
-from pydantic import BaseModel, Field, ValidationError
-
-
-# the user payload schema
-class UserSchema(BaseModel):
-    username: str = Field(min_length=5, max_length=50, pattern=r"^[a-zA-Z][a-zA-Z\d]*(?:_?[a-zA-Z\d]+)?$")
-    userpassword: str = Field(min_length=3)
-    userquestion: str = Field(min_length=3, max_length=2000)
-    useranswer: str = Field(min_length=1, max_length=2000)
-    # godown in-charge will have orgs
-    orgs: dict = Field(default=dict())
-
-# the username payload schema
-class UserNameSchema(BaseModel):
-    username: str = Field(min_length=5, max_length=50, pattern=r"^[a-zA-Z][a-zA-Z\d]*(?:_?[a-zA-Z\d]+)?$")
-
-# uses password reset model
-class ResetPassword(BaseModel):
-    userid: int
-    userpassword: str = Field(min_length=3)
-
-class ChangePassword(BaseModel):
-    userid: int
-    userpassword: str = Field(min_length=3)
-    useranswer: str = Field(min_length=1, max_length=2000)
-
-def getUserRole(userid, orgcode):
-    con = Connection
-    con = eng.connect()
-    try:
-        roleQuery = con.execute(
-            text("select u.orgs#>'{:orgcode,userrole}' as userrole from gkusers u where userid = :userid;"),
-            orgcode = orgcode,
-            userid = userid,
-        )
-
-        # print(row)
-        if roleQuery.rowcount == 1:
-            row = roleQuery.fetchone()
-            User = {"userrole": row["userrole"]}
-            return {"gkstatus": gkcore.enumdict["Success"], "gkresult": User}
-        else:
-            return {
-                "gkstatus": gkcore.enumdict["ConnectionFailed"],
-                "gkmessage": "User may not be part of the Org. Contact admin",
-            }
-    except:
-        print(traceback.format_exc())
-        return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-    finally:
-        con.close()
+from pydantic import ValidationError
 
 
 @view_defaults(route_name="gkuser")
@@ -73,7 +26,6 @@ class api_gkuser(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
-        self.con = Connection
         self.is_user_registration_disabled = os.environ.get(
             "GKCORE_DISABLE_USER_REGISTRATION",
             "false",
@@ -128,14 +80,13 @@ class api_gkuser(object):
         validated_data = UserSchema.model_validate(self.request.json_body)
         dataset = validated_data.model_dump(exclude_none=True)
 
-        try:
-            self.con = eng.connect()
+        with eng.begin() as con:
 
             # insert the user info into gkusers table
-            self.con.execute(gkdb.gkusers.insert(), [dataset])
+            con.execute(gkdb.gkusers.insert(), [dataset])
 
             # get the userid of the newly created user
-            userid = self.con.execute(
+            userid = con.execute(
                 select([gkdb.gkusers.c.userid]).where(
                     gkdb.gkusers.c.username == dataset["username"]
                 )
@@ -143,16 +94,12 @@ class api_gkuser(object):
 
             # generate the auth token
             token = generateAuthToken(
-                self.con,
+                con,
                 {"userid": userid["userid"], "username": dataset["username"]},
                 "user",
             )
             return {"gkstatus": enumdict["Success"], "token": token}
-        except exc.IntegrityError:
-            return {"gkstatus": enumdict["DuplicateEntry"]}
-        except Exception as e:
-            gk_log(__name__).debug(e)
-            return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
+
 
     """
     updateDefaultUserName() method is used to update the username in gkusers table that was created during migration 
@@ -173,19 +120,18 @@ class api_gkuser(object):
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.begin() as con:
 
                 dataset = self.request.json_body
 
-                roleQuery = self.con.execute(
+                roleQuery = con.execute(
                     text("select u.orgs#>'{:orgcode,userrole}' as userrole from gkusers u where userid = :userid;"),
                     orgcode = authDetails["orgcode"],
                     userid = dataset["userid"],
                 )
 
                 if roleQuery.rowcount == 1:
-                    self.con.execute(
+                    con.execute(
                         gkdb.gkusers.update()
                         .where(gkdb.gkusers.c.userid == dataset["userid"])
                         .values(username=dataset["username"])
@@ -196,7 +142,7 @@ class api_gkuser(object):
                     self.con.execute(gkdb.users.delete().where(gkdb.users.c.userid == dataset["olduserid"]))
                     """
                     token = generateAuthToken(
-                        self.con,
+                        con,
                         {"userid": dataset["userid"], "username": dataset["username"]},
                         "user",
                     )
@@ -206,11 +152,7 @@ class api_gkuser(object):
                     "gkstatus": enumdict["ActionDisallowed"],
                     "gkmessage": "Invalid User",
                 }
-            except:
-                print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     """This function sends basic data of user like username ,userrole. This API cant be used to fetch the data of other users, only for self use. """
 
@@ -224,13 +166,12 @@ class api_gkuser(object):
         if authDetails["auth"] is False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # there is only one possibility for a catch which is failed connection to db.
                 # Retrieve data of that user whose userid is sent
                 userid = authDetails["userid"]
                 orgcode = authDetails["orgcode"]
-                result = self.con.execute(
+                result = con.execute(
                     select(
                         [
                             gkdb.gkusers.c.username,
@@ -260,10 +201,7 @@ class api_gkuser(object):
                 elif userRole == 3:
                     userData["userroleName"] = "Godown In Charge"
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": userData}
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     """
     Following function is to get all users data having same user role .It needs userrole & only admin can view data of other users.
@@ -283,8 +221,7 @@ class api_gkuser(object):
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # get user role to validate.
                 # only admin can view all users entire data
                 userid = authDetails["userid"]
@@ -295,7 +232,7 @@ class api_gkuser(object):
                 if "gkresult" in selfRoleResp:
                     selfRole = selfRoleResp["gkresult"]["userrole"]
                 if selfRole == -1:
-                    orgQuery = self.con.execute(
+                    orgQuery = con.execute(
                         select([gkdb.organisation.c.users]).where(
                             gkdb.organisation.c.orgcode == orgcode
                         )
@@ -304,7 +241,7 @@ class api_gkuser(object):
                     usersList = []
                     for userId in orgUsers:
                         if orgUsers[userId]:
-                            userQuery = self.con.execute(
+                            userQuery = con.execute(
                                 select([gkdb.gkusers]).where(
                                     gkdb.gkusers.c.userid == userId
                                 )
@@ -332,7 +269,7 @@ class api_gkuser(object):
 
                                 elif int(requestRole) == 3:
                                     User["userroleName"] = "Godown In Charge"
-                                    usgo = self.con.execute(
+                                    usgo = con.execute(
                                         select([gkdb.usergodown.c.goid]).where(
                                             gkdb.gkusers.c.userid == userId
                                         )
@@ -342,7 +279,7 @@ class api_gkuser(object):
                                     for g in goids:
                                         godownid = g["goid"]
                                         # now we have associated godown ids, by which we can get godown name
-                                        godownData = self.con.execute(
+                                        godownData = con.execute(
                                             select([gkdb.godown.c.goname]).where(
                                                 gkdb.godown.c.goid == godownid
                                             )
@@ -359,10 +296,6 @@ class api_gkuser(object):
                 else:
                     return {"gkstatus": gkcore.enumdict["ActionDisallowed"]}
 
-            except:
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
 
     @view_config(
         route_name="gkuser_role",
@@ -402,16 +335,15 @@ class api_gkuser(object):
         if authDetails["auth"] is False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
+            with eng.connect() as con:
                 # Fetches the data of the users that are part of a particular organisation
                 # TODO: optimize the below query if possible
-                allUserData = self.con.execute(
+                allUserData = con.execute(
                     text("select gkusers.userid, orgs->':orgcode' as userconf, username from gkusers inner join (select jsonb_object_keys(users) as userid from organisation where orgcode = :orgcode) orgs on cast(orgs.userid as integer) = gkusers.userid;"),
                     orgcode = authDetails["orgcode"],
                 ).fetchall()
 
-                checkFlag = self.con.execute(
+                checkFlag = con.execute(
                     select([gkdb.organisation.c.invflag]).where(
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
@@ -445,11 +377,7 @@ class api_gkuser(object):
                     )
 
                 return {"gkstatus": gkcore.enumdict["Success"], "gkresult": users}
-            except:
-                print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     # request_param="type=get_user_orgs",
     """
@@ -470,9 +398,8 @@ class api_gkuser(object):
         if authDetails["auth"] is False:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
-            try:
-                self.con = eng.connect()
-                userData = self.con.execute(
+            with eng.connect() as con:
+                userData = con.execute(
                     select([gkdb.gkusers.c.orgs]).where(
                         gkdb.gkusers.c.userid == authDetails["userid"]
                     )
@@ -481,7 +408,7 @@ class api_gkuser(object):
                 if userData["orgs"] and type(userData["orgs"]) == dict:
                     # TODO: optimize the below code if possible
                     for orgCode in userData["orgs"]:
-                        orgData = self.con.execute(
+                        orgData = con.execute(
                             select(
                                 [
                                     gkdb.organisation.c.orgname,
@@ -515,11 +442,7 @@ class api_gkuser(object):
                     "gkstatus": enumdict["Success"],
                     "gkresult": payload,
                 }
-            except:
-                print(traceback.format_exc())
-                return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     """This function checks if the username sent is unique"""
 
@@ -530,26 +453,17 @@ class api_gkuser(object):
         route_name="gkuser_uname",
     )
     def checkUserNameUnique(self):
-        try:
-            self.con = eng.connect()
+        with eng.connect() as con:
             # we now validate the incoming payload
             # and throw an error when it fails
             # Validate against the regex pattern
-            user_to_validate = {
-                "username": self.request.matchdict["username"]
-            }
-            try:
-                user_data = UserNameSchema(**user_to_validate)
-            except ValidationError as e:
-                return {
-                    "gkstatus": enumdict["ConnectionFailed"],
-                    "gkresult": e.errors(),
-                }
+            validated_data = UserNameSchema.model_validate(self.request.json_body)
+            dataset = validated_data.model_dump(exclude_none=True)
 
             # there is only one possibility for a catch which is failed connection to db.
             # Retrieve data of that user whose userid is sent
-            uname = self.request.matchdict["username"]
-            query = self.con.execute(
+            uname = dataset["username"]
+            query = con.execute(
                 select(
                     [
                         gkdb.gkusers.c.userid,
@@ -561,7 +475,7 @@ class api_gkuser(object):
             if "check_legacy" in self.request.params:
                 query2 = {"rowcount": 0}
                 if tableExists("users"):
-                    query2 = self.con.execute(
+                    query2 = con.execute(
                         select(
                             [
                                 gkdb.users.c.userid,
@@ -571,11 +485,7 @@ class api_gkuser(object):
 
                 result = result and query2.rowcount == 0
             return {"gkstatus": gkcore.enumdict["Success"], "gkresult": result}
-        except:
-            print(traceback.format_exc())
-            return {"gkstatus": gkcore.enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
+
 
     # request_param="type=recovery_question",
     @view_config(
@@ -584,10 +494,9 @@ class api_gkuser(object):
         route_name="gkuser_pwd_question",
     )
     def getquestion(self):
-        try:
-            self.con = eng.connect()
+        with eng.connect() as con:
             username = self.request.params["username"]
-            result = self.con.execute(
+            result = con.execute(
                 select([gkdb.gkusers]).where(
                     and_(
                         gkdb.gkusers.c.username == username,
@@ -604,7 +513,7 @@ class api_gkuser(object):
                 # else check if the old users table exists,
                 # if it does, ask the user to send both username and orgcode
                 if "orgname" in self.request.params:
-                    orgQuery = self.con.execute(
+                    orgQuery = con.execute(
                         select([gkdb.organisation.c.orgcode]).where(
                             and_(
                                 gkdb.organisation.c.orgname
@@ -628,7 +537,7 @@ class api_gkuser(object):
                             + "_"
                             + self.request.params["username"]
                         )
-                        result = self.con.execute(
+                        result = con.execute(
                             select([gkdb.gkusers]).where(
                                 and_(
                                     gkdb.gkusers.c.username == uname,
@@ -646,7 +555,7 @@ class api_gkuser(object):
                                 "gkresult": user,
                             }
                 elif tableExists("users"):
-                    query2 = self.con.execute(
+                    query2 = con.execute(
                         select([gkdb.users.c.userid]).where(
                             gkdb.users.c.username == self.request.params["username"]
                         )
@@ -654,10 +563,7 @@ class api_gkuser(object):
                     if query2.rowcount > 0:
                         return {"gkstatus": enumdict["ActionDisallowed"]}
                 return {"gkstatus": enumdict["BadPrivilege"]}
-        except:
-            return {"gkstatus": enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
+
 
     # request_param="type=verify_answer",
     @view_config(
@@ -666,11 +572,10 @@ class api_gkuser(object):
         route_name="gkuser_pwd_answer",
     )
     def verifyanswer(self):
-        try:
-            self.con = eng.connect()
+        with eng.connect() as con:
             userid = self.request.params["userid"]
             useranswer = self.request.params["useranswer"]
-            result = self.con.execute(
+            result = con.execute(
                 select([gkdb.gkusers]).where(gkdb.gkusers.c.userid == userid)
             )
             row = result.fetchone()
@@ -680,10 +585,7 @@ class api_gkuser(object):
                 return {"gkstatus": enumdict["Success"]}
             else:
                 return {"gkstatus": enumdict["BadPrivilege"]}
-        except:
-            return {"gkstatus": enumdict["ConnectionFailed"]}
-        finally:
-            self.con.close()
+
 
     @view_config(
         request_method="PUT",
@@ -692,8 +594,7 @@ class api_gkuser(object):
     )
     def resetpassword(self):
         gk_log(__name__).info("reset password")
-        try:
-            self.con = eng.connect()
+        with eng.begin() as con:
             # we now validate the incoming payload
             # and throw an error when it fails
             try:
@@ -706,7 +607,7 @@ class api_gkuser(object):
                 }
             # check whether the user is already existing
             # in the database
-            user = self.con.execute(
+            user = con.execute(
                 select([gkdb.gkusers]).where(
                     and_(
                         gkdb.gkusers.c.userid == dataset["userid"],
@@ -716,7 +617,7 @@ class api_gkuser(object):
             )
             # if exists, update the relevant column with new password
             if user.rowcount > 0:
-                self.con.execute(
+                con.execute(
                     gkdb.gkusers.update()
                     .where(gkdb.gkusers.c.userid == dataset["userid"])
                     .values(userpassword=dataset["userpassword"])
@@ -724,8 +625,7 @@ class api_gkuser(object):
                 return {"gkstatus": enumdict["Success"]}
             else:
                 return {"gkstatus": enumdict["BadPrivilege"]}
-        except:
-            print(traceback.format_exc())
+
 
     @view_config(
         request_method="POST", route_name="gkuser_pwd_validate", renderer="json"
@@ -736,7 +636,6 @@ class api_gkuser(object):
         current password in edituser.
         """
         try:
-            self.con = eng.connect()
             token = self.request.headers["gktoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
@@ -744,9 +643,9 @@ class api_gkuser(object):
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAcces"]}
         else:
-            try:
+            with eng.connect() as con:
                 dataset = self.request.json_body
-                result = self.con.execute(
+                result = con.execute(
                     select([gkdb.gkusers.c.userid]).where(
                         and_(
                             gkdb.gkusers.c.username == dataset["username"],
@@ -758,10 +657,7 @@ class api_gkuser(object):
                     return {"gkstatus": enumdict["Success"]}
                 else:
                     return {"gkstatus": enumdict["BadPrivilege"]}
-            except:
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(request_method="DELETE", renderer="json")
     def deleteUser(self):
@@ -775,7 +671,6 @@ class api_gkuser(object):
         # validate the gktoken
         user = {}
         try:
-            self.con = eng.connect()
             token = self.request.headers["gkusertoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
@@ -786,8 +681,8 @@ class api_gkuser(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         # get the user info from the database
         else:
-            try:
-                result = self.con.execute(
+            with eng.begin() as con:
+                result = con.execute(
                     select([gkdb.gkusers]).where(
                         and_(
                             gkdb.gkusers.c.userid == user["userid"],
@@ -814,17 +709,13 @@ class api_gkuser(object):
                     return {"gkstatus": enumdict["ActionDisallowed"]}
                 else:
                     # delete the user from the database & return success status code
-                    self.con.execute(
+                    con.execute(
                         delete(gkdb.gkusers).where(
                             gkdb.gkusers.c.userid == user["userid"],
                         )
                     )
                     return {"gkstatus": enumdict["Success"]}
-            except Exception as e:
-                gk_log(__name__).error(e)
-                return {"gkstatus": enumdict["ConnectionFailed"]}
-            finally:
-                self.con.close()
+
 
     @view_config(
         request_method="PUT",
@@ -834,7 +725,6 @@ class api_gkuser(object):
     def changeUserPassword(self):
         """Change user's password"""
         try:
-            self.con = eng.connect()
             token = self.request.headers["gkusertoken"]
         except Exception as e:
             return {
@@ -844,8 +734,7 @@ class api_gkuser(object):
         authDetails = userAuthCheck(token)
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        try:
-            self.con = eng.connect()
+        with eng.begin() as con:
             dataset = self.request.json_body
 
             # we now validate the incoming payload
@@ -860,12 +749,9 @@ class api_gkuser(object):
                     "gkresult": e.errors(),
                 }
             # insert the updated password to the db
-            self.con.execute(
+            con.execute(
                 gkdb.gkusers.update()
                 .where(gkdb.gkusers.c.userid == dataset["userid"])
                 .values(userpassword=dataset["userpassword"])
             )
             return {"gkstatus": enumdict["Success"]}
-        except Exception as e:
-            gk_log(__name__).error(e)
-            return {"gkstatus": enumdict["ConnectionFailed"]}

@@ -42,8 +42,7 @@ from pyramid.response import Response
 from pyramid.view import view_defaults, view_config
 import jwt
 import gkcore
-from gkcore.utils import authCheck
-from gkcore.views.api_gkuser import getUserRole
+from gkcore.utils import authCheck, getUserRole
 
 
 @view_defaults(route_name="godown")

@@ -32,7 +32,7 @@ Contributors:
 """
 
 from pyramid.view import view_defaults, view_config
-from gkcore.utils import authCheck, generateAuthToken, userAuthCheck
+from gkcore.utils import authCheck, generateAuthToken, userAuthCheck, getUserRole
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from sqlalchemy.sql import select
@@ -44,7 +44,6 @@ import gkcore
 import json
 from datetime import datetime, timedelta
 import os
-from gkcore.views.api_gkuser import getUserRole
 
 con = Connection
 

@@ -29,7 +29,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.models import gkdb
 from gkcore.views.account.schemas import AccountDetails
 from gkcore.views.account.services import reset_acc_defaults
@@ -40,8 +40,8 @@ from sqlalchemy.sql.expression import text
 from pyramid.view import view_defaults, view_config
 from sqlalchemy.sql.expression import null
 from gkcore.models.gkdb import accounts
-from datetime import datetime
-from gkcore.views.api_gkuser import getUserRole
+from datetime import datetime, date
+
 
 """
 purpose:

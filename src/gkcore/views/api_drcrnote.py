@@ -47,8 +47,7 @@ from sqlalchemy.sql.expression import text
 from pyramid.view import view_defaults, view_config
 from datetime import datetime
 import gkcore
-from gkcore.utils import authCheck
-from gkcore.views.api_gkuser import getUserRole
+from gkcore.utils import authCheck, getUserRole
 from gkcore.views.api_invoice import getStateCode, createAccount
 import traceback  # for printing detailed exception logs
 

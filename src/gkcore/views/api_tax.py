@@ -26,7 +26,7 @@ Contributors:
 """
 
 from gkcore import eng, enumdict
-from gkcore.utils import authCheck
+from gkcore.utils import authCheck, getUserRole
 from gkcore.models.gkdb import (
     tax,
     users,
@@ -47,7 +47,6 @@ from pyramid.view import view_defaults, view_config
 from sqlalchemy.ext.baked import Result
 import gkcore
 from sqlalchemy.sql.expression import null
-from gkcore.views.api_gkuser import getUserRole
 from datetime import datetime
 
 
