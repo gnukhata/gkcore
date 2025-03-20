@@ -513,7 +513,10 @@ class api_drcr(object):
             # inoutflag query param is used to filter entries by sales and purchases
             # 9 -> purchase, 15 -> sales, 0 -> all.
             inoutflag = [self.request.params.get("inoutflag")]
-            if self.request.params.get("inoutflag") == "0":
+            if (
+                    self.request.params.get("inoutflag") == "0"
+                    or not self.request.params.get("inoutflag")
+            ):
                 inoutflag = ["9", "15"]
             result = con.execute(
                 select(
@@ -529,7 +532,7 @@ class api_drcr(object):
                 )
                 .where(drcr.c.orgcode == authDetails["orgcode"])
                 .order_by(drcr.c.drcrdate)
-            )
+            ).fetchall()
             drcrdata = []
             for row in result:
                 # invoice,cust
