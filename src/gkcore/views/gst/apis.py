@@ -46,6 +46,7 @@ from gkcore.models.gkdb import (
     customerandsupplier,
     state,
     drcr,
+    transaction,
     organisation,
 )
 import requests
@@ -110,9 +111,10 @@ class GstReturn(object):
                         customerandsupplier.c.custname,
                         customerandsupplier.c.gst_reg_type,
                         customerandsupplier.c.gst_party_type,
+                        transaction.c.transaction_details,
                     ]
                 )
-                .select_from(invoice.join(customerandsupplier))
+                .select_from(invoice.join(customerandsupplier).join(transaction))
                 .where(
                     and_(
                         invoice.c.invoicedate.between(
@@ -145,9 +147,10 @@ class GstReturn(object):
                         customerandsupplier.c.custname,
                         customerandsupplier.c.gst_reg_type,
                         customerandsupplier.c.gst_party_type,
+                        transaction.c.transaction_details,
                     ]
                 )
-                .select_from(drcr.join(invoice).join(customerandsupplier))
+                .select_from(drcr.join(invoice).join(customerandsupplier).join(transaction))
                 .where(
                     and_(
                         drcr.c.drcrdate.between(

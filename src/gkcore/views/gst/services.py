@@ -144,7 +144,9 @@ def b2b_r1(con, invoices):
             )
 
             row = defaultdict(dict)
-            row["gstin"] = inv["consignee"].get("gstinconsignee")
+            row["gstin"] = list(
+                inv["transaction_details"]["contact"]["gstin"].values()
+            )[0]
             row["receiver"] = inv["custname"]
             row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
@@ -443,7 +445,9 @@ def cdnr_r1(con, drcr_all):
             # print(note.keys())
             row = {}
             # print("Invoice id: %s"%(str(note["invid"])))
-            row["gstin"] = note["gstin"][str(ts_code)]
+            row["gstin"] = list(
+                note["transaction_details"]["contact"]["gstin"].values()
+            )[0]
             row["receiver"] = note["custname"]
             row["invid"] = note["invid"]
             row["invoice_number"] = note["invoiceno"]
@@ -1154,7 +1158,14 @@ def check_report_properties(inv_cn_row):
     is_igst = False
     is_b2b = False
     is_large = False
-    if inv_cn_row["consignee"] and inv_cn_row["consignee"].get("gstinconsignee"):
+    gstin = None
+    try:
+        gstin = list(inv_cn_row["transaction_details"]["contact"]["gstin"].values())[0]
+    except (KeyError, AttributeError):
+        pass
+
+    if gstin:
+#    if inv_cn_row["consignee"] and inv_cn_row["consignee"].get("gstinconsignee"):
         is_b2b = True
     if inv_cn_row["invoicetotal"] > 100000:
         is_large = True
