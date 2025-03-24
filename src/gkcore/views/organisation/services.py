@@ -9,7 +9,7 @@ def get_organisation_profile(org_code):
             select([organisation])
             .where(organisation.c.orgcode == org_code)
         ).fetchone()
-        organsiation_profile = {
+        organisation_profile = {
             "orgcode": org_details["orgcode"],
             "orgname": org_details["orgname"],
             "orgaddr": org_details["orgaddr"],
@@ -25,4 +25,4 @@ def get_organisation_profile(org_code):
             "tin": org_details["tin"],
             "bankdetails": org_details["bankdetails"],
         }
-        return organsiation_profile
+        return organisation_profile
