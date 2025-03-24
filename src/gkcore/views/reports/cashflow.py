@@ -227,30 +227,6 @@ class api_cashflow(object):
 
                 receiptcf.extend(rctransactionsgrid)
                 paymentcf.extend(closinggrid)
-                if len(receiptcf) > len(paymentcf):
-                    emptyno = len(receiptcf) - len(paymentcf)
-                    for i in range(0, emptyno):
-                        paymentcf.append(
-                            {
-                                "toby": "",
-                                "particulars": "",
-                                "amount": ".",
-                                "accountcode": "",
-                                "ttlRunCr": "",
-                            }
-                        )
-                if len(receiptcf) < len(paymentcf):
-                    emptyno = len(paymentcf) - len(receiptcf)
-                    for i in range(0, emptyno):
-                        receiptcf.append(
-                            {
-                                "toby": "",
-                                "particulars": "",
-                                "amount": ".",
-                                "accountcode": "",
-                                "ttlRunDr": "",
-                            }
-                        )
                 receiptcf.append(
                     {
                         "toby": "",
