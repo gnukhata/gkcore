@@ -1616,7 +1616,7 @@ class api_invoice(object):
                     }
                     for id, name, hsn in products
                 }
-                org_details = get_organisation_profile(authDetails["orgcode"]),
+                org_details = get_organisation_profile(authDetails["orgcode"])
                 transaction_details = {
                     "godown": dict(godown_details),
                     "contact": dict(contact_details),
