@@ -37,7 +37,7 @@ import io
 import openpyxl
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import Font, Alignment, PatternFill, NamedStyle, Border, Side
-from gkcore.views.api_gstreturns import generate_gstr_3b_data
+from gkcore.views.gst.services import generate_gstr_3b_data
 from gkcore.views.api_state import getStates
 
 
