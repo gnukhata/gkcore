@@ -106,7 +106,13 @@ class api_rollclose(object):
         else:
             with eng.begin() as con:
                 orgCode = int(authDetails["orgcode"])
-                endDate = self.request.params["financialend"]
+                financialStartEnd = con.execute(
+                    "select yearstart, yearend, orgtype from organisation where orgcode = %d"
+                    % int(orgCode)
+                )
+                startEndRow = financialStartEnd.fetchone()
+                startDate = str(startEndRow["yearstart"])
+                endDate = str(startEndRow["yearend"])
                 closBal = 0.00
                 blacktransactionsdata = con.execute(
                     select(
@@ -121,12 +127,6 @@ class api_rollclose(object):
                 blacktransactions = blacktransactionsdata.fetchone()
                 if blacktransactions["blackcount"] > 0:
                     return {"gkstatus": enumdict["ActionDisallowed"]}
-                financialStartEnd = con.execute(
-                    "select yearstart, yearend, orgtype from organisation where orgcode = %d"
-                    % int(orgCode)
-                )
-                startEndRow = financialStartEnd.fetchone()
-                startDate = str(startEndRow["yearstart"])
                 closingAccount = ""
                 closingAccountCode = 0
                 if startEndRow["orgtype"] == "Profit Making":
