@@ -145,7 +145,15 @@ def migrate():
 
         # Add default UQCs
         for unit, desc in list(UQC_LIST.items()):
-            try:
+            if not con.execute(
+                    select([gkdb.unitofmeasurement])
+                    .where(
+                        and_(
+                            gkdb.unitofmeasurement.c.unitname == unit,
+                            gkdb.unitofmeasurement.c.sysunit == 1,
+                        )
+                    )
+            ).returns_rows:
                 con.execute(
                     gkdb.unitofmeasurement.insert(),
                     [
@@ -157,8 +165,6 @@ def migrate():
                         }
                     ],
                 )
-            except IntegrityError:
-                pass
 
             UQC_LIST.pop(unit, 0)
 
