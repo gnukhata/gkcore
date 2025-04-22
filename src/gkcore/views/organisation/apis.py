@@ -45,6 +45,8 @@ import json
 from datetime import datetime, timedelta
 import os
 
+from gkcore.views.organisation.schemas import OrgCreate
+
 con = Connection
 
 
@@ -161,6 +163,9 @@ class api_organisation(object):
             with eng.begin() as con:
                 dataset = self.request.json_body
                 orgdata = dataset["orgdetails"]
+
+                validated_data = OrgCreate.model_validate(self.request.json_body)
+                dataset = validated_data.model_dump(exclude_none=True)
 
                 result = con.execute(gkdb.organisation.insert(), [orgdata])
                 code = con.execute(
