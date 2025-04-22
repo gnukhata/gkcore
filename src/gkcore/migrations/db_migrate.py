@@ -153,7 +153,7 @@ def migrate():
                             gkdb.unitofmeasurement.c.sysunit == 1,
                         )
                     )
-            ).returns_rows:
+            ).fetchone():
                 con.execute(
                     gkdb.unitofmeasurement.insert(),
                     [
