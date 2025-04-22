@@ -46,7 +46,7 @@ import json
 from datetime import datetime, timedelta
 import os
 
-from gkcore.views.organisation.schemas import OrgCreate
+from gkcore.views.organisation.schemas import OrgCreate, OrgUpdate
 
 con = Connection
 
@@ -1005,7 +1005,8 @@ class api_organisation(object):
                     authDetails["userid"], authDetails["orgcode"]
                 )
                 userRole = userRoleData["gkresult"]["userrole"]
-                dataset = self.request.json_body
+                validated_data = OrgUpdate.model_validate(self.request.json_body)
+                dataset = validated_data.model_dump(exclude_none=True)
                 # Check for duplicate entry before insertion
                 result_duplicate_check = con.execute(
                     select([gkdb.organisation.c.orgname]).where(
