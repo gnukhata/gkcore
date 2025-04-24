@@ -78,7 +78,9 @@ def userLogin(request):
 
         payload = {}
         if userData["orgs"]:
-            for orgCode in userData["orgs"]:
+            org_list = list(userData["orgs"].keys())
+            org_list.reverse()
+            for orgCode in org_list:
                 orgData = con.execute(
                     select(
                         [

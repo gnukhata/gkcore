@@ -407,7 +407,9 @@ class api_gkuser(object):
                 payload = {}
                 if userData["orgs"] and type(userData["orgs"]) == dict:
                     # TODO: optimize the below code if possible
-                    for orgCode in userData["orgs"]:
+                    org_list = list(userData["orgs"].keys())
+                    org_list.reverse()
+                    for orgCode in org_list:
                         orgData = con.execute(
                             select(
                                 [
