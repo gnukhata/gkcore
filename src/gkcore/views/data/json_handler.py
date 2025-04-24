@@ -1,6 +1,6 @@
 import json, io, logging
 from gkcore import eng
-from sqlalchemy import MetaData, select, func, and_
+from sqlalchemy import MetaData, select, func, and_, or_
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.sql.schema import Table
@@ -30,6 +30,27 @@ def get_table_array(con: Connection, table_name: str, orgcode: int) -> list:
                 func.jsonb_extract_path_text(
                     table.c.orgs, str(orgcode)
                 ) != None
+            )
+        elif table_name == "transaction":
+            org_invoices = select([gkdb.invoice.c.immutable_data_id]).where(
+                gkdb.invoice.c.orgcode == orgcode
+            )
+            org_purchase_orders = select(
+                [gkdb.purchaseorder.c.immutable_data_id]
+            ).where(
+                gkdb.purchaseorder.c.orgcode == orgcode
+            )
+            org_transfer_notes = select(
+                [gkdb.transfernote.c.immutable_data_id]
+            ).where(
+                gkdb.transfernote.c.orgcode == orgcode
+            )
+            statement = table.select().where(
+                or_(
+                    gkdb.transaction.c.transaction_id.in_(org_invoices),
+                    gkdb.transaction.c.transaction_id.in_(org_purchase_orders),
+                    gkdb.transaction.c.transaction_id.in_(org_transfer_notes),
+                )
             )
         else:
             statement = table.select().where(table.c.orgcode == orgcode)
