@@ -8,115 +8,56 @@ The REST API server of GNUKhata
 # Development Setup
 
 ## Docker
+- [docker](https://www.docker.com/) [Configure system to run docker as non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
+- [docker-compose](https://docs.docker.com/compose/)
 
-### Linux/Mac
+- Create and move to project directory - `mkdir gnukhata && cd gnukhata`
+- Build the project - `docker-compose --build up -d`
+- To add configurations, add `--env_file path_to_configuration_file` to above command. Available configurations are listed [here](https://gitlab.com/gnukhata/gkcore/-/blob/devel/env.sample).
+- To stop running GNUKhata, run - `docker-compose down`
+
+## Manual Setup
 
 Requirements:
 
-- [docker](https://www.docker.com/) [Configure system to run docker as non-root user](https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
-- [docker-compose](https://docs.docker.com/compose/)
 - [python](https://www.python.org/) (v3.8 & above)
-- [pip](https://pip.pypa.io)
+- postgresql
+- python-poetry
 
-```sh
-# Install dependencies
-# On debian/Ubuntu distro's
-sudo apt install libpq-dev build-essential python3-dev python3-pip
+Steps:
 
-# after cloning this repo, cd to the folder
-cd gkcore/
-
-# create virtualenv
-python3 -m venv gkenv
-
-# activate the virtualenv
-source gkenv/bin/activate
-
-# install dependencies & initialize the application.
-# make sure to follow the instructions above to run docker as non-root user
-# otherwise you will get permission error
-./gkcore_cli.py init
-
-# starts the dev server
-./gkcore_cli.py serve
+- Create postgresql database and user for the project.
+- Clone the project to your system and move into project directory.
+``` sh
+git clone https://gitlab.com/gnukhata/gkcore.git
+cd gkcore
+```
+- Add database name and user name to `.env` file, refer `env.template` for configuration options.
+- Create project directory and start a python virtualenv.
+- Install project dependancies.
+``` sh
+poetry install
+```
+- Add database tables and run migrations
+``` sh
+gkdb --init
+gkdb --migrate
+```
+- Serve the project in production or development environment, default is production.
+``` sh
+gkserve [--development, --production]
 ```
 
 > gkcore can be accessed at `http://localhost:6543`
 
 > The API docs (swagger UI) can be accessed via `http://localhost:6543/docs/` from your web browser
 
-<!-- ### Manual Way
-
-- On debian/Ubuntu distributions Install python-virtualenv postgresql and dependencies using following command
-
-> ` sudo apt-get install python3-virtualenv postgresql python3-dev libpq-dev git python3-setuptools build-essential`
-
-- Create a python virtualenv in a directory(NOT IN gkwebapp or gkcore. If using emacs please do so in '.virtualenvs' directory in home.) using:
-
-> `virtualenv gkenv `
-
-- change directory to gkenv:
-
-> `cd gkenv`
-
-- Activate your virtualenv using:
-
-> `source bin/activate`
-
-- Fork gkcore from https://gitlab.com/gnukhata/gkcore
-
-- Create and add your SSH key to gitlab by following this guide - https://gitlab.com/help/gitlab-basics/create-your-ssh-keys.md
-
-- Clone gkcore in your workspace using:
-
-> `git clone git@gitlab.com:<username>/gkcore.git`
-
-- Change permission of gkcore to gain write acess.
-
-> `sudo chmod 775 gkcore`
-
-- Change to gkcore directory. Look inside the directory. You must find files like `gkutil.sh`, `setup.py`, `initdb.py`
-
-- Give permission to gkutil.sh file to execute and execute the same using:
-
-> `chmod 755 gkutil.sh`
-
-> `./gkutil.sh`
-
-- Activate your virtual environment and run setup.py using:
-
-> `python3 setup.py develop`
-
-- Your environment will be checked for all the required libraries and the missing ones will be downloaded.
-
-- Now we have to run initdb.py script. This will create tables in our database. To run this script we need to switch to a user 'gkadmin' which was created when we ran 'gkutil.sh' script.
-
-> `sudo su gkadmin`
-
-Activate your virtualenv and then run initdb.py
-
-> `python initdb.py`
-
-- To run gkcore server in development mode use:
-
-> `pserve development.ini --reload`
-
-gkcore is now accessible at `http://localhost:6543`🎉 -->
-
 ## Windows 11
 
 Requirements:
 
-- [docker](https://www.docker.com/)
-- `wsl --install` (run this command in the cmd prompt in an administrator mode)
-- [Node.js 16.x.x](https://nodejs.org/download/release/v16.20.0/node-v16.20.0-x64.msi)
-- [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170)
-  **Download v14 or higher versions. Download all the packages present**
-- [python](https://www.python.org/downloads/) **Add the path while installing**
-- [postgres 12.x](https://www.enterprisedb.com/downloads/postgres-postgresql-downloads)
-- [Git](https://git-scm.com/download/win) **Download the standalone installer for required bit**
-- `python gkcore_cli.py init` **Run this command to initialize the DB**
-- `python gkcore_cli.py serve` **Run this command to initialize the dev server (localhost:6543)**
+- [docker](https://docs.docker.com/desktop/setup/install/windows-install/)
+- Follow the docker section for next steps.
 
 ### Troubleshooting:
 
@@ -133,6 +74,8 @@ Requirements:
 
 - `GKCORE_DISABLE_ORG_REGISTRATION`: Default is `false`. Set to `true` to
     disable organisation registration.
+    
+- More configurations are listed [here](https://gitlab.com/gnukhata/gkcore/-/blob/devel/env.sample).
 
 # After Installation
 
