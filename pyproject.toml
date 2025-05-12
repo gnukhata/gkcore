@@ -30,6 +30,7 @@ email-validator = "^2.2.0"
 python-dotenv = "1.0.1"
 pyramid-openapi3 = "^0.19.1"
 psycopg2 = "^2.9.10"
+bcrypt = "^4.3.0"
 
 [build-system]
 requires = ["poetry-core"]
