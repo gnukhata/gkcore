@@ -1,4 +1,5 @@
 import os
+import bcrypt
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from gkcore.views.user.schemas import (
@@ -79,6 +80,9 @@ class api_gkuser(object):
 
         validated_data = UserSchema.model_validate(self.request.json_body)
         dataset = validated_data.model_dump(exclude_none=True)
+        encoded_password = dataset.pop("userpassword").encode('utf-8')
+        hashed_password = bcrypt.hashpw(encoded_password, bcrypt.gensalt())
+        dataset["userpassword"] = hashed_password.decode('utf-8')
 
         with eng.begin() as con:
 

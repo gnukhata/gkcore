@@ -26,6 +26,7 @@ Contributors:
 """
 
 
+import bcrypt
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from gkcore.views.login.schemas import OrgLogin, UserLogin
@@ -57,10 +58,9 @@ def userLogin(request):
 
     with eng.connect() as con:
         result = con.execute(
-            select([gkdb.gkusers.c.userid]).where(
+            select([gkdb.gkusers.c.userid, gkdb.gkusers.c.userpassword]).where(
                 and_(
                     gkdb.gkusers.c.username == dataset["username"],
-                    gkdb.gkusers.c.userpassword == dataset["userpassword"],
                 )
             )
         )
@@ -69,6 +69,12 @@ def userLogin(request):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
         record = result.fetchone()
+
+        encoded_password = dataset["userpassword"].encode('utf-8')
+        encoded_password_hash = record["userpassword"].encode('utf-8')
+        if not bcrypt.checkpw(encoded_password, encoded_password_hash):
+            return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
         # check if any orgs are mapped to the userid
         userData = con.execute(
             select([gkdb.gkusers.c.orgs]).where(
