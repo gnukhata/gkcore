@@ -275,7 +275,7 @@ class api_godownregister(object):
                                 )
                         if stockRow["dcinvtnflag"] == 7:
                             # Debit Credit Note
-                            countresult = self.con.execute(
+                            countresult = con.execute(
                                 select([func.count(drcr.c.drcrid).label("dc")]).where(
                                     and_(
                                         drcr.c.drcrdate >= yearStart,
