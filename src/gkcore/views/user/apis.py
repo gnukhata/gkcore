@@ -459,7 +459,7 @@ class api_gkuser(object):
             # we now validate the incoming payload
             # and throw an error when it fails
             # Validate against the regex pattern
-            validated_data = UserNameSchema.model_validate(self.request.json_body)
+            validated_data = UserNameSchema.model_validate(self.request.matchdict)
             dataset = validated_data.model_dump(exclude_none=True)
 
             # there is only one possibility for a catch which is failed connection to db.
