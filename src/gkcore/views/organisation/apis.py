@@ -35,6 +35,7 @@ from pyramid.view import view_defaults, view_config
 from gkcore.utils import authCheck, generateAuthToken, userAuthCheck, getUserRole
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
+from gkcore.models.gkdb import organisation
 from sqlalchemy.sql import select
 from sqlalchemy import func, desc
 from sqlalchemy.engine.base import Connection
@@ -44,6 +45,8 @@ import gkcore
 import json
 from datetime import datetime, timedelta
 import os
+
+from gkcore.views.organisation.schemas import OrgCreate, OrgUpdate
 
 con = Connection
 
@@ -161,6 +164,9 @@ class api_organisation(object):
             with eng.begin() as con:
                 dataset = self.request.json_body
                 orgdata = dataset["orgdetails"]
+
+                validated_data = OrgCreate.model_validate(self.request.json_body)
+                dataset = validated_data.model_dump(exclude_none=True)
 
                 result = con.execute(gkdb.organisation.insert(), [orgdata])
                 code = con.execute(
@@ -812,119 +818,33 @@ class api_organisation(object):
         else:
             with eng.connect() as con:
                 result = con.execute(
-                    select([gkdb.organisation]).where(
+                    select([organisation]).where(
                         gkdb.organisation.c.orgcode == authDetails["orgcode"]
                     )
                 )
                 row = result.fetchone()
-                if row["orgcity"] == None:
-                    orgcity = ""
-                else:
-                    orgcity = row["orgcity"]
-
-                if row["orgaddr"] == None:
-                    orgaddr = ""
-                else:
-                    orgaddr = row["orgaddr"]
-
-                if row["orgpincode"] == None:
-                    orgpincode = ""
-                else:
-                    orgpincode = row["orgpincode"]
-
-                if row["orgstate"] == None:
-                    orgstate = ""
-                else:
-                    orgstate = row["orgstate"]
-
-                if row["orgcountry"] == None:
-                    orgcountry = ""
-                else:
-                    orgcountry = row["orgcountry"]
-
-                if row["orgtelno"] == None:
-                    orgtelno = ""
-                else:
-                    orgtelno = row["orgtelno"]
-
-                if row["orgfax"] == None:
-                    orgfax = ""
-                else:
-                    orgfax = row["orgfax"]
-
-                if row["orgwebsite"] == None:
-                    orgwebsite = ""
-                else:
-                    orgwebsite = row["orgwebsite"]
-
-                if row["orgemail"] == None:
-                    orgemail = ""
-                else:
-                    orgemail = row["orgemail"]
-
-                if row["orgpan"] == None:
-                    orgpan = ""
-                else:
-                    orgpan = row["orgpan"]
-
-                if row["orgmvat"] == None:
-                    orgmvat = ""
-                else:
-                    orgmvat = row["orgmvat"]
-
-                if row["orgstax"] == None:
-                    orgstax = ""
-                else:
-                    orgstax = row["orgstax"]
-
-                if row["orgregno"] == None:
-                    orgregno = ""
-                else:
-                    orgregno = row["orgregno"]
-
-                if row["orgregdate"] == None:
-                    orgregdate = ""
-                else:
-                    orgregdate = row["orgregdate"]
-
-                if row["orgfcrano"] == None:
-                    orgfcrano = ""
-                else:
-                    orgfcrano = row["orgfcrano"]
-
-                if row["orgfcradate"] == None:
-                    orgfcradate = ""
-                else:
-                    orgfcradate = row["orgfcradate"]
-                if row["gstin"] == None:
-                    gstin = ""
-
-                if row["bankdetails"] == None:
-                    bankdetails = ""
-                else:
-                    bankdetails = row["bankdetails"]
 
                 orgDetails = {
                     "orgname": row["orgname"],
                     "orgtype": row["orgtype"],
                     "yearstart": str(row["yearstart"]),
                     "yearend": str(row["yearend"]),
-                    "orgcity": orgcity,
-                    "orgaddr": orgaddr,
-                    "orgpincode": orgpincode,
-                    "orgstate": orgstate,
-                    "orgcountry": orgcountry,
-                    "orgtelno": orgtelno,
-                    "orgfax": orgfax,
-                    "orgwebsite": orgwebsite,
-                    "orgemail": orgemail,
-                    "orgpan": orgpan,
-                    "orgmvat": orgmvat,
-                    "orgstax": orgstax,
-                    "orgregno": orgregno,
-                    "orgregdate": orgregdate,
-                    "orgfcrano": orgfcrano,
-                    "orgfcradate": orgfcradate,
+                    "orgcity": row.orgcity,
+                    "orgaddr": row.orgaddr,
+                    "orgpincode": row.orgpincode,
+                    "orgstate": row.orgstate,
+                    "orgcountry": row.orgcountry,
+                    "orgtelno": row.orgtelno,
+                    "orgfax": row.orgfax,
+                    "orgwebsite": row.orgwebsite,
+                    "orgemail": row.orgemail,
+                    "orgpan": row.orgpan,
+                    "orgmvat": row.orgmvat,
+                    "orgstax": row.orgstax,
+                    "orgregno": row.orgregno,
+                    "orgregdate": row.orgregdate,
+                    "orgfcrano": row.orgfcrano,
+                    "orgfcradate": row.orgfcradate,
                     "roflag": row["roflag"],
                     "booksclosedflag": row["booksclosedflag"],
                     "invflag": row["invflag"],
@@ -1085,7 +1005,8 @@ class api_organisation(object):
                     authDetails["userid"], authDetails["orgcode"]
                 )
                 userRole = userRoleData["gkresult"]["userrole"]
-                dataset = self.request.json_body
+                validated_data = OrgUpdate.model_validate(self.request.json_body)
+                dataset = validated_data.model_dump(exclude_none=True)
                 # Check for duplicate entry before insertion
                 result_duplicate_check = con.execute(
                     select([gkdb.organisation.c.orgname]).where(
