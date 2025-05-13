@@ -489,7 +489,7 @@ class api_dashboard(object):
         with eng.connect() as con:
             account_group = self.request.params["group"]
             groupname_accounts_map = {
-                "cash_accounts": ["Cash", "Bank"],
+                "cash_accounts": ["Cash", "Bank", "Secured", "Unsecured"],
                 "assets": ["Current Assets"],
                 "liabilities": ["Current Liabilities"],
             }
