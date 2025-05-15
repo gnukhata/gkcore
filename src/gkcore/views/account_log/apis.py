@@ -87,8 +87,8 @@ class api_log(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result = self.con.execute(
-                    godown.update()
+                self.con.execute(
+                    log.update()
                     .where(log.c.logid == dataset["logid"])
                     .values(dataset)
                 )
