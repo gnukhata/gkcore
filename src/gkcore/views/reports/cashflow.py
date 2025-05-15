@@ -199,7 +199,7 @@ class api_cashflow(object):
                             ):
                                 pyaccountcodes.append(dr)
                                 drresult = self.con.execute(
-                                    text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (drs ?| :bankcodes);"),
+                                    text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (crs ?| :bankcodes);"),
                                     dr = dr,
                                     voucherdate_from = financialStart,
                                     voucherdate_to = calculateTo,
