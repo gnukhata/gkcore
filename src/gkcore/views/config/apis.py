@@ -107,7 +107,7 @@ class api_config(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        with eng.connect() as con:
+        with eng.begin() as con:
             dataset = self.request.json_body
             config = dataset["config"]
             confType = self.request.params["conftype"]
@@ -143,7 +143,7 @@ class api_config(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        with eng.connect() as conn:
+        with eng.begin() as conn:
             dataset = self.request.json_body
 
             # Validate the payload structure
