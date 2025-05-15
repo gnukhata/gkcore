@@ -60,7 +60,8 @@ class api_data(object):
         renderer="json",
     )
     def import_tally_spreadsheet(self):
-        return data.spreadsheet_handler.import_tally(self)
+        with eng.connect() as con:
+            return data.spreadsheet_handler.import_tally(self, con)
 
     @view_config(
         route_name="export-json",

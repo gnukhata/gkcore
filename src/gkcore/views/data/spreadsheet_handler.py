@@ -155,7 +155,7 @@ def export_ledger(self):
         return {"gkstatus": 3}
 
 
-def import_tally(self):
+def import_tally(self, con):
     """
      This function will take a spreadsheet containing data from tally or GNUKhata
      Then the code will read the file using parsing library (openpyxl).
@@ -204,7 +204,6 @@ def import_tally(self):
         parentgroupid = None
         parentgroup = ""
         openingBl = 0.00
-        self.con = eng.connect()
 
         # gather user info
         user = authCheck(header["gktoken"])
@@ -270,7 +269,7 @@ def import_tally(self):
                         ):
                             openingBl = float(-openingBl)
                             try:
-                                newacc = self.con.execute(
+                                newacc = con.execute(
                                     accounts_table.insert(),
                                     {
                                         "accountname": accRow[0].value,
@@ -296,7 +295,7 @@ def import_tally(self):
                         ):
                             openingBl = float(-openingBl)
                             try:
-                                newacc = self.con.execute(
+                                newacc = con.execute(
                                     accounts_table.insert(),
                                     {
                                         "accountname": accRow[0].value,
@@ -311,7 +310,7 @@ def import_tally(self):
 
                 if len(accRow) == 2:
                     try:
-                        newsub = self.con.execute(
+                        newsub = con.execute(
                             accounts_table.insert(),
                             {
                                 "accountname": accRow[0].value,
