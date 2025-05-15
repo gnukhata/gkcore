@@ -39,7 +39,7 @@ from gkcore import eng
 from sqlalchemy.sql import select
 from gkcore.models.gkdb import organisation
 
-import gkcore.views.data as data
+from gkcore.views.data import spreadsheet_handler
 
 
 class api_data(object):
@@ -52,7 +52,7 @@ class api_data(object):
         renderer="json",
     )
     def export_spreadsheet(self):
-        return data.spreadsheet_handler.export_ledger(self)
+        return spreadsheet_handler.export_ledger(self)
 
     @view_config(
         route_name="import-xlsx",
@@ -61,7 +61,7 @@ class api_data(object):
     )
     def import_tally_spreadsheet(self):
         with eng.connect() as con:
-            return data.spreadsheet_handler.import_tally(self, con)
+            return spreadsheet_handler.import_tally(self, con)
 
     @view_config(
         route_name="export-json",
