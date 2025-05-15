@@ -23,7 +23,6 @@ def export_ledger(self):
     *yearstart* = mm-dd-yyyy
     yearend= yyyy-mm-dd
     """
-    self.con = Connection
     try:
         header = {"gktoken": self.request.headers["gktoken"]}
         gkwb = Workbook()
