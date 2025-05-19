@@ -39,7 +39,7 @@ from sqlalchemy.ext.baked import Result
 import gkcore
 
 # from gkcore.utils import authCheck
-from gkcore.views.api_transaction import getInvVouchers
+from gkcore.views.transaction.apis import getInvVouchers
 from gkcore.views.api_invoice import getDefaultAcc
 
 import traceback  # for printing detailed exception logs
