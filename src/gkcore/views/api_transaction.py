@@ -41,7 +41,6 @@ from gkcore.models.gkdb import (
 )
 from sqlalchemy.sql import select
 from sqlalchemy import func
-from sqlalchemy.engine.base import Connection
 from sqlalchemy import and_, between
 from pyramid.view import view_defaults, view_config
 from datetime import datetime
