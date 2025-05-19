@@ -220,3 +220,18 @@ def getInvVouchers(con, orgcode, invid, include_drcrid=False, include_invid=Fals
             }
         )
     return voucherRecords
+
+
+def check_voucher_exists(vouchernumber, vouchercode, orgcode):
+    with eng.connect() as con:
+        result = con.execute(
+            select([vouchers]).where(
+                and_(
+                    vouchers.c.orgcode == orgcode,
+                    vouchers.c.vouchernumber == vouchernumber,
+                    vouchers.c.vouchercode == vouchercode,
+                )
+            )
+        )
+        if result.rowcount == 0:
+            raise ValueError("Invalid voucher details.")
