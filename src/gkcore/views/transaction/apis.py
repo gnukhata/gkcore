@@ -37,6 +37,7 @@ from gkcore.models.gkdb import (
     bankrecon,
     invoice,
 )
+from gkcore.views.transaction.schemas import VoucherDetails, VoucherUpdateDetails
 from sqlalchemy.sql import select
 from sqlalchemy import func
 from sqlalchemy import and_, between
@@ -136,8 +137,12 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
+        validated_data = VoucherDetails.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump(exclude_none=True)
+
         with eng.begin() as con:
-            dataset = self.request.json_body
             dataset["orgcode"] = authDetails["orgcode"]
             drs = dataset["drs"]
             crs = dataset["crs"]
@@ -1200,8 +1205,12 @@ class api_transaction(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
+        validated_data = VoucherUpdateDetails.model_validate(
+            self.request.json_body, context={"orgcode": authDetails["orgcode"]}
+        )
+        dataset = validated_data.model_dump(exclude_none=True)
+
         with eng.begin() as con:
-            dataset = self.request.json_body
             if "lockflag" in dataset:
                 if dataset["lockflag"] == "True":
                     dataset["lockflag"] = True
