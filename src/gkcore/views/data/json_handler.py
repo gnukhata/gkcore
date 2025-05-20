@@ -499,10 +499,12 @@ def update_transaction_details(
     new_products_details = {}
 
     if godown_details:
-        godown_details["goid"] = pk_map["godown"][godown_details["goid"]]
+        godown_details["goid"] = pk_map["godown"][int(godown_details["goid"])]
         godown_details["orgcode"] = orgcode
     if contact_details:
-        contact_details["custid"] = pk_map["customerandsupplier"][contact_details["custid"]]
+        contact_details["custid"] = pk_map["customerandsupplier"][
+            int(contact_details["custid"])
+        ]
         contact_details["orgcode"] = orgcode
     if products_details:
         for product_code in products_details.keys():
@@ -518,7 +520,7 @@ def update_transaction_details(
     if godowns_details:
         new_godown_details = {}
         for goid in godowns_details.keys():
-            new_goid = pk_map["godown"][goid]
+            new_goid = pk_map["godown"][int(goid)]
             new_godown_details.update(
                 {
                     new_goid: {
