@@ -975,6 +975,7 @@ gkusers = Table(
     Column("orgs", JSONB, default="{}"),
     UniqueConstraint("username"),
     Index("gkuserindex", "username"),
+    info={"key_related_json_fields": {"orgs": "organisation"}},
 )
 
 """ the table for storing bank reconciliation data.

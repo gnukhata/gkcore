@@ -213,6 +213,16 @@ def import_org_data(con: Connection, data: dict) -> int:
         if table.name == "stock":
             update_stock_data(con, table, pk_map, table_rows, pk_field)
         update_json_fields(con, table, pk_map, table_rows, pk_field, orgcode)
+
+    # Update orgcode in user tables
+    gkuser_rows = con.execute(
+        gkdb.gkusers
+        .select()
+        .where(
+            gkdb.gkusers.c.userid.in_(pk_map["gkusers"].values())
+        )
+    ).fetchall()
+    update_json_fields(con, gkdb.gkusers, pk_map, gkuser_rows, "userid", orgcode)
     return orgcode
 
 
