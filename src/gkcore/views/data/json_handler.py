@@ -104,7 +104,6 @@ def export_org_data(con: Connection, orgcode: int) -> str:
     ignored_tables: list[str] = [
         "state",
         "signature",
-        "unitofmeasurement",
     ]
 
     # loop through the tables and assign table data to their respective keys
@@ -147,7 +146,7 @@ def import_org_data(con: Connection, data: dict) -> int:
     :return: `orgcode` of the new organisation
     """
     table_list = metadata.sorted_tables
-    excluded_tables = ["unitofmeasurement", "state", "signature"]
+    excluded_tables = ["state", "signature"]
 
     pk_map = {}
     for table in table_list:
@@ -179,8 +178,9 @@ def import_org_data(con: Connection, data: dict) -> int:
 
     orgcode = list(pk_map["organisation"].values()).pop()
 
+    print(table_list)
     for table in table_list:
-        if table.name in ["unitofmeasurement", "signature", "state", "gkusers"]:
+        if table.name in ["signature", "state", "gkusers"]:
             continue
 
         # Table is being required to imported again, otherwise old data is being shown
