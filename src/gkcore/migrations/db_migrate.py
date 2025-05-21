@@ -16,6 +16,7 @@ Contributors:
 
 """
 
+import os
 from gkcore import eng
 from gkcore.data.uoms import UQC_LIST
 from gkcore.views.api_invoice import rename_inv_no_uniquely
@@ -24,6 +25,7 @@ from gkcore.models import gkdb
 from sqlalchemy import and_, func, select
 from gkcore.models.meta import (
     does_foreignkey_exist,
+    does_check_constraint_exist,
     does_unique_constraint_exist,
     does_primarykey_exist,
     columnExists,
@@ -2194,5 +2196,81 @@ def migrate():
     with eng.begin() as conn:
         if not tableExists("bank"):
             bank.create(eng)
+
+    with eng.begin() as con:
+        MAX_UPLOAD_SIZE = os.environ.get("GKCORE_MAX_UPLOAD_SIZE") or 1048576
+
+        if not does_check_constraint_exist(
+            con,
+            "organisation",
+            "check_logo_size",
+        ):
+            con.execute(
+                "alter table organisation add constraint check_logo_size check (length(logo::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
+        if not does_check_constraint_exist(
+            con,
+            "vouchers",
+            "check_attachment_size",
+        ):
+            con.execute(
+                "alter table vouchers add constraint check_attachment_size check (length(attachment::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
+        if not does_check_constraint_exist(
+            con,
+            "invoice",
+            "check_attachment_size",
+        ):
+            con.execute(
+                "alter table invoice add constraint check_attachment_size check (length(attachment::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
+        if not does_check_constraint_exist(
+            con,
+            "invoicebin",
+            "check_attachment_size",
+        ):
+            con.execute(
+                "alter table invoicebin add constraint check_attachment_size check (length(attachment::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
+        if not does_check_constraint_exist(
+            con,
+            "delchal",
+            "check_attachment_size",
+        ):
+            con.execute(
+                "alter table delchal add constraint check_attachment_size check (length(attachment::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
+        if not does_check_constraint_exist(
+            con,
+            "delchalbin",
+            "check_attachment_size",
+        ):
+            con.execute(
+                "alter table delchalbin add constraint check_attachment_size check (length(attachment::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
+        if not does_check_constraint_exist(
+            con,
+            "purchaseorder",
+            "check_attachment_size",
+        ):
+            con.execute(
+                "alter table purchaseorder add constraint check_attachment_size check (length(attachment::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
+        if not does_check_constraint_exist(
+            con,
+            "drcr",
+            "check_attachment_size",
+        ):
+            con.execute(
+                "alter table drcr add constraint check_attachment_size check (length(attachment::text) <= %d)"
+                % (MAX_UPLOAD_SIZE)
+            )
 
         print("Database migration successful")

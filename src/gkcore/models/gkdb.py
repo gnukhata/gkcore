@@ -22,6 +22,7 @@ Copyright (C) 2017, 2018, 2019, 2020 Digital Freedom Foundation & Accion Labs Pv
 Contributors:
 "Krishnakant Mane" <kk@gmail.com>
 """
+import os
 from sqlalchemy.dialects.postgresql.json import JSONB
 
 """
@@ -44,9 +45,13 @@ from sqlalchemy import (
     Float
     # <- time abstraction field
 )
-from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint
+from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.sql.sqltypes import BOOLEAN, Numeric, UnicodeText, Integer
 from sqlalchemy import MetaData
+
+# Get maximum file upload size limit from env variable
+# If not set, fall back to 1MB
+MAX_UPLOAD_SIZE = os.environ.get("GKCORE_MAX_UPLOAD_SIZE") or 1048576
 
 # metadata is the module that converts Python code into real sql statements, specially for creating tables.
 metadata = MetaData()
@@ -134,7 +139,7 @@ organisation = Table(
     Column("modeflag", Integer, default=1),
     Column("avnoflag", Integer, default=0),
     Column("ainvnoflag", Integer, default=0),
-    Column("logo", JSON),
+    Column("logo", JSON, CheckConstraint("length(logo::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_logo_size")),
     Column("gstin", JSONB),
     Column("tin", UnicodeText),
     Column("cin", UnicodeText),
@@ -446,7 +451,7 @@ vouchers = Table(
     Column("crs", JSONB, nullable=False),
     Column("prjdrs", JSONB),
     Column("prjcrs", JSONB),
-    Column("attachment", JSON),
+    Column("attachment", JSON, CheckConstraint("length(attachment::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_attachment_size")),
     Column("attachmentcount", Integer, default=0),
     Column("vouchertype", UnicodeText, nullable=False),
     Column("lockflag", BOOLEAN, default=False),
@@ -601,7 +606,7 @@ invoice = Table(
     Column("taxstate", UnicodeText),
     Column("sourcestate", UnicodeText),
     Column("orgstategstin", UnicodeText),
-    Column("attachment", JSON),
+    Column("attachment", JSON, CheckConstraint("length(attachment::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_attachment_size")),
     Column("attachmentcount", Integer, default=0),
     Column("orderid", Integer, ForeignKey("purchaseorder.orderid")),
     Column(
@@ -678,7 +683,7 @@ invoicebin = Table(
     Column("taxstate", UnicodeText),
     Column("sourcestate", UnicodeText),
     Column("orgstategstin", UnicodeText),
-    Column("attachment", JSON),
+    Column("attachment", JSON, CheckConstraint("length(attachment::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_attachment_size")),
     Column("attachmentcount", Integer, default=0),
     Column("orderid", Integer, ForeignKey("purchaseorder.orderid")),
     Column(
@@ -751,7 +756,7 @@ delchal = Table(
     Column("canceldate", DateTime),
     Column("noofpackages", Integer),
     Column("modeoftransport", UnicodeText),
-    Column("attachment", JSON),
+    Column("attachment", JSON, CheckConstraint("length(attachment::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_attachment_size")),
     Column("consignee", JSONB),
     Column("taxstate", UnicodeText),
     Column("sourcestate", UnicodeText),
@@ -808,7 +813,7 @@ delchalbin = Table(
     Column("designation", UnicodeText),
     Column("noofpackages", Integer, nullable=False),
     Column("modeoftransport", UnicodeText),
-    Column("attachment", JSON),
+    Column("attachment", JSON, CheckConstraint("length(attachment::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_attachment_size")),
     Column("consignee", JSONB),
     Column("taxstate", UnicodeText),
     Column("sourcestate", UnicodeText),
@@ -1082,7 +1087,7 @@ purchaseorder = Table(
     Column("pototalwords", UnicodeText),
     Column("sourcestate", UnicodeText),
     Column("orgstategstin", UnicodeText),
-    Column("attachment", JSON),
+    Column("attachment", JSON, CheckConstraint("length(attachment::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_attachment_size")),
     Column("attachmentcount", Integer, default=0),
     Column("consignee", JSONB),
     Column("freeqty", JSONB),
@@ -1367,7 +1372,7 @@ drcr = Table(
     Column("totreduct", Numeric(13, 2), default=0.00),
     Column("reductionval", JSONB),
     Column("reference", JSONB),
-    Column("attachment", JSON),
+    Column("attachment", JSON, CheckConstraint("length(attachment::text) <= %d" % (MAX_UPLOAD_SIZE), name="check_attachment_size")),
     Column("attachmentcount", Integer, default=0),
     Column("userid", Integer, ForeignKey("gkusers.userid")),
     Column("roundoffflag", Integer, default=0),
