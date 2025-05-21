@@ -623,6 +623,10 @@ class api_gkuser(object):
             )
             # if exists, update the relevant column with new password
             if user.rowcount > 0:
+                encoded_password = dataset.pop("userpassword").encode('utf-8')
+                hashed_password = bcrypt.hashpw(encoded_password, bcrypt.gensalt())
+                dataset["userpassword"] = hashed_password.decode('utf-8')
+
                 con.execute(
                     gkdb.gkusers.update()
                     .where(gkdb.gkusers.c.userid == dataset["userid"])
