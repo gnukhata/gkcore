@@ -1,6 +1,6 @@
 import json, io, logging
 from gkcore import eng
-from sqlalchemy import MetaData, select, func, and_
+from sqlalchemy import MetaData, select, func, and_, or_
 from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql.elements import quoted_name
 from sqlalchemy.sql.schema import Table
@@ -30,6 +30,27 @@ def get_table_array(con: Connection, table_name: str, orgcode: int) -> list:
                 func.jsonb_extract_path_text(
                     table.c.orgs, str(orgcode)
                 ) != None
+            )
+        elif table_name == "transaction":
+            org_invoices = select([gkdb.invoice.c.immutable_data_id]).where(
+                gkdb.invoice.c.orgcode == orgcode
+            )
+            org_purchase_orders = select(
+                [gkdb.purchaseorder.c.immutable_data_id]
+            ).where(
+                gkdb.purchaseorder.c.orgcode == orgcode
+            )
+            org_transfer_notes = select(
+                [gkdb.transfernote.c.immutable_data_id]
+            ).where(
+                gkdb.transfernote.c.orgcode == orgcode
+            )
+            statement = table.select().where(
+                or_(
+                    gkdb.transaction.c.transaction_id.in_(org_invoices),
+                    gkdb.transaction.c.transaction_id.in_(org_purchase_orders),
+                    gkdb.transaction.c.transaction_id.in_(org_transfer_notes),
+                )
             )
         else:
             statement = table.select().where(table.c.orgcode == orgcode)
@@ -165,12 +186,34 @@ def import_org_data(con: Connection, data: dict) -> int:
         # Table is being required to imported again, otherwise old data is being shown
         table = getattr(gkdb, table.name)
         pk_field = get_pk_field_name(table)
-        table_rows = con.execute(table.select().where(table.c.orgcode == orgcode)).fetchall()
+        if table.name == "transaction":
+            org_invoices = select([gkdb.invoice.c.immutable_data_id]).where(
+                gkdb.invoice.c.orgcode == orgcode
+            )
+            org_purchase_orders = select(
+                [gkdb.purchaseorder.c.immutable_data_id]
+            ).where(
+                gkdb.purchaseorder.c.orgcode == orgcode
+            )
+            org_transfer_notes = select(
+                [gkdb.transfernote.c.immutable_data_id]
+            ).where(
+                gkdb.transfernote.c.orgcode == orgcode
+            )
+            statement = table.select().where(
+                or_(
+                    gkdb.transaction.c.transaction_id.in_(org_invoices),
+                    gkdb.transaction.c.transaction_id.in_(org_purchase_orders),
+                    gkdb.transaction.c.transaction_id.in_(org_transfer_notes),
+                )
+            )
+            table_rows = con.execute(statement).fetchall()
+        else:
+            table_rows = con.execute(table.select().where(table.c.orgcode == orgcode)).fetchall()
         if table.name == "stock":
             update_stock_data(con, table, pk_map, table_rows, pk_field)
-        update_json_fields(con, table, pk_map, table_rows, pk_field)
-    new_org_code = list(pk_map["organisation"].values())[0]
-    return new_org_code
+        update_json_fields(con, table, pk_map, table_rows, pk_field, orgcode)
+    return orgcode
 
 
 def get_pk_field_name(table: Table) -> str:
@@ -335,6 +378,7 @@ def update_json_fields(
         pk_map: dict,
         table_rows: list,
         pk_field: str,
+        orgcode: int,
 ) -> None:
     """ Updates JSONB fields with updated primary key.
 
@@ -358,9 +402,14 @@ def update_json_fields(
     :param pk_map: Mapping between old `pk`s and newly created `pk`s
     :param table_rows: Table rows
     :param pk_field: Primary key for the table
+    :param orgcode: `orgcode` of the imported organisation
     :return: None
     """
 
+    if table.name == "transaction":
+        for row in table_rows:
+            update_transaction_details(con, pk_map, row, orgcode)
+        return
     key_related_json_fields = table.info.get("key_related_json_fields")
     value_related_json_fields = table.info.get("value_related_json_fields")
     if not (key_related_json_fields or value_related_json_fields):
@@ -427,6 +476,75 @@ def update_json_fields(
                     }
                 )
             )
+
+def update_transaction_details(
+        con: Connection,
+        pk_map: dict,
+        row: dict,
+        orgcode: int,
+) -> None:
+    """ Update transaction table 'transaction_details' field.
+
+    :param con: SQL Alchemy engine connection
+    :param pk_map: Mapping between old `pk`s and newly created `pk`s
+    :param rows: Table row
+    :param orgcode: `orgcode` of the imported organisation
+    :return: None
+    """
+    transaction_details = row["transaction_details"]
+    godown_details = transaction_details.get("godown")
+    godowns_details = transaction_details.get("godowns")
+    products_details = transaction_details.get("products")
+    contact_details = transaction_details.get("contact")
+    new_products_details = {}
+
+    if godown_details:
+        godown_details["goid"] = pk_map["godown"][int(godown_details["goid"])]
+        godown_details["orgcode"] = orgcode
+    if contact_details:
+        contact_details["custid"] = pk_map["customerandsupplier"][
+            int(contact_details["custid"])
+        ]
+        contact_details["orgcode"] = orgcode
+    if products_details:
+        for product_code in products_details.keys():
+            new_product_code = pk_map["product"][int(product_code)]
+            new_products_details.update(
+                {
+                    new_product_code: {
+                        **products_details[product_code],
+                        "productcode": new_product_code
+                    }
+                }
+            )
+    if godowns_details:
+        new_godown_details = {}
+        for goid in godowns_details.keys():
+            new_goid = pk_map["godown"][int(goid)]
+            new_godown_details.update(
+                {
+                    new_goid: {
+                        **godowns_details[goid],
+                        "godowncode": new_goid,
+                        "orgcode": orgcode,
+                    }
+                }
+            )
+    con.execute(
+        gkdb.transaction
+        .update()
+        .where(
+            gkdb.transaction.c.transaction_id == row["transaction_id"]
+        )
+        .values(
+            transaction_details = {
+                "godown": godown_details,
+                "contact": contact_details,
+                "godowns": godowns_details,
+                "products": new_products_details,
+            }
+        )
+    )
 
 
 def update_user_conf(con: Connection, userid: int, orgcode: int) -> None:
