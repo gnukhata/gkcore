@@ -1,4 +1,5 @@
 import os
+import bcrypt
 from gkcore import eng, enumdict
 from gkcore.models import gkdb
 from gkcore.views.user.schemas import (
@@ -7,6 +8,7 @@ from gkcore.views.user.schemas import (
     ResetPassword,
     ChangePassword,
 )
+from gkcore.views.login.schemas import UserLogin
 from sqlalchemy.sql import select, delete
 from sqlalchemy import and_
 from sqlalchemy.sql.expression import text
@@ -79,6 +81,9 @@ class api_gkuser(object):
 
         validated_data = UserSchema.model_validate(self.request.json_body)
         dataset = validated_data.model_dump(exclude_none=True)
+        encoded_password = dataset.pop("userpassword").encode('utf-8')
+        hashed_password = bcrypt.hashpw(encoded_password, bcrypt.gensalt())
+        dataset["userpassword"] = hashed_password.decode('utf-8')
 
         with eng.begin() as con:
 
@@ -619,6 +624,10 @@ class api_gkuser(object):
             )
             # if exists, update the relevant column with new password
             if user.rowcount > 0:
+                encoded_password = dataset.pop("userpassword").encode('utf-8')
+                hashed_password = bcrypt.hashpw(encoded_password, bcrypt.gensalt())
+                dataset["userpassword"] = hashed_password.decode('utf-8')
+
                 con.execute(
                     gkdb.gkusers.update()
                     .where(gkdb.gkusers.c.userid == dataset["userid"])
@@ -638,27 +647,32 @@ class api_gkuser(object):
         current password in edituser.
         """
         try:
-            token = self.request.headers["gktoken"]
+            token = self.request.headers["gkusertoken"]
         except:
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
-        authDetails = authCheck(token)
+        authDetails = userAuthCheck(token)
         if authDetails["auth"] is False:
             return {"gkstatus": enumdict["UnauthorisedAcces"]}
         else:
             with eng.connect() as con:
-                dataset = self.request.json_body
+                validated_data = UserLogin.model_validate(self.request.json_body)
+                dataset = validated_data.model_dump()
                 result = con.execute(
-                    select([gkdb.gkusers.c.userid]).where(
+                    select([gkdb.gkusers.c.userpassword]).where(
                         and_(
                             gkdb.gkusers.c.username == dataset["username"],
-                            gkdb.gkusers.c.userpassword == dataset["userpassword"],
                         )
                     )
-                )
-                if result.rowcount == 1:
+                ).fetchone()
+                if not result:
+                    return {"gkstatus": enumdict["UnauthorisedAccess"]}
+
+                encoded_password = dataset["userpassword"].encode('utf-8')
+                encoded_password_hash = result["userpassword"].encode('utf-8')
+                if bcrypt.checkpw(encoded_password, encoded_password_hash):
                     return {"gkstatus": enumdict["Success"]}
                 else:
-                    return {"gkstatus": enumdict["BadPrivilege"]}
+                    return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
 
     @view_config(request_method="DELETE", renderer="json")
@@ -750,6 +764,12 @@ class api_gkuser(object):
                     "gkstatus": enumdict["ConnectionFailed"],
                     "gkresult": e.errors(),
                 }
+
+            # hash password
+            encoded_password = dataset.pop("userpassword").encode('utf-8')
+            hashed_password = bcrypt.hashpw(encoded_password, bcrypt.gensalt())
+            dataset["userpassword"] = hashed_password.decode('utf-8')
+
             # insert the updated password to the db
             con.execute(
                 gkdb.gkusers.update()
