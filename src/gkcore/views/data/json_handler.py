@@ -297,11 +297,12 @@ def insert_org_data(
 
     while len(table_data) > 0:
         row = table_data.pop(0)
+        row_copy = {**row}
         row_pk_map = insert_row(
             con, row, pk_field, foreign_keys, table, pk_map, table_pk_map
         )
         if not row_pk_map:
-            table_data.append(row)
+            table_data.append(row_copy)
             continue
         # Update pk_map with newly created primary key and the old one
         table_pk_map.update(row_pk_map)
