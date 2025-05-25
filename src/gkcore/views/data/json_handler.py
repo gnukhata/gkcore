@@ -158,17 +158,18 @@ def import_org_data(con: Connection, data: dict) -> int:
             ).fetchall()
             current_user_names = [user.username for user in current_user_names]
             duplicate_user_names = list(
-                set(current_user_names) & set(data_user_name_list)
+                set(current_user_names) | set(data_user_name_list)
             )
 
             for user in table_data:
-                if user["username"] in duplicate_user_names:
+                username = user["username"]
+                if username in current_user_names:
                     counter = 1
-                    username = user["username"]
-                    while username in current_user_names:
+                    while username in duplicate_user_names:
                         username = f"{user['username']}_{counter}"
                         counter += 1
                     user["username"] = username
+                    duplicate_user_names.append(username)
 
         if table.name in ["signature", "state"]:
             continue
@@ -178,7 +179,6 @@ def import_org_data(con: Connection, data: dict) -> int:
 
     orgcode = list(pk_map["organisation"].values()).pop()
 
-    print(table_list)
     for table in table_list:
         if table.name in ["signature", "state", "gkusers"]:
             continue
