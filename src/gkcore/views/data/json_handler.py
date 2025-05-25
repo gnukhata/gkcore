@@ -274,6 +274,27 @@ def insert_org_data(
         )
     }
 
+    # [TODO] The following check will only find the changes that have circular
+    # foreignkey connection for the first level (A->B, B->A) not multi level
+    # ones (A->B->C, C->A). Generic check has to be implemented.
+    if table.name == "groupsubgroups":
+        pk_subgroupof_map = [
+            frozenset({row["groupcode"], row["subgroupof"]}) for row in table_data
+        ]
+        if len(pk_subgroupof_map) != len(set(pk_subgroupof_map)):
+            raise ValueError(
+                "Self referencing table 'groupsubgroups' has circular reference at field 'subgroupof'."
+            )
+
+    if table.name == "unitofmeasurement":
+        pk_subunitof_map = [
+            frozenset({row["uomid"], row["subunitof"]}) for row in table_data
+        ]
+        if len(pk_subunitof_map) != len(set(pk_subunitof_map)):
+            raise ValueError(
+                "Self referencing table 'unitofmeasurement' has circular reference at field 'subunitof'."
+            )
+
     while len(table_data) > 0:
         row = table_data.pop(0)
         row_pk_map = insert_row(
