@@ -133,6 +133,51 @@ class profit_loss(object):
                 "pnl_left": indirect_expense,
                 "pnl_right": indirect_income,
             }
+
+            vertical_format = [
+                *trading_left,
+                {
+                    "name": "Total Income",
+                    "amount": totals["trading_left"],
+                    "level": "0",
+                    "type": "total",
+                },
+                *trading_right,
+                {
+                    "name": "Total Expense",
+                    "amount": totals["trading_right"],
+                    "level": "0",
+                    "type": "total",
+                },
+                {
+                    "name": f"Gross profit(loss)",
+                    "amount": gross_pnl,
+                    "level": "0",
+                    "type": "pnl_str",
+                },
+                *pnl_left,
+                {
+                    "name": "Total Indirect Income",
+                    "amount": totals["pnl_left"],
+                    "level": "0",
+                    "type": "total",
+                },
+                *pnl_right,
+                {
+                    "name": "Total Indirect Expense",
+                    "amount": totals["pnl_right"],
+                    "level": "0",
+                    "type": "total",
+                },
+                {
+                    "name": f"Net profit(loss)",
+                    "amount": net_pnl,
+                    "level": "0",
+                    "type": "pnl_str",
+                },
+            ]
+
+
             if gross_pnl < 0:
                 summary = {"gross": {"label": loss_str, "value": gross_pnl}}
                 trading_right.append(
@@ -213,6 +258,7 @@ class profit_loss(object):
                 "trading_right": trading_right,
                 "pnl_left": pnl_left,
                 "pnl_right": pnl_right,
+                "vertical": vertical_format,
                 "summary": summary,
             }
 
