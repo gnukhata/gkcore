@@ -760,6 +760,10 @@ def godownwisestockonhandfun(
                                 finalRow["qty"]
                             )
                             totaloutward = float(totaloutward) + float(finalRow["qty"])
+            product_value = calculateStockValue(
+                        con, orgcode, endDate, productCode, godownCode
+                    )
+
             stockReport.append(
                 {
                     "srno": 1,
@@ -767,6 +771,7 @@ def godownwisestockonhandfun(
                     "totaloutwardqty": "%.2f" % float(totaloutward),
                     "balance": "%.2f" % float(gopeningStock),
                     "productcode": productCode,
+                    "value": product_value,
                 }
             )
             return stockReport
