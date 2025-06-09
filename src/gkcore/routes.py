@@ -108,6 +108,7 @@ def includeme(config):
     config.add_route("forgotpassword", "/forgotpassword")
     config.add_route("categories", "/categories")
     config.add_route("godown", "/godown")
+    config.add_route("bank", "/bank")
     config.add_route("purchaseorder", "/purchaseorder")
     config.add_route("transfernote", "/transfernote")
     config.add_route("discrepancynote", "/discrepancynote")

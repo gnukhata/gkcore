@@ -31,7 +31,7 @@ from gkcore.models.meta import (
     getOnDelete,
     uniqueConstraintExists,
 )
-from gkcore.models.gkdb import state
+from gkcore.models.gkdb import state, bank
 from datetime import datetime, timedelta
 import traceback
 
@@ -683,7 +683,7 @@ def migrate():
                                     ],
                                 )
                             elif acc == "Bank A/C":
-                                bank = con.execute(
+                                bank_acc = con.execute(
                                     select([gkdb.groupsubgroups.c.groupcode]).where(
                                         and_(
                                             gkdb.groupsubgroups.c.groupname
@@ -693,7 +693,7 @@ def migrate():
                                         )
                                     )
                                 )
-                                bankgrp = bank.fetchone()
+                                bankgrp = bank_acc.fetchone()
                                 bankadd = con.execute(
                                     gkdb.accounts.insert(),
                                     {
@@ -2191,5 +2191,8 @@ def migrate():
         with eng.begin() as con:
             con.execute("alter table organisation add column if not exists cin text")
 
+    with eng.begin() as conn:
+        if not tableExists("bank"):
+            bank.create(eng)
 
         print("Database migration successful")
