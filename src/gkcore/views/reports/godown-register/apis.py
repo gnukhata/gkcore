@@ -229,6 +229,7 @@ class api_godownregister(object):
                         "rnid": "",
                         "rnno": "",
                         "inward": "%.2f" % float(gopeningStock),
+                        "balance": "%.2f" % float(gopeningStock),
                         "balance_value": godown_stock_value,
                     }
                 )
