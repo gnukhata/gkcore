@@ -192,7 +192,7 @@ class profit_loss(object):
                 pnl_left.insert(
                     0, {
                         "name": f"Gross {loss_str} b/d to {profit_str} & {loss_str}",
-                        "amount": gross_pnl,
+                        "amount": -gross_pnl,
                         "level": "0",
                         "type": "pnl_str",
                     }
