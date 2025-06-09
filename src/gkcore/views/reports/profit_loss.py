@@ -137,14 +137,14 @@ class profit_loss(object):
             vertical_format = [
                 *trading_left,
                 {
-                    "name": "Total Income",
+                    "name": "Total Expense",
                     "amount": totals["trading_left"],
                     "level": "0",
                     "type": "total",
                 },
                 *trading_right,
                 {
-                    "name": "Total Expense",
+                    "name": "Total Income",
                     "amount": totals["trading_right"],
                     "level": "0",
                     "type": "total",
@@ -157,14 +157,14 @@ class profit_loss(object):
                 },
                 *pnl_left,
                 {
-                    "name": "Total Indirect Income",
+                    "name": "Total Indirect Expense",
                     "amount": totals["pnl_left"],
                     "level": "0",
                     "type": "total",
                 },
                 *pnl_right,
                 {
-                    "name": "Total Indirect Expense",
+                    "name": "Total Indirect Income",
                     "amount": totals["pnl_right"],
                     "level": "0",
                     "type": "total",
