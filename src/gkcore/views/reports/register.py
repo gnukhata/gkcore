@@ -267,6 +267,7 @@ class api_stock_register(object):
                         "invno": "",
                         "rnid": "",
                         "rnno": "",
+                        "balance": "%.2f" % float(openingStock),
                         "inward": "%.2f" % float(openingStock),
                     }
                 )
