@@ -1823,7 +1823,7 @@ def get_groupwise_accounts_balances(
         # under "Direct Income" and "Direct Expenses". The purpose of this grouping is
         # unidentified. This check can be removed when these accounts are removed from
         # these groups.
-        if account["accountname"] in ["Opening Stock", "Profit & Loss"]:
+        if account["accountname"] in ["Opening Stock", "Profit & Loss", "Income & Expenditure"]:
             continue
         account_balance = get_account_vouchers_data(
             connection, orgcode, account["accountcode"], from_date, to_date
