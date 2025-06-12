@@ -182,7 +182,7 @@ class profit_loss(object):
                 summary = {"gross": {"label": loss_str, "value": gross_pnl}}
                 trading_right.append(
                     {
-                        "name": f"Gross {loss_str} c/d to {profit_str} & {loss_str}",
+                        "name": f"Gross {loss_str} c/d",
                         "amount": -gross_pnl,
                         "level": "0",
                         "type": "pnl_str",
@@ -191,7 +191,7 @@ class profit_loss(object):
                 totals["trading_right"] -= gross_pnl
                 pnl_left.insert(
                     0, {
-                        "name": f"Gross {loss_str} b/d to {profit_str} & {loss_str}",
+                        "name": f"Gross {loss_str} b/d",
                         "amount": -gross_pnl,
                         "level": "0",
                         "type": "pnl_str",
@@ -202,7 +202,7 @@ class profit_loss(object):
                 summary = {"gross": {"label": profit_str, "value": gross_pnl}}
                 trading_left.append(
                     {
-                        "name": f"Gross {profit_str} c/d to {profit_str} & {loss_str}",
+                        "name": f"Gross {profit_str} c/d",
                         "amount": gross_pnl,
                         "level": "0",
                         "type": "pnl_str",
@@ -211,7 +211,7 @@ class profit_loss(object):
                 totals["trading_left"] += gross_pnl
                 pnl_right.insert(
                     0, {
-                        "name": f"Gross {profit_str} b/d to {profit_str} & {loss_str}",
+                        "name": f"Gross {profit_str} b/d",
                         "amount": gross_pnl,
                         "level": "0",
                         "type": "pnl_str",
