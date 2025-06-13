@@ -1,9 +1,10 @@
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
-from gkcore.models.gkdb import bank, accounts, groupsubgroups
+from gkcore.models.gkdb import bank, accounts, groupsubgroups, vouchers
+from gkcore.utils.utils import get_row
 from gkcore.views.bank.schemas import BankCreate, BankUpdate
 from sqlalchemy.sql import select, update, insert, delete
-from sqlalchemy import and_
+from sqlalchemy import and_, func, or_
 from pyramid.view import view_defaults, view_config
 
 
@@ -115,11 +116,36 @@ class api_bank(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         with eng.begin() as con:
             dataset = self.request.json_body
-            con.execute(
-                delete(bank).where(
-                    bank.c.id == dataset["id"]
+            bank_id = dataset["id"]
+            bank_row = get_row(con, bank, bank_id)
+            account = get_row(con, accounts, bank_row["accountcode"])
+            voucher_rows = con.execute(
+                vouchers.select().where(
+                    or_(
+                        func.jsonb_extract_path_text(
+                            vouchers.c.crs, str(account["accountcode"])
+                        ) != None,
+                        func.jsonb_extract_path_text(
+                            vouchers.c.drs, str(account["accountcode"])
+                        ) != None,
+                    )
                 )
             )
+
+            if voucher_rows.rowcount > 0:
+                return {"gkstatus": enumdict["ActionDisallowed"]}
+
+            con.execute(
+                delete(bank).where(
+                    bank.c.id == bank_id
+                )
+            )
+            con.execute(
+                delete(accounts).where(
+                    accounts.c.accountcode == bank_row["accountcode"]
+                )
+            )
+
             return {"gkstatus": enumdict["Success"]}
 
 
