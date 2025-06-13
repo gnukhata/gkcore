@@ -81,16 +81,23 @@ class api_bank(object):
         dataset = validated_data.model_dump()
         with eng.begin() as con:
             id = dataset.pop("id")
+            opening_balance = dataset.pop("opening_balance", None)
             dataset["orgcode"] = authDetails["orgcode"]
             result = con.execute(
                 update(bank)
                 .where(bank.c.id == id)
                 .values(dataset)
-                .returning(bank.c.id)
-            )
+                .returning(bank.c.id, bank.c.accountcode)
+            ).fetchone()
+            if opening_balance:
+                con.execute(
+                    update(accounts)
+                    .where(accounts.c.accountcode == result["accountcode"])
+                    .values(openingbal = opening_balance)
+                )
             return {
                 "gkstatus": enumdict["Success"],
-                "gkresult": result.scalar(),
+                "gkresult": result["id"],
             }
 
 

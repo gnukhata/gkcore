@@ -17,3 +17,4 @@ class BankUpdate(BaseModel):
     branch_name: Optional[str] = None
     ifsc: Optional[str] = None
     account_number: Optional[str] = None
+    opening_balance: Optional[float]
