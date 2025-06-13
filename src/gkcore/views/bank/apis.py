@@ -165,18 +165,23 @@ class api_bank(object):
 
         with eng.connect() as con:
             if bank_id:
-                banks = con.execute(
-                    select([bank]).where(
-                        bank.c.id == bank_id,
-                    )
-                ).fetchone()
+                banks = get_row(con, bank, bank_id)
+                account = get_row(con, accounts, banks["accountcode"])
+                banks = {**dict(banks), "opening_balance": account["openingbal"]}
             else:
                 banks = con.execute(
                     select([bank]).where(
                         bank.c.orgcode == authDetails["orgcode"],
                     )
                 ).fetchall()
-                banks = [dict(bank) for bank in banks]
+                banks = [
+                    {
+                        **dict(bank),
+                        "opening_balance": get_row(
+                            con, accounts, bank["accountcode"]
+                        )["openingbal"]
+                    } for bank in banks
+                ]
 
             return {
                 "gkstatus": enumdict["Success"],
