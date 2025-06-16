@@ -833,6 +833,75 @@ def hsn_r1(con, orgcode, start, end):
         return {"status": 3}
 
 
+def docs_issued(invoices=[], drcr_notes=[]):
+    """Generates documents issued summary for GSTR1 report save API.
+
+    :param invoices: Invoice database rows
+    :param drcr_notes: Debit/Credit note database rows
+    """
+    def format_doc_summary(rows, serial_no_field):
+        return {
+            "num": 1,
+            "from": getattr(rows[0], serial_no_field),
+            "to": getattr(rows[-1], serial_no_field),
+            "totnum": len(rows),
+            "cancel": 0,
+            "net_issue": len(rows),
+        }
+
+    party_invoice_docs = []
+    pos_invoice_docs = []
+    for invoice in invoices:
+        if invoice.icflag == 9:
+            party_invoice_docs.append(invoice)
+        else:
+            pos_invoice_docs.append(invoice)
+
+    debit_note_docs = []
+    credit_note_docs = []
+    for drcr_note in drcr_notes:
+        if drcr_note.dctypeflag == 3:
+            credit_note_docs.append(drcr_note)
+        else:
+            debit_note_docs.append(drcr_note)
+
+    consolidated_invoices = []
+    if party_invoice_docs:
+        party_invoices = format_doc_summary(party_invoice_docs, "invoiceno")
+        consolidated_invoices.append(party_invoices)
+    if pos_invoice_docs:
+        pos_invoices = {**format_doc_summary(pos_invoice_docs, "invoiceno"), "num": 2}
+        consolidated_invoices.append(pos_invoices)
+
+    doc_det = []
+
+    if consolidated_invoices:
+        doc_det.append(
+            {
+                "doc_num": 1,
+                "docs": consolidated_invoices,
+            }
+        )
+    if debit_note_docs:
+        doc_det.append(
+            {
+                "doc_num": 4,
+                "docs": [format_doc_summary(debit_note_docs, "drcrno")],
+            }
+        )
+    if credit_note_docs:
+        doc_det.append(
+            {
+                "doc_num": 5,
+                "docs":[format_doc_summary(credit_note_docs, "drcrno")],
+            }
+        )
+
+    return {
+        "doc_det": doc_det
+    }
+
+
 """
 generate_gstr_3b_data: generates the data required for creating gstr3b json and spreadsheet
 
