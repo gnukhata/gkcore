@@ -128,6 +128,7 @@ class GstReturn(object):
                         invoice.c.orgcode == orgcode,
                     )
                 )
+                .order_by(invoice.c.invoicedate)
                 .order_by(invoice.c.invid)
             ).fetchall()
 
