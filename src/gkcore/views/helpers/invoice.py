@@ -40,23 +40,16 @@ def get_invoice_details(connection, invoice_id):
                 invoice.c.sourcestate,
                 invoice.c.cess,
                 invoice.c.discount,
+                invoice.c.consignee,
             ]
         ).where(invoice.c.invid == invoice_id)
     ).fetchone()
 
     party_details = get_party_details(connection, invoice_details["custid"])
 
-    state_details = connection.execute(
-        select([state.c.statecode]).where(
-            state.c.statename == invoice_details["taxstate"]
-        )
-    ).fetchone()
-
-    gstin = (
-        party_details["gstin"].get(str(state_details["statecode"]))
-        if party_details["gstin"]
-        else ""
-    )
+    gstin = ""
+    if invoice_details["consignee"]:
+        gstin = invoice_details["consignee"].get("gstinconsignee", "")
 
     tax_details = []
     tax_name = None
