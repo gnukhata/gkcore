@@ -1375,3 +1375,43 @@ drcr = Table(
     UniqueConstraint("orgcode", "rnid", "dctypeflag"),
     info={"key_related_json_fields": {"reductionval": "product"}},
 )
+"""
+Bank Table
+===========
+
+This table records bank accounts of the organisation.
+
+Fields:
+account_name: Name of the account
+bank_name: Bank name
+branch_name: Branch name
+ifsc_code: IFSC code
+account_number: Account number
+orgcode: Organisation code
+accountcode: Account code
+"""
+
+bank = Table(
+    "bank",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("account_name", UnicodeText, nullable=False),
+    Column("bank_name", UnicodeText),
+    Column("branch_name", UnicodeText),
+    Column("ifsc", UnicodeText),
+    Column("account_number", UnicodeText),
+    Column(
+        "orgcode",
+        Integer,
+        ForeignKey("organisation.orgcode", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    Column(
+        "accountcode",
+        Integer,
+        ForeignKey("accounts.accountcode", ondelete="CASCADE"),
+        nullable=False,
+    ),
+    UniqueConstraint("orgcode", "account_name"),
+    UniqueConstraint("accountcode", "account_name"),
+)

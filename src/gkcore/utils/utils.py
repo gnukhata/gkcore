@@ -8,6 +8,7 @@ from Crypto.PublicKey import RSA
 from datetime import date, timedelta
 import calendar
 from gkcore import enumdict
+from sqlalchemy.inspection import inspect
 
 
 def gk_log(name: str = __name__):
@@ -142,3 +143,12 @@ def getUserRole(userid, orgcode):
                 "gkstatus": enumdict["ConnectionFailed"],
                 "gkmessage": "User may not be part of the Org. Contact admin",
             }
+
+
+def get_row(con, table, pk):
+    """Fetch the table row for the given pk"""
+    return con.execute(
+        table.select().where(
+            list(inspect(table).primary_key)[0] == pk
+        )
+    ).fetchone()
