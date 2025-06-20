@@ -163,63 +163,101 @@ class api_cashflow(object):
                             cbAccount["accountcode"]
                         ):
                             rcaccountcodes.append(cr)
-                            crresult = con.execute(
+                            crresult_cashbank_dr = con.execute(
                                 text("select sum(cast(crs->>:cr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ?| :bankcodes);"),
                                 cr = cr,
                                 voucherdate_from = financialStart,
                                 voucherdate_to = calculateTo,
                                 bankcodes = bankcodes,
-                            )
-                            crresultRow = crresult.fetchone()
+                            ).scalar()
+                            crresult_cashbank_cr = con.execute(
+                                text("select sum(cast(crs->>:cr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (crs ?| :bankcodes);"),
+                                cr = cr,
+                                voucherdate_from = financialStart,
+                                voucherdate_to = calculateTo,
+                                bankcodes = bankcodes,
+                            ).scalar()
                             rcaccountname = con.execute(
                                 "select accountname from accounts where accountcode=%d"
                                 % (int(cr))
                             )
                             rcacc = "".join(rcaccountname.fetchone())
-                            if crresultRow["total"] != None:
-                                ttlRunDr += float(crresultRow["total"])
+                            if crresult_cashbank_dr:
+                                ttlRunDr += crresult_cashbank_dr
                                 rctransactionsgrid.append(
                                     {
                                         "toby": "To",
                                         "particulars": rcacc,
                                         "amount": "%.2f"
-                                        % float(crresultRow["total"]),
+                                        % crresult_cashbank_dr,
                                         "accountcode": int(cr),
                                         "ttlRunDr": ttlRunDr,
                                     }
                                 )
-                                rctotal += float(crresultRow["total"])
+                                rctotal += crresult_cashbank_dr
+                            if crresult_cashbank_cr:
+                                ttlRunDr += crresult_cashbank_cr
+                                rctransactionsgrid.append(
+                                    {
+                                        "toby": "To",
+                                        "particulars": rcacc,
+                                        "amount": "%.2f"
+                                        % crresult_cashbank_cr,
+                                        "accountcode": int(cr),
+                                        "ttlRunDr": ttlRunDr,
+                                    }
+                                )
+                                rctotal += crresult_cashbank_cr
                     for dr in transaction["drs"]:
                         if dr not in pyaccountcodes and int(dr) != int(
                             cbAccount["accountcode"]
                         ):
                             pyaccountcodes.append(dr)
-                            drresult = con.execute(
+                            drresult_cashbank_cr = con.execute(
                                 text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (crs ?| :bankcodes);"),
                                 dr = dr,
                                 voucherdate_from = financialStart,
                                 voucherdate_to = calculateTo,
                                 bankcodes = bankcodes,
-                            )
-                            drresultRow = drresult.fetchone()
+                            ).scalar()
+                            drresult_cashbank_dr = con.execute(
+                                text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ?| :bankcodes);"),
+                                dr = dr,
+                                voucherdate_from = financialStart,
+                                voucherdate_to = calculateTo,
+                                bankcodes = bankcodes,
+                            ).scalar()
                             pyaccountname = con.execute(
                                 "select accountname from accounts where accountcode=%d"
                                 % (int(dr))
                             )
                             pyacc = "".join(pyaccountname.fetchone())
-                            if drresultRow["total"] != None:
-                                ttlRunCr += float(drresultRow["total"])
+                            if drresult_cashbank_dr:
+                                ttlRunCr += drresult_cashbank_dr
                                 paymentcf.append(
                                     {
                                         "toby": "By",
                                         "particulars": pyacc,
                                         "amount": "%.2f"
-                                        % float(drresultRow["total"]),
+                                        % drresult_cashbank_dr,
                                         "accountcode": int(dr),
                                         "ttlRunCr": ttlRunCr,
                                     }
                                 )
-                                pytotal += float(drresultRow["total"])
+                                pytotal += drresult_cashbank_dr
+                            if drresult_cashbank_cr:
+                                ttlRunCr += drresult_cashbank_cr
+                                paymentcf.append(
+                                    {
+                                        "toby": "By",
+                                        "particulars": pyacc,
+                                        "amount": "%.2f"
+                                        % drresult_cashbank_cr,
+                                        "accountcode": int(dr),
+                                        "ttlRunCr": ttlRunCr,
+                                    }
+                                )
+                                pytotal += drresult_cashbank_cr
 
             receiptcf.extend(rctransactionsgrid)
             paymentcf.extend(closinggrid)
