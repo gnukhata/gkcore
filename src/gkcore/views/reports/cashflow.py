@@ -1,6 +1,5 @@
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
-from sqlalchemy.engine.base import Connection
 from sqlalchemy.sql.expression import text
 from pyramid.request import Request
 from pyramid.view import view_defaults, view_config
@@ -13,7 +12,6 @@ class api_cashflow(object):
     def __init__(self, request):
         self.request = Request
         self.request = request
-        self.con = Connection
 
     @view_config(renderer="json")
     def cashflow(self):
@@ -44,216 +42,209 @@ class api_cashflow(object):
         authDetails = authCheck(token)
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
-        else:
-            try:
-                self.con = eng.connect()
-                calculateFrom = self.request.params["calculatefrom"]
-                calculateTo = self.request.params["calculateto"]
-                financialStart = self.request.params["financialstart"]
-                cbAccountsData = self.con.execute(
-                    text("select accountcode, openingbal, accountname from accounts where orgcode = :orgcode and groupcode in (select groupcode from groupsubgroups where orgcode = :orgcode and groupname in ('Bank','Cash')) order by accountname"),
-                    orgcode = authDetails["orgcode"],
-                )
-                cbAccounts = cbAccountsData.fetchall()
-                receiptcf = []
-                paymentcf = []
-                rctransactionsgrid = []
-                closinggrid = []
-                rcaccountcodes = []
-                pyaccountcodes = []
-                bankcodes = []
-                rctotal = 0.00
-                pytotal = 0.00
-                ttlRunDr = 0.00
-                ttlRunCr = 0.00
-                vfrom = datetime.strptime(str(calculateFrom), "%Y-%m-%d")
-                fstart = datetime.strptime(str(financialStart), "%Y-%m-%d")
-                if vfrom == fstart:
-                    receiptcf.append(
-                        {
-                            "toby": "To",
-                            "particulars": "Opening balance",
-                            "amount": "",
-                            "accountcode": "",
-                            "ttlRunDr": "",
-                        }
-                    )
-                if vfrom > fstart:
-                    receiptcf.append(
-                        {
-                            "toby": "To",
-                            "particulars": "Balance B/F",
-                            "amount": "",
-                            "accountcode": "",
-                            "ttlRunDr": "",
-                        }
-                    )
-                for cbAccount in cbAccounts:
-                    bankcodes.append(str(cbAccount["accountcode"]))
-                closinggrid.append(
-                    {
-                        "toby": "By",
-                        "particulars": "Closing balance",
-                        "amount": "",
-                        "accountcode": "",
-                        "ttlRunCr": "",
-                    }
-                )
-                for cbAccount in cbAccounts:
-                    opacc = calculateBalance(
-                        self.con,
-                        cbAccount["accountcode"],
-                        financialStart,
-                        calculateFrom,
-                        calculateTo,
-                    )
-                    if opacc["balbrought"] != 0.00:
-                        if opacc["openbaltype"] == "Dr":
-                            receiptcf.append(
-                                {
-                                    "toby": "",
-                                    "particulars": "".join(cbAccount["accountname"]),
-                                    "amount": "%.2f" % float(opacc["balbrought"]),
-                                    "accountcode": cbAccount["accountcode"],
-                                    "ttlRunDr": "",
-                                }
-                            )
-                            rctotal += float(opacc["balbrought"])
-                        if opacc["openbaltype"] == "Cr":
-                            receiptcf.append(
-                                {
-                                    "toby": "",
-                                    "particulars": "".join(cbAccount["accountname"]),
-                                    "amount": "-" + "%.2f" % float(opacc["balbrought"]),
-                                    "accountcode": cbAccount["accountcode"],
-                                    "ttlRunDr": "",
-                                }
-                            )
-                            rctotal -= float(opacc["balbrought"])
-                    if opacc["curbal"] != 0.00:
-                        if opacc["baltype"] == "Dr":
-                            closinggrid.append(
-                                {
-                                    "toby": "",
-                                    "particulars": "".join(cbAccount["accountname"]),
-                                    "amount": "%.2f" % float(opacc["curbal"]),
-                                    "accountcode": cbAccount["accountcode"],
-                                    "ttlRunCr": "",
-                                }
-                            )
-                            pytotal += float(opacc["curbal"])
-                        if opacc["baltype"] == "Cr":
-                            closinggrid.append(
-                                {
-                                    "toby": "",
-                                    "particulars": "".join(cbAccount["accountname"]),
-                                    "amount": "-" + "%.2f" % float(opacc["curbal"]),
-                                    "accountcode": cbAccount["accountcode"],
-                                    "ttlRunCr": "",
-                                }
-                            )
-                            pytotal -= float(opacc["curbal"])
-                    transactionsRecords = self.con.execute(
-                        text("select crs,drs from vouchers where voucherdate >= :voucherdate_from  and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ? :drs or crs ? :crs);"),
-                        voucherdate_from = calculateFrom,
-                        voucherdate_to = calculateTo,
-                        drs = str(cbAccount["accountcode"]),
-                        crs = str(cbAccount["accountcode"]),
-                    )
-                    transactions = transactionsRecords.fetchall()
-                    for transaction in transactions:
-                        for cr in transaction["crs"]:
-                            if cr not in rcaccountcodes and int(cr) != int(
-                                cbAccount["accountcode"]
-                            ):
-                                rcaccountcodes.append(cr)
-                                crresult = self.con.execute(
-                                    text("select sum(cast(crs->>:cr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ?| :bankcodes);"),
-                                    cr = cr,
-                                    voucherdate_from = financialStart,
-                                    voucherdate_to = calculateTo,
-                                    bankcodes = bankcodes,
-                                )
-                                crresultRow = crresult.fetchone()
-                                rcaccountname = self.con.execute(
-                                    "select accountname from accounts where accountcode=%d"
-                                    % (int(cr))
-                                )
-                                rcacc = "".join(rcaccountname.fetchone())
-                                if crresultRow["total"] != None:
-                                    ttlRunDr += float(crresultRow["total"])
-                                    rctransactionsgrid.append(
-                                        {
-                                            "toby": "To",
-                                            "particulars": rcacc,
-                                            "amount": "%.2f"
-                                            % float(crresultRow["total"]),
-                                            "accountcode": int(cr),
-                                            "ttlRunDr": ttlRunDr,
-                                        }
-                                    )
-                                    rctotal += float(crresultRow["total"])
-                        for dr in transaction["drs"]:
-                            if dr not in pyaccountcodes and int(dr) != int(
-                                cbAccount["accountcode"]
-                            ):
-                                pyaccountcodes.append(dr)
-                                drresult = self.con.execute(
-                                    text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (crs ?| :bankcodes);"),
-                                    dr = dr,
-                                    voucherdate_from = financialStart,
-                                    voucherdate_to = calculateTo,
-                                    bankcodes = bankcodes,
-                                )
-                                drresultRow = drresult.fetchone()
-                                pyaccountname = self.con.execute(
-                                    "select accountname from accounts where accountcode=%d"
-                                    % (int(dr))
-                                )
-                                pyacc = "".join(pyaccountname.fetchone())
-                                if drresultRow["total"] != None:
-                                    ttlRunCr += float(drresultRow["total"])
-                                    paymentcf.append(
-                                        {
-                                            "toby": "By",
-                                            "particulars": pyacc,
-                                            "amount": "%.2f"
-                                            % float(drresultRow["total"]),
-                                            "accountcode": int(dr),
-                                            "ttlRunCr": ttlRunCr,
-                                        }
-                                    )
-                                    pytotal += float(drresultRow["total"])
-
-                receiptcf.extend(rctransactionsgrid)
-                paymentcf.extend(closinggrid)
+        with eng.connect() as con:
+            calculateFrom = self.request.params["calculatefrom"]
+            calculateTo = self.request.params["calculateto"]
+            financialStart = self.request.params["financialstart"]
+            cbAccountsData = con.execute(
+                text("select accountcode, openingbal, accountname from accounts where orgcode = :orgcode and groupcode in (select groupcode from groupsubgroups where orgcode = :orgcode and groupname in ('Bank','Cash')) order by accountname"),
+                orgcode = authDetails["orgcode"],
+            )
+            cbAccounts = cbAccountsData.fetchall()
+            receiptcf = []
+            paymentcf = []
+            rctransactionsgrid = []
+            closinggrid = []
+            rcaccountcodes = []
+            pyaccountcodes = []
+            bankcodes = []
+            rctotal = 0.00
+            pytotal = 0.00
+            ttlRunDr = 0.00
+            ttlRunCr = 0.00
+            vfrom = datetime.strptime(str(calculateFrom), "%Y-%m-%d")
+            fstart = datetime.strptime(str(financialStart), "%Y-%m-%d")
+            if vfrom == fstart:
                 receiptcf.append(
                     {
-                        "toby": "",
-                        "particulars": "Total",
-                        "amount": "%.2f" % float(rctotal),
+                        "toby": "To",
+                        "particulars": "Opening balance",
+                        "amount": "",
                         "accountcode": "",
                         "ttlRunDr": "",
                     }
                 )
-                paymentcf.append(
+            if vfrom > fstart:
+                receiptcf.append(
                     {
-                        "toby": "",
-                        "particulars": "Total",
-                        "amount": "%.2f" % float(pytotal),
+                        "toby": "To",
+                        "particulars": "Balance B/F",
+                        "amount": "",
                         "accountcode": "",
-                        "ttlRunCr": "",
+                        "ttlRunDr": "",
                     }
                 )
-                self.con.close()
-
-                return {
-                    "gkstatus": enumdict["Success"],
-                    "gkresult":{
-                        "rcgkresult": receiptcf,
-                        "pygkresult": paymentcf,
-                    }
+            for cbAccount in cbAccounts:
+                bankcodes.append(str(cbAccount["accountcode"]))
+            closinggrid.append(
+                {
+                    "toby": "By",
+                    "particulars": "Closing balance",
+                    "amount": "",
+                    "accountcode": "",
+                    "ttlRunCr": "",
                 }
-            except:
-                self.con.close()
-                return {"gkstatus": enumdict["ConnectionFailed"]}
+            )
+            for cbAccount in cbAccounts:
+                opacc = calculateBalance(
+                    con,
+                    cbAccount["accountcode"],
+                    financialStart,
+                    calculateFrom,
+                    calculateTo,
+                )
+                if opacc["balbrought"] != 0.00:
+                    if opacc["openbaltype"] == "Dr":
+                        receiptcf.append(
+                            {
+                                "toby": "",
+                                "particulars": "".join(cbAccount["accountname"]),
+                                "amount": "%.2f" % float(opacc["balbrought"]),
+                                "accountcode": cbAccount["accountcode"],
+                                "ttlRunDr": "",
+                            }
+                        )
+                        rctotal += float(opacc["balbrought"])
+                    if opacc["openbaltype"] == "Cr":
+                        receiptcf.append(
+                            {
+                                "toby": "",
+                                "particulars": "".join(cbAccount["accountname"]),
+                                "amount": "-" + "%.2f" % float(opacc["balbrought"]),
+                                "accountcode": cbAccount["accountcode"],
+                                "ttlRunDr": "",
+                            }
+                        )
+                        rctotal -= float(opacc["balbrought"])
+                if opacc["curbal"] != 0.00:
+                    if opacc["baltype"] == "Dr":
+                        closinggrid.append(
+                            {
+                                "toby": "",
+                                "particulars": "".join(cbAccount["accountname"]),
+                                "amount": "%.2f" % float(opacc["curbal"]),
+                                "accountcode": cbAccount["accountcode"],
+                                "ttlRunCr": "",
+                            }
+                        )
+                        pytotal += float(opacc["curbal"])
+                    if opacc["baltype"] == "Cr":
+                        closinggrid.append(
+                            {
+                                "toby": "",
+                                "particulars": "".join(cbAccount["accountname"]),
+                                "amount": "-" + "%.2f" % float(opacc["curbal"]),
+                                "accountcode": cbAccount["accountcode"],
+                                "ttlRunCr": "",
+                            }
+                        )
+                        pytotal -= float(opacc["curbal"])
+                transactionsRecords = con.execute(
+                    text("select crs,drs from vouchers where voucherdate >= :voucherdate_from  and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ? :drs or crs ? :crs);"),
+                    voucherdate_from = calculateFrom,
+                    voucherdate_to = calculateTo,
+                    drs = str(cbAccount["accountcode"]),
+                    crs = str(cbAccount["accountcode"]),
+                )
+                transactions = transactionsRecords.fetchall()
+                for transaction in transactions:
+                    for cr in transaction["crs"]:
+                        if cr not in rcaccountcodes and int(cr) != int(
+                            cbAccount["accountcode"]
+                        ):
+                            rcaccountcodes.append(cr)
+                            crresult = con.execute(
+                                text("select sum(cast(crs->>:cr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ?| :bankcodes);"),
+                                cr = cr,
+                                voucherdate_from = financialStart,
+                                voucherdate_to = calculateTo,
+                                bankcodes = bankcodes,
+                            )
+                            crresultRow = crresult.fetchone()
+                            rcaccountname = con.execute(
+                                "select accountname from accounts where accountcode=%d"
+                                % (int(cr))
+                            )
+                            rcacc = "".join(rcaccountname.fetchone())
+                            if crresultRow["total"] != None:
+                                ttlRunDr += float(crresultRow["total"])
+                                rctransactionsgrid.append(
+                                    {
+                                        "toby": "To",
+                                        "particulars": rcacc,
+                                        "amount": "%.2f"
+                                        % float(crresultRow["total"]),
+                                        "accountcode": int(cr),
+                                        "ttlRunDr": ttlRunDr,
+                                    }
+                                )
+                                rctotal += float(crresultRow["total"])
+                    for dr in transaction["drs"]:
+                        if dr not in pyaccountcodes and int(dr) != int(
+                            cbAccount["accountcode"]
+                        ):
+                            pyaccountcodes.append(dr)
+                            drresult = con.execute(
+                                text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (crs ?| :bankcodes);"),
+                                dr = dr,
+                                voucherdate_from = financialStart,
+                                voucherdate_to = calculateTo,
+                                bankcodes = bankcodes,
+                            )
+                            drresultRow = drresult.fetchone()
+                            pyaccountname = con.execute(
+                                "select accountname from accounts where accountcode=%d"
+                                % (int(dr))
+                            )
+                            pyacc = "".join(pyaccountname.fetchone())
+                            if drresultRow["total"] != None:
+                                ttlRunCr += float(drresultRow["total"])
+                                paymentcf.append(
+                                    {
+                                        "toby": "By",
+                                        "particulars": pyacc,
+                                        "amount": "%.2f"
+                                        % float(drresultRow["total"]),
+                                        "accountcode": int(dr),
+                                        "ttlRunCr": ttlRunCr,
+                                    }
+                                )
+                                pytotal += float(drresultRow["total"])
+
+            receiptcf.extend(rctransactionsgrid)
+            paymentcf.extend(closinggrid)
+            receiptcf.append(
+                {
+                    "toby": "",
+                    "particulars": "Total",
+                    "amount": "%.2f" % float(rctotal),
+                    "accountcode": "",
+                    "ttlRunDr": "",
+                }
+            )
+            paymentcf.append(
+                {
+                    "toby": "",
+                    "particulars": "Total",
+                    "amount": "%.2f" % float(pytotal),
+                    "accountcode": "",
+                    "ttlRunCr": "",
+                }
+            )
+            return {
+                "gkstatus": enumdict["Success"],
+                "gkresult":{
+                    "rcgkresult": receiptcf,
+                    "pygkresult": paymentcf,
+                }
+            }
