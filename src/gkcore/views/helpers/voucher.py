@@ -79,7 +79,8 @@ def get_org_vouchers(
         from_date=None,
         to_date=None,
         entry_type=None,
-        is_cancelled=False
+        is_cancelled=False,
+        ignored_accounts=None,
 ):
     """ Fetches vouchers for an organization.
 
@@ -114,6 +115,18 @@ def get_org_vouchers(
         statement = statement.where(voucher_table.c.voucherdate >= from_date)
     if to_date:
         statement = statement.where(voucher_table.c.voucherdate <= to_date)
+    if ignored_accounts:
+        for ignored_account_code in ignored_accounts:
+            statement = statement.where(
+                and_(
+                    func.jsonb_extract_path_text(
+                        voucher_table.c.crs, str(ignored_account_code)
+                    ) == None,
+                    func.jsonb_extract_path_text(
+                        voucher_table.c.drs, str(ignored_account_code)
+                    ) == None,
+                )
+            )
     return connection.execute(statement).fetchall()
 
 

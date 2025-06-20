@@ -10,7 +10,8 @@ Contributors:
 """
 from gkcore import eng, enumdict
 from gkcore.utils import authCheck
-from gkcore.models.gkdb import organisation
+from gkcore.models.gkdb import organisation, accounts
+from sqlalchemy import and_
 from sqlalchemy.sql import select
 from pyramid.view import view_defaults, view_config
 from gkcore.views.reports.helpers.stock import (
@@ -83,12 +84,24 @@ class profit_loss(object):
                 con, orgcode, calculate_to
             )
 
+
+            # Adding "Profit & Loss" to ignored accounts.
+            pnl_accounts = con.execute(
+                select([accounts.c.accountcode])
+                .where(
+                    and_(
+                        accounts.c.accountname.in_(["Profit & Loss", "Income & Expenditure"]),
+                        accounts.c.orgcode == orgcode,
+                    )
+                )
+            ).fetchall()
+            pnl_account_codes = [pnl_account["accountcode"] for pnl_account in pnl_accounts]
             # Calculate balance for Direct/Indirect Income/Expense accounts
             trading_left, direct_expense = get_groupwise_accounts_balances(
                 con, orgcode, "Direct Expense", calculate_from, calculate_to
             )
             trading_right, direct_income = get_groupwise_accounts_balances(
-                con, orgcode, "Direct Income", calculate_from, calculate_to
+                con, orgcode, "Direct Income", calculate_from, calculate_to, pnl_account_codes
             )
             pnl_left, indirect_expense = get_groupwise_accounts_balances(
                 con, orgcode, "Indirect Expense", calculate_from, calculate_to
