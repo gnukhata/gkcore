@@ -154,7 +154,7 @@ class api_cashflow(object):
                             )
                             pytotal -= float(opacc["curbal"])
                     transactionsRecords = self.con.execute(
-                        text("select crs,drs from vouchers where voucherdate >= :voucherdate_from  and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (drs ? :drs or crs ? :crs);"),
+                        text("select crs,drs from vouchers where voucherdate >= :voucherdate_from  and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ? :drs or crs ? :crs);"),
                         voucherdate_from = calculateFrom,
                         voucherdate_to = calculateTo,
                         drs = str(cbAccount["accountcode"]),
@@ -168,7 +168,7 @@ class api_cashflow(object):
                             ):
                                 rcaccountcodes.append(cr)
                                 crresult = self.con.execute(
-                                    text("select sum(cast(crs->>:cr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (drs ?| :bankcodes);"),
+                                    text("select sum(cast(crs->>:cr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (drs ?| :bankcodes);"),
                                     cr = cr,
                                     voucherdate_from = financialStart,
                                     voucherdate_to = calculateTo,
@@ -199,7 +199,7 @@ class api_cashflow(object):
                             ):
                                 pyaccountcodes.append(dr)
                                 drresult = self.con.execute(
-                                    text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra','journal') and (crs ?| :bankcodes);"),
+                                    text("select sum(cast(drs->>:dr as float)) as total from vouchers where delflag = false and voucherdate >= :voucherdate_from and voucherdate <= :voucherdate_to and vouchertype not in ('contra') and (crs ?| :bankcodes);"),
                                     dr = dr,
                                     voucherdate_from = financialStart,
                                     voucherdate_to = calculateTo,
