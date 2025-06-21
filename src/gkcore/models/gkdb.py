@@ -708,6 +708,7 @@ invoicebin = Table(
     Column("invoicetotalword", UnicodeText),
     Column("invnarration", UnicodeText),
     Column("dcinfo", JSONB),
+    Column("immutable_data_id", Integer, ForeignKey("transaction.transaction_id")),
     Index("invoicebin_orgcodeindex", "orgcode"),
     Index("invoicebin_invoicenoindex", "invoiceno"),
     info={
