@@ -33,6 +33,7 @@ from gkcore.views.gst.services import (
     b2cs_r1,
     cdnr_r1,
     cdnur_r1,
+    docs_issued,
     generate_gstr_3b_data,
     hsn_r1,
 )
@@ -103,6 +104,7 @@ class GstReturn(object):
                         invoice.c.taxstate,
                         invoice.c.sourcestate,
                         invoice.c.tax,
+                        invoice.c.icflag,
                         invoice.c.cess,
                         invoice.c.taxflag,
                         invoice.c.contents,
@@ -126,6 +128,8 @@ class GstReturn(object):
                         invoice.c.orgcode == orgcode,
                     )
                 )
+                .order_by(invoice.c.invoicedate)
+                .order_by(invoice.c.invid)
             ).fetchall()
 
             # Debit/credit notes
@@ -161,6 +165,7 @@ class GstReturn(object):
                         drcr.c.orgcode == orgcode,
                     )
                 )
+                .order_by(drcr.c.drcrid)
             ).fetchall()
 
             gkdata = {}
@@ -213,6 +218,7 @@ class GstReturn(object):
                 "cdnr": cdnr["json"],
                 "cdnur": cdnur["json"],
                 "hsn": hsn["json"],
+                "doc_issue": docs_issued(invoices, drcrs_all),
                 "nil": {
                     "inv": [
                         {
