@@ -104,7 +104,6 @@ def export_org_data(con: Connection, orgcode: int) -> str:
     ignored_tables: list[str] = [
         "state",
         "signature",
-        "unitofmeasurement",
     ]
 
     # loop through the tables and assign table data to their respective keys
@@ -147,7 +146,7 @@ def import_org_data(con: Connection, data: dict) -> int:
     :return: `orgcode` of the new organisation
     """
     table_list = metadata.sorted_tables
-    excluded_tables = ["unitofmeasurement", "state", "signature"]
+    excluded_tables = ["state", "signature"]
 
     pk_map = {}
     for table in table_list:
@@ -159,17 +158,18 @@ def import_org_data(con: Connection, data: dict) -> int:
             ).fetchall()
             current_user_names = [user.username for user in current_user_names]
             duplicate_user_names = list(
-                set(current_user_names) & set(data_user_name_list)
+                set(current_user_names) | set(data_user_name_list)
             )
 
             for user in table_data:
-                if user["username"] in duplicate_user_names:
+                username = user["username"]
+                if username in current_user_names:
                     counter = 1
-                    username = user["username"]
-                    while username in current_user_names:
+                    while username in duplicate_user_names:
                         username = f"{user['username']}_{counter}"
                         counter += 1
                     user["username"] = username
+                    duplicate_user_names.append(username)
 
         if table.name in ["signature", "state"]:
             continue
@@ -180,7 +180,7 @@ def import_org_data(con: Connection, data: dict) -> int:
     orgcode = list(pk_map["organisation"].values()).pop()
 
     for table in table_list:
-        if table.name in ["unitofmeasurement", "signature", "state", "gkusers"]:
+        if table.name in ["signature", "state", "gkusers"]:
             continue
 
         # Table is being required to imported again, otherwise old data is being shown
@@ -213,6 +213,16 @@ def import_org_data(con: Connection, data: dict) -> int:
         if table.name == "stock":
             update_stock_data(con, table, pk_map, table_rows, pk_field)
         update_json_fields(con, table, pk_map, table_rows, pk_field, orgcode)
+
+    # Update orgcode in user tables
+    gkuser_rows = con.execute(
+        gkdb.gkusers
+        .select()
+        .where(
+            gkdb.gkusers.c.userid.in_(pk_map["gkusers"].values())
+        )
+    ).fetchall()
+    update_json_fields(con, gkdb.gkusers, pk_map, gkuser_rows, "userid", orgcode)
     return orgcode
 
 
@@ -264,13 +274,35 @@ def insert_org_data(
         )
     }
 
+    # [TODO] The following check will only find the changes that have circular
+    # foreignkey connection for the first level (A->B, B->A) not multi level
+    # ones (A->B->C, C->A). Generic check has to be implemented.
+    if table.name == "groupsubgroups":
+        pk_subgroupof_map = [
+            frozenset({row["groupcode"], row["subgroupof"]}) for row in table_data
+        ]
+        if len(pk_subgroupof_map) != len(set(pk_subgroupof_map)):
+            raise ValueError(
+                "Self referencing table 'groupsubgroups' has circular reference at field 'subgroupof'."
+            )
+
+    if table.name == "unitofmeasurement":
+        pk_subunitof_map = [
+            frozenset({row["uomid"], row["subunitof"]}) for row in table_data
+        ]
+        if len(pk_subunitof_map) != len(set(pk_subunitof_map)):
+            raise ValueError(
+                "Self referencing table 'unitofmeasurement' has circular reference at field 'subunitof'."
+            )
+
     while len(table_data) > 0:
         row = table_data.pop(0)
+        row_copy = {**row}
         row_pk_map = insert_row(
             con, row, pk_field, foreign_keys, table, pk_map, table_pk_map
         )
         if not row_pk_map:
-            table_data.append(row)
+            table_data.append(row_copy)
             continue
         # Update pk_map with newly created primary key and the old one
         table_pk_map.update(row_pk_map)
