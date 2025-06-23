@@ -595,7 +595,7 @@ class api_transaction(object):
                         vouchers.c.delflag == False,
                     )
                 )
-                .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
+                .order_by(vouchers.c.voucherdate.desc(), vouchers.c.vouchercode.desc())
             )
             voucherRecords = []
 
