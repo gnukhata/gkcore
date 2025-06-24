@@ -64,6 +64,8 @@ class api_hsn(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
 
         # eval the given hsn code
+        if len(str(self.request.params["validate"] or "")) < 6:
+            return {"gkstatus": 3}
         try:
             for code in hsn_codes():
                 if self.request.params["validate"] == str(code["hsn_code"]):
