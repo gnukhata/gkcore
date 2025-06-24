@@ -46,6 +46,12 @@ def does_foreignkey_exist(eng, table_name, constraint_name):
     # return true if the constraint already exists
     return any(constraint['name'] == constraint_name for constraint in constraints)
 
+def does_check_constraint_exist(eng, table_name, constraint_name):
+    # Inspect the database to check for the constraint
+    inspector = inspect(eng)
+    constraints = inspector.get_check_constraints(table_name)
+    # return true if the constraint already exists
+    return any(constraint['name'] == constraint_name for constraint in constraints)
 
 def does_unique_constraint_exist(eng, table_name, constraint_name):
     # Inspect the database to check for the constraint
