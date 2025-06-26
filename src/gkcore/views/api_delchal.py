@@ -1254,19 +1254,14 @@ class api_delchal(object):
             dcdata = []
             srno = 1
             for row in alldcids:
-                invid = con.execute(
-                    select([dcinv.c.invid])
-                    .where(and_(
-                        dcinv.c.dcid == row["dcid"],
-                        dcinv.c.orgcode == authDetails["orgcode"],
-                    ))
+                immutable_data_id = con.execute(
+                    select([invoicebin.c.immutable_data_id])
+                    .where(
+                        invoicebin.c.dcinfo["dcno"].astext == row["dcno"]
+                    )
                 ).scalar()
                 immutable_data = {}
-                if invid:
-                    immutable_data_id = con.execute(
-                        select([invoice.c.immutable_data_id])
-                        .where(invoice.c.invid == invid)
-                    ).scalar()
+                if immutable_data_id:
                     immutable_data = con.execute(
                         select([transaction.c.transaction_details])
                         .where(transaction.c.transaction_id == immutable_data_id)
