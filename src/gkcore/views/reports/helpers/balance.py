@@ -1744,7 +1744,12 @@ def getBalanceSheet(con, orgcode, calculateTo, calculatefrom, balancetype):
 
 
 def get_account_vouchers_data(
-        connection, orgcode, account_id, from_date=None, to_date=None
+        connection,
+        orgcode,
+        account_id,
+        from_date=None,
+        to_date=None,
+        ignored_accounts=None,
 ):
     """Function to fetch voucher data for accounts for a given period.
 
@@ -1757,6 +1762,7 @@ def get_account_vouchers_data(
         account_id,
         from_date,
         to_date,
+        ignored_accounts=ignored_accounts,
     )
     vouchers_consolidated = generate_consolidated_voucher_data(
         connection, voucher_rows, account_id
@@ -1778,7 +1784,12 @@ def get_current_balance(connection, account):
 
 
 def get_groupwise_accounts_balances(
-        connection, orgcode, group_name, from_date=None, to_date=None
+        connection,
+        orgcode,
+        group_name,
+        from_date=None,
+        to_date=None,
+        ignored_accounts=None,
 ):
     """Function to fetch voucher data of accounts of a group.
 
@@ -1825,8 +1836,9 @@ def get_groupwise_accounts_balances(
         # these groups.
         if account["accountname"] in ["Opening Stock", "Profit & Loss", "Income & Expenditure"]:
             continue
+
         account_balance = get_account_vouchers_data(
-            connection, orgcode, account["accountcode"], from_date, to_date
+            connection, orgcode, account["accountcode"], from_date, to_date, ignored_accounts,
         )
         account["amount"] = account_balance
         accounts_list.append({
