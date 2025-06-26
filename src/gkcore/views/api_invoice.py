@@ -3099,6 +3099,11 @@ class api_invoice(object):
                 )
                 invrow = result.fetchone()
 
+                immutable_data = con.execute(
+                    select([transaction.c.transaction_details])
+                    .where(transaction.c.transaction_id == invrow["immutable_data_id"])
+                ).scalar()
+
                 inv = {
                     "invid": invrow["invid"],
                     "taxflag": invrow["taxflag"],
@@ -3112,6 +3117,7 @@ class api_invoice(object):
                     "paymentmode": invrow["paymentmode"],
                     "inoutflag": invrow["inoutflag"],
                     "discflag": invrow["discflag"],
+                    "immutable_data": immutable_data,
                 }
 
                 if invrow["sourcestate"] != None:

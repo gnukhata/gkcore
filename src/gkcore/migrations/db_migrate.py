@@ -2159,36 +2159,46 @@ def migrate():
                     primary key (transaction_id)
                 )"""
                 conn.execute(query)
-                conn.execute("alter table invoice add column if not exists immutable_data_id Integer")
-                if not does_foreignkey_exist(
-                    eng,
-                    "invoice",
-                    "invoice_transaction_id_fkey"
-                ):
-                    conn.execute("""
-                        alter table invoice add foreign key (immutable_data_id)
-                        references transaction(transaction_id)
-                    """)
-                conn.execute("alter table purchaseorder add column if not exists immutable_data_id Integer")
-                if not does_foreignkey_exist(
-                    eng,
-                    "purchaseorder",
-                    "purchaseorder_transaction_id_fkey"
-                ):
-                    conn.execute("""
-                        alter table purchaseorder add foreign key (immutable_data_id)
-                        references transaction(transaction_id)
-                    """)
-                conn.execute("alter table transfernote add column if not exists immutable_data_id Integer")
-                if not does_foreignkey_exist(
-                    eng,
-                    "transfernote",
-                    "transfernote_transaction_id_fkey"
-                ):
-                    conn.execute("""
-                        alter table transfernote add foreign key (immutable_data_id)
-                        references transaction(transaction_id)
-                    """)
+            conn.execute("alter table invoice add column if not exists immutable_data_id Integer")
+            if not does_foreignkey_exist(
+                eng,
+                "invoice",
+                "invoice_transaction_id_fkey"
+            ):
+                conn.execute("""
+                    alter table invoice add foreign key (immutable_data_id)
+                    references transaction(transaction_id)
+                """)
+            conn.execute("alter table invoicebin add column if not exists immutable_data_id Integer")
+            if not does_foreignkey_exist(
+                eng,
+                "invoicebin",
+                "invoicebin_transaction_id_fkey"
+            ):
+                conn.execute("""
+                    alter table invoicebin add foreign key (immutable_data_id)
+                    references transaction(transaction_id)
+                """)
+            conn.execute("alter table purchaseorder add column if not exists immutable_data_id Integer")
+            if not does_foreignkey_exist(
+                eng,
+                "purchaseorder",
+                "purchaseorder_transaction_id_fkey"
+            ):
+                conn.execute("""
+                    alter table purchaseorder add foreign key (immutable_data_id)
+                    references transaction(transaction_id)
+                """)
+            conn.execute("alter table transfernote add column if not exists immutable_data_id Integer")
+            if not does_foreignkey_exist(
+                eng,
+                "transfernote",
+                "transfernote_transaction_id_fkey"
+            ):
+                conn.execute("""
+                    alter table transfernote add foreign key (immutable_data_id)
+                    references transaction(transaction_id)
+                """)
 
         with eng.begin() as con:
             con.execute("alter table organisation add column if not exists cin text")
