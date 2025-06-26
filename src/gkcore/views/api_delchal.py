@@ -43,6 +43,7 @@ from gkcore.models.gkdb import (
     rejectionnote,
     delchalbin,
     invoice,
+    invoicebin,
     log,
 )
 from sqlalchemy.sql import select
@@ -984,6 +985,22 @@ class api_delchal(object):
                             ][str(sourceStateCode)]
                         except:
                             singledelchal["custSupDetails"]["custgstin"] = None
+
+
+
+            immutable_data_id = con.execute(
+                select([invoicebin.c.immutable_data_id])
+                .where(
+                    invoicebin.c.dcinfo["dcno"].astext == delchaldata["dcno"]
+                )
+            ).scalar()
+            immutable_data = {}
+            if immutable_data_id:
+                immutable_data = con.execute(
+                    select([transaction.c.transaction_details])
+                    .where(transaction.c.transaction_id == immutable_data_id)
+                ).scalar()
+            singledelchal["immutable_data"] = immutable_data
 
             # ..........................................Delchal ProductCode Info....................
             if delchaldata["contents"] != None:
