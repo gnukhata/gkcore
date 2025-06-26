@@ -2948,11 +2948,11 @@ class api_invoice(object):
             logdata = {}
             logdata["orgcode"] = authDetails["orgcode"]
             logdata["userid"] = authDetails["userid"]
-            logdata["time"] = datetime.today().strftime("%Y-%m-%d")
+            logdata["time"] = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             logdata["activity"] = (
                 str(invoicedata["invoiceno"]) + " Invoice Cancelled"
             )
-            result = con.execute(log.insert(), [logdata])
+            con.execute(log.insert(), [logdata])
             return {"gkstatus": enumdict["Success"]}
 
     @view_config(route_name="invoice_invid", request_method="DELETE", renderer="json")
