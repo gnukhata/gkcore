@@ -1,6 +1,6 @@
 from gkcore.views.helpers.contact import get_party_details
 from sqlalchemy.sql import select
-from gkcore.models.gkdb import invoice, state, product
+from gkcore.models.gkdb import invoice, state, product, transaction
 from sqlalchemy import func
 from gkcore import enumdict
 
@@ -41,15 +41,19 @@ def get_invoice_details(connection, invoice_id):
                 invoice.c.cess,
                 invoice.c.discount,
                 invoice.c.consignee,
+                transaction.c.transaction_details,
             ]
-        ).where(invoice.c.invid == invoice_id)
+        )
+        .select_from(invoice.join(transaction))
+        .where(invoice.c.invid == invoice_id)
     ).fetchone()
 
     party_details = get_party_details(connection, invoice_details["custid"])
 
-    gstin = ""
-    if invoice_details["consignee"]:
-        gstin = invoice_details["consignee"].get("gstinconsignee", "")
+    try:
+        gstin = list(invoice_details["transaction_details"]["contact"]["gstin"].values())[0]
+    except (AttributeError, TypeError, IndexError):
+        gstin = ""
 
     tax_details = []
     tax_name = None
