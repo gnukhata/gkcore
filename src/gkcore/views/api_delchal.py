@@ -1032,6 +1032,7 @@ class api_delchal(object):
                         select(
                             [
                                 product.c.productdesc,
+                                product.c.productcode,
                                 product.c.uomid,
                                 product.c.gsflag,
                                 product.c.gscode,
@@ -1097,6 +1098,7 @@ class api_delchal(object):
                             "taxableamount": "%.2f" % (float(taxableAmount)),
                             "totalAmount": "%.2f" % (float(totalAmount)),
                             "taxname": "VAT",
+                            "productCode": prodrow["productcode"],
                             "taxrate": "%.2f" % (float(taxRate)),
                             "taxamount": "%.2f" % (float(taxAmount)),
                         }
@@ -1150,6 +1152,7 @@ class api_delchal(object):
                             "taxname": taxname,
                             "taxrate": "%.2f" % (float(taxRate)),
                             "taxamount": "%.2f" % (float(taxAmount)),
+                            "productCode": prodrow["productcode"],
                             "cess": "%.2f" % (float(cessAmount)),
                             "cessrate": "%.2f" % (float(cessVal)),
                         }
