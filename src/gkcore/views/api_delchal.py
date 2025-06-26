@@ -1309,6 +1309,7 @@ class api_delchal(object):
                 singledcdata = {
                     "dcid": row["dcid"],
                     "dcno": row["dcno"],
+                    "total": float(row["delchaltotal"]),
                     "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
                     "dcflag": dcflag,
                     "inoutflag": row["inoutflag"],
