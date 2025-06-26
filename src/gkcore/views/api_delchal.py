@@ -43,6 +43,7 @@ from gkcore.models.gkdb import (
     rejectionnote,
     delchalbin,
     invoice,
+    invoicebin,
     log,
 )
 from sqlalchemy.sql import select
@@ -985,6 +986,22 @@ class api_delchal(object):
                         except:
                             singledelchal["custSupDetails"]["custgstin"] = None
 
+
+
+            immutable_data_id = con.execute(
+                select([invoicebin.c.immutable_data_id])
+                .where(
+                    invoicebin.c.dcinfo["dcno"].astext == delchaldata["dcno"]
+                )
+            ).scalar()
+            immutable_data = {}
+            if immutable_data_id:
+                immutable_data = con.execute(
+                    select([transaction.c.transaction_details])
+                    .where(transaction.c.transaction_id == immutable_data_id)
+                ).scalar()
+            singledelchal["immutable_data"] = immutable_data
+
             # ..........................................Delchal ProductCode Info....................
             if delchaldata["contents"] != None:
                 singledelchal["delchalflag"] = 14
@@ -1015,6 +1032,7 @@ class api_delchal(object):
                         select(
                             [
                                 product.c.productdesc,
+                                product.c.productcode,
                                 product.c.uomid,
                                 product.c.gsflag,
                                 product.c.gscode,
@@ -1080,6 +1098,7 @@ class api_delchal(object):
                             "taxableamount": "%.2f" % (float(taxableAmount)),
                             "totalAmount": "%.2f" % (float(totalAmount)),
                             "taxname": "VAT",
+                            "productCode": prodrow["productcode"],
                             "taxrate": "%.2f" % (float(taxRate)),
                             "taxamount": "%.2f" % (float(taxAmount)),
                         }
@@ -1133,6 +1152,7 @@ class api_delchal(object):
                             "taxname": taxname,
                             "taxrate": "%.2f" % (float(taxRate)),
                             "taxamount": "%.2f" % (float(taxAmount)),
+                            "productCode": prodrow["productcode"],
                             "cess": "%.2f" % (float(cessAmount)),
                             "cessrate": "%.2f" % (float(cessVal)),
                         }
@@ -1234,19 +1254,14 @@ class api_delchal(object):
             dcdata = []
             srno = 1
             for row in alldcids:
-                invid = con.execute(
-                    select([dcinv.c.invid])
-                    .where(and_(
-                        dcinv.c.dcid == row["dcid"],
-                        dcinv.c.orgcode == authDetails["orgcode"],
-                    ))
+                immutable_data_id = con.execute(
+                    select([invoicebin.c.immutable_data_id])
+                    .where(
+                        invoicebin.c.dcinfo["dcno"].astext == row["dcno"]
+                    )
                 ).scalar()
                 immutable_data = {}
-                if invid:
-                    immutable_data_id = con.execute(
-                        select([invoice.c.immutable_data_id])
-                        .where(invoice.c.invid == invid)
-                    ).scalar()
+                if immutable_data_id:
                     immutable_data = con.execute(
                         select([transaction.c.transaction_details])
                         .where(transaction.c.transaction_id == immutable_data_id)
@@ -1294,6 +1309,7 @@ class api_delchal(object):
                 singledcdata = {
                     "dcid": row["dcid"],
                     "dcno": row["dcno"],
+                    "total": float(row["delchaltotal"]),
                     "dcdate": datetime.strftime(row["dcdate"], "%d-%m-%Y"),
                     "dcflag": dcflag,
                     "inoutflag": row["inoutflag"],
