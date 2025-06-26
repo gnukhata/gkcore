@@ -566,6 +566,7 @@ class api_transaction(object):
             ur = getUserRole(authDetails["userid"], authDetails["orgcode"])
             urole = ur["gkresult"]
             voucherType = self.request.params["vouchertype"]
+            transactionType = self.request.params.get("transactionType")
             vouchersData = con.execute(
                 select(
                     [
@@ -579,6 +580,7 @@ class api_transaction(object):
                         vouchers.c.prjcrs,
                         vouchers.c.prjdrs,
                         vouchers.c.vouchertype,
+                        vouchers.c.invid,
                         vouchers.c.lockflag,
                         vouchers.c.delflag,
                         vouchers.c.projectcode,
@@ -593,7 +595,7 @@ class api_transaction(object):
                         vouchers.c.delflag == False,
                     )
                 )
-                .order_by(vouchers.c.voucherdate, vouchers.c.vouchercode)
+                .order_by(vouchers.c.voucherdate.desc(), vouchers.c.vouchercode.desc())
             )
             voucherRecords = []
 
@@ -638,6 +640,16 @@ class api_transaction(object):
                     finalCR[account["accountname"]] = rawCr[list(rawCr.keys())[0]]
                 if voucher["narration"] == "null":
                     voucher["narration"] = ""
+
+                if voucherType == "sales":
+                    is_cash_memo = con.execute(
+                        select([invoice.c.icflag]).where(
+                            invoice.c.invid == voucher["invid"]
+                        )
+                    ).scalar() == 3
+
+                    if transactionType == "cashmemo" and not is_cash_memo:
+                        continue
 
                 voucherRecords.append(
                     {
