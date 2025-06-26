@@ -83,13 +83,12 @@ def get_invoice_details(connection, invoice_id):
         }
         tax_details.append(item_tax_details)
         if tax_name == "SGST":
-            tax_name = "CGST"
             tax_details.append(
                 {
                     "product_id": item_id,
                     "tax_amount": tax_amount,
-                    "tax_name": tax_name,
-                    "tax_str": f"{tax_percent}% {tax_name}",
+                    "tax_name": "CGST",
+                    "tax_str": f"{tax_percent}% CGST",
                     "tax_percent": tax_percent,
                 }
             )
