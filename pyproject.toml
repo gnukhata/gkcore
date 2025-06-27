@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "gkcore"
-version = "8.0b1"
+version = "8.0rc"
 description = "GNUKhata's REST API server"
 authors = ["GNUKhata Contributors"]
 license = "AGPLv3"
