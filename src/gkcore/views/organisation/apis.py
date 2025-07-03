@@ -226,7 +226,7 @@ class api_organisation(object):
                         },
                     ],
                 )
-                # Create account Cash in hand under subgroup Cash & Bank A/C under Bank.
+                # Create account Cash in hand under subgroup Cash.
                 csh = con.execute(
                     select([gkdb.groupsubgroups.c.groupcode]).where(
                         and_(
@@ -243,24 +243,6 @@ class api_organisation(object):
                         "groupcode": cshgrpcd["groupcode"],
                         "orgcode": orgcode["orgcode"],
                         "defaultflag": 3,
-                    },
-                )
-                bnk = con.execute(
-                    select([gkdb.groupsubgroups.c.groupcode]).where(
-                        and_(
-                            gkdb.groupsubgroups.c.groupname == "Bank",
-                            gkdb.groupsubgroups.c.orgcode == orgcode["orgcode"],
-                        )
-                    )
-                )
-                bnkgrpcd = bnk.fetchone()
-                resultb = con.execute(
-                    gkdb.accounts.insert(),
-                    {
-                        "accountname": "Bank A/C",
-                        "groupcode": bnkgrpcd["groupcode"],
-                        "orgcode": orgcode["orgcode"],
-                        "defaultflag": 2,
                     },
                 )
 
