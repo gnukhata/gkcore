@@ -48,7 +48,7 @@ from sqlalchemy.sql.functions import func
 from gkcore.views.reports.helpers.stock import (
     calculateStockValue,
     stockonhandfun,
-    godownwisestockonhandfun,
+    godownwise_stock_on_hand,
 )
 
 @view_defaults(request_method="GET", renderer="json_extended")
@@ -520,17 +520,16 @@ class api_godownregister(object):
                     prodcodedesclist = []
                     for productcode in prodcodelist:
                         productCode = productcode["productcode"]
-                        result = godownwisestockonhandfun(
+                        result = godownwise_stock_on_hand(
                             con,
                             orgcode,
                             startDate,
                             endDate,
-                            stocktype,
                             productCode,
                             godownCode,
                         )
-                        resultlist = result[0]["prodid"] = productCode
-                        stocklist.append(result[0])
+                        result["prodid"] = productCode
+                        stocklist.append(result)
 
                     allprodstocklist = sorted(
                         stocklist, key=lambda x: float(x["balance"])
