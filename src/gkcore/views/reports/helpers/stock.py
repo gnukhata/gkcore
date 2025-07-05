@@ -605,354 +605,165 @@ def calculateStockValue(con, orgcode, endDate, productCode, godownCode):
         return -1
 
 
-def godownwisestockonhandfun(
-    con, orgcode, startDate, endDate, stocktype, productCode, godownCode
+def godownwise_stock_on_hand(
+    con, orgcode, startDate, endDate, productCode, godownCode
 ):
     with eng.connect() as con:
-        stockReport = []
         totalinward = 0.00
         totaloutward = 0.00
-        openingStock = 0.00
-        if stocktype == "pg":
-            productCode = productCode
-            godownCode = godownCode
-            goopeningStockResult = con.execute(
-                select([goprod.c.goopeningstock]).where(
-                    and_(
-                        goprod.c.productcode == productCode,
-                        goprod.c.goid == godownCode,
-                        goprod.c.orgcode == orgcode,
-                    )
+        productCode = productCode
+        godownCode = godownCode
+        goopeningStockResult = con.execute(
+            select([goprod.c.goopeningstock]).where(
+                and_(
+                    goprod.c.productcode == productCode,
+                    goprod.c.goid == godownCode,
+                    goprod.c.orgcode == orgcode,
                 )
             )
-            gosRow = goopeningStockResult.fetchone()
-            if gosRow != None:
-                gopeningStock = gosRow["goopeningstock"]
-            else:
-                gopeningStock = 0.00
-            stockRecords = con.execute(
-                select([stock])
-                .where(
-                    and_(
-                        stock.c.productcode == productCode,
-                        stock.c.goid == godownCode,
-                        stock.c.orgcode == orgcode,
-                    )
-                )
-                .order_by(stock.c.stockdate)
-            )
-            stockData = stockRecords.fetchall()
-            ysData = con.execute(
-                select([organisation.c.yearstart]).where(
-                    organisation.c.orgcode == orgcode
+        )
+        gosRow = goopeningStockResult.fetchone()
+        if gosRow != None:
+            gopeningStock = gosRow["goopeningstock"]
+        else:
+            gopeningStock = 0.00
+        stockRecords = con.execute(
+            select([stock])
+            .where(
+                and_(
+                    stock.c.productcode == productCode,
+                    stock.c.goid == godownCode,
+                    stock.c.orgcode == orgcode,
                 )
             )
-            ysRow = ysData.fetchone()
-            yearStart = datetime.strptime(str(ysRow["yearstart"]), "%Y-%m-%d")
-            if not startDate:
-                startDate = yearStart
-            totalinward = totalinward + float(gopeningStock)
-            for finalRow in stockData:
-                if finalRow["dcinvtnflag"] == 4:
-                    # Delivery note
-                    countresult = con.execute(
-                        select(
-                            [delchal.c.dcdate, delchal.c.dcno, delchal.c.custid]
-                        ).where(
-                            and_(
-                                delchal.c.dcdate <= endDate,
-                                delchal.c.dcid == finalRow["dcinvtnid"],
-                            )
+            .order_by(stock.c.stockdate)
+        )
+        stockData = stockRecords.fetchall()
+        ysData = con.execute(
+            select([organisation.c.yearstart]).where(
+                organisation.c.orgcode == orgcode
+            )
+        )
+        ysRow = ysData.fetchone()
+        yearStart = datetime.strptime(str(ysRow["yearstart"]), "%Y-%m-%d")
+        if not startDate:
+            startDate = yearStart
+        totalinward = totalinward + float(gopeningStock)
+        for finalRow in stockData:
+            if finalRow["dcinvtnflag"] == 4:
+                # Delivery note
+                countresult = con.execute(
+                    select(
+                        [delchal.c.dcdate, delchal.c.dcno, delchal.c.custid]
+                    ).where(
+                        and_(
+                            delchal.c.dcdate <= endDate,
+                            delchal.c.dcid == finalRow["dcinvtnid"],
                         )
                     )
-                    if countresult.rowcount == 1:
-                        countrow = countresult.fetchone()
-                        custdata = con.execute(
-                            select([customerandsupplier.c.custname]).where(
-                                customerandsupplier.c.custid == countrow["custid"]
-                            )
-                        )
-                        custrow = custdata.fetchone()
-                        dcinvresult = con.execute(
-                            select([dcinv.c.invid]).where(
-                                dcinv.c.dcid == finalRow["dcinvtnid"]
-                            )
-                        )
-                        if dcinvresult.rowcount == 1:
-                            dcinvrow = dcinvresult.fetchone()
-                            invresult = con.execute(
-                                select([invoice.c.invoiceno]).where(
-                                    invoice.c.invid == dcinvrow["invid"]
-                                )
-                            )
-                            """ No need to check if invresult has rowcount 1 since it must be 1 """
-                            invrow = invresult.fetchone()
-                            trntype = "delchal&invoice"
-                        else:
-                            dcinvrow = {"invid": ""}
-                            invrow = {"invoiceno": ""}
-                            trntype = "delcha"
-                        if finalRow["inout"] == 9:
-                            gopeningStock = float(gopeningStock) + float(
-                                finalRow["qty"]
-                            )
-                            totalinward = float(totalinward) + float(finalRow["qty"])
-                        if finalRow["inout"] == 15:
-                            gopeningStock = float(gopeningStock) - float(
-                                finalRow["qty"]
-                            )
-                            totaloutward = float(totaloutward) + float(finalRow["qty"])
-                if finalRow["dcinvtnflag"] == 20:
-                    # Transfer Note
-                    countresult = con.execute(
-                        select(
-                            [
-                                transfernote.c.transfernotedate,
-                                transfernote.c.transfernoteno,
-                            ]
-                        ).where(
-                            and_(
-                                transfernote.c.transfernotedate <= endDate,
-                                transfernote.c.transfernoteid == finalRow["dcinvtnid"],
-                            )
+                )
+                if countresult.rowcount == 1:
+                    countrow = countresult.fetchone()
+                    custdata = con.execute(
+                        select([customerandsupplier.c.custname]).where(
+                            customerandsupplier.c.custid == countrow["custid"]
                         )
                     )
-                    if countresult.rowcount == 1:
-                        countrow = countresult.fetchone()
-                        if finalRow["inout"] == 9:
-                            gopeningStock = float(gopeningStock) + float(
-                                finalRow["qty"]
+                    custrow = custdata.fetchone()
+                    dcinvresult = con.execute(
+                        select([dcinv.c.invid]).where(
+                            dcinv.c.dcid == finalRow["dcinvtnid"]
+                        )
+                    )
+                    if dcinvresult.rowcount == 1:
+                        dcinvrow = dcinvresult.fetchone()
+                        invresult = con.execute(
+                            select([invoice.c.invoiceno]).where(
+                                invoice.c.invid == dcinvrow["invid"]
                             )
-                            totalinward = float(totalinward) + float(finalRow["qty"])
-                        if finalRow["inout"] == 15:
-                            gopeningStock = float(gopeningStock) - float(
-                                finalRow["qty"]
-                            )
-                            totaloutward = float(totaloutward) + float(finalRow["qty"])
-                if finalRow["dcinvtnflag"] == 18:
-                    # Rejection Note
+                        )
+                        """ No need to check if invresult has rowcount 1 since it must be 1 """
+                        invrow = invresult.fetchone()
+                        trntype = "delchal&invoice"
+                    else:
+                        dcinvrow = {"invid": ""}
+                        invrow = {"invoiceno": ""}
+                        trntype = "delcha"
                     if finalRow["inout"] == 9:
-                        gopeningStock = float(gopeningStock) + float(finalRow["qty"])
+                        gopeningStock = float(gopeningStock) + float(
+                            finalRow["qty"]
+                        )
                         totalinward = float(totalinward) + float(finalRow["qty"])
                     if finalRow["inout"] == 15:
-                        gopeningStock = float(gopeningStock) - float(finalRow["qty"])
+                        gopeningStock = float(gopeningStock) - float(
+                            finalRow["qty"]
+                        )
                         totaloutward = float(totaloutward) + float(finalRow["qty"])
-                if finalRow["dcinvtnflag"] == 7:
-                    # Debite Credit Note
-                    countresult = con.execute(
-                        select([func.count(drcr.c.drcrid).label("dc")]).where(
-                            and_(
-                                drcr.c.drcrdate >= yearStart,
-                                drcr.c.drcrdate <= endDate,
-                                drcr.c.drcrid == finalRow["dcinvtnid"],
-                            )
-                        )
-                    )
-                    countrow = countresult.fetchone()
-                    if countrow["dc"] == 1:
-                        if finalRow["inout"] == 9:
-                            gopeningStock = float(gopeningStock) + float(
-                                finalRow["qty"]
-                            )
-                            totalinward = float(totalinward) + float(finalRow["qty"])
-                        if finalRow["inout"] == 15:
-                            gopeningStock = float(gopeningStock) - float(
-                                finalRow["qty"]
-                            )
-                            totaloutward = float(totaloutward) + float(finalRow["qty"])
-            product_value = calculateStockValue(
-                        con, orgcode, endDate, productCode, godownCode
-                    )
-
-            stockReport.append(
-                {
-                    "srno": 1,
-                    "totalinwardqty": "%.2f" % float(totalinward),
-                    "totaloutwardqty": "%.2f" % float(totaloutward),
-                    "balance": "%.2f" % float(gopeningStock),
-                    "productcode": productCode,
-                    "value": product_value,
-                }
-            )
-            return stockReport
-        if stocktype == "pag":
-            productCode = productCode
-            products = con.execute(
-                select([product.c.productdesc]).where(
-                    and_(
-                        product.c.productcode == productCode,
-                        product.c.orgcode == orgcode,
-                    )
-                )
-            )
-            prodDesc = products.fetchone()
-            goopeningStockResult = con.execute(
-                select([goprod.c.goopeningstock, goprod.c.goid]).where(
-                    and_(
-                        goprod.c.productcode == productCode, goprod.c.orgcode == orgcode
-                    )
-                )
-            )
-            gosRow = goopeningStockResult.fetchall()
-            srno = 1
-            for row in gosRow:
-                totalinward = 0.00
-                totaloutward = 0.00
-                openingStock = 0.00
-                if row["goopeningstock"] != None:
-                    gopeningStock = row["goopeningstock"]
-                else:
-                    gopeningStock = 0.00
-                godowns = con.execute(
-                    select([godown.c.goname]).where(
-                        and_(godown.c.goid == row["goid"], godown.c.orgcode == orgcode)
-                    )
-                )
-                goName = godowns.fetchone()
-                gn = goName["goname"]
-                stockRecords = con.execute(
-                    select([stock])
-                    .where(
+            if finalRow["dcinvtnflag"] == 20:
+                # Transfer Note
+                countresult = con.execute(
+                    select(
+                        [
+                            transfernote.c.transfernotedate,
+                            transfernote.c.transfernoteno,
+                        ]
+                    ).where(
                         and_(
-                            stock.c.productcode == productCode,
-                            stock.c.goid == row["goid"],
-                            stock.c.orgcode == orgcode,
+                            transfernote.c.transfernotedate <= endDate,
+                            transfernote.c.transfernoteid == finalRow["dcinvtnid"],
                         )
                     )
-                    .order_by(stock.c.stockdate)
                 )
-                stockData = stockRecords.fetchall()
-                totalinward = totalinward + float(gopeningStock)
-                for finalRow in stockData:
-                    if finalRow["dcinvtnflag"] == 4:
-                        countresult = con.execute(
-                            select(
-                                [delchal.c.dcdate, delchal.c.dcno, delchal.c.custid]
-                            ).where(
-                                and_(
-                                    delchal.c.dcdate <= endDate,
-                                    delchal.c.dcid == finalRow["dcinvtnid"],
-                                )
-                            )
+                if countresult.rowcount == 1:
+                    countrow = countresult.fetchone()
+                    if finalRow["inout"] == 9:
+                        gopeningStock = float(gopeningStock) + float(
+                            finalRow["qty"]
                         )
-                        if countresult.rowcount == 1:
-                            countrow = countresult.fetchone()
-                            custdata = con.execute(
-                                select([customerandsupplier.c.custname]).where(
-                                    customerandsupplier.c.custid == countrow["custid"]
-                                )
-                            )
-                            custrow = custdata.fetchone()
-                            dcinvresult = con.execute(
-                                select([dcinv.c.invid]).where(
-                                    dcinv.c.dcid == finalRow["dcinvtnid"]
-                                )
-                            )
-                            if dcinvresult.rowcount == 1:
-                                dcinvrow = dcinvresult.fetchone()
-                                invresult = con.execute(
-                                    select([invoice.c.invoiceno]).where(
-                                        invoice.c.invid == dcinvrow["invid"]
-                                    )
-                                )
-                                """ No need to check if invresult has rowcount 1 since it must be 1 """
-                                invrow = invresult.fetchone()
-                                trntype = "delchal&invoice"
-                            else:
-                                dcinvrow = {"invid": ""}
-                                invrow = {"invoiceno": ""}
-                                trntype = "delcha"
-                            if finalRow["inout"] == 9:
-                                gopeningStock = float(gopeningStock) + float(
-                                    finalRow["qty"]
-                                )
-                                totalinward = float(totalinward) + float(
-                                    finalRow["qty"]
-                                )
-                            if finalRow["inout"] == 15:
-                                gopeningStock = float(gopeningStock) - float(
-                                    finalRow["qty"]
-                                )
-                                totaloutward = float(totaloutward) + float(
-                                    finalRow["qty"]
-                                )
-                    if finalRow["dcinvtnflag"] == 20:
-                        countresult = con.execute(
-                            select(
-                                [
-                                    transfernote.c.transfernotedate,
-                                    transfernote.c.transfernoteno,
-                                ]
-                            ).where(
-                                and_(
-                                    transfernote.c.transfernotedate <= endDate,
-                                    transfernote.c.transfernoteid
-                                    == finalRow["dcinvtnid"],
-                                )
-                            )
+                        totalinward = float(totalinward) + float(finalRow["qty"])
+                    if finalRow["inout"] == 15:
+                        gopeningStock = float(gopeningStock) - float(
+                            finalRow["qty"]
                         )
-                        if countresult.rowcount == 1:
-                            countrow = countresult.fetchone()
-                            if finalRow["inout"] == 9:
-                                gopeningStock = float(gopeningStock) + float(
-                                    finalRow["qty"]
-                                )
-                                totalinward = float(totalinward) + float(
-                                    finalRow["qty"]
-                                )
-                            if finalRow["inout"] == 15:
-                                gopeningStock = float(gopeningStock) - float(
-                                    finalRow["qty"]
-                                )
-                                totaloutward = float(totaloutward) + float(
-                                    finalRow["qty"]
-                                )
-                    if finalRow["dcinvtnflag"] == 18:
-                        if finalRow["inout"] == 9:
-                            gopeningStock = float(gopeningStock) + float(
-                                finalRow["qty"]
-                            )
-                            totalinward = float(totalinward) + float(finalRow["qty"])
-                        if finalRow["inout"] == 15:
-                            gopeningStock = float(gopeningStock) - float(
-                                finalRow["qty"]
-                            )
-                            totaloutward = float(totaloutward) + float(finalRow["qty"])
-                    if finalRow["dcinvtnflag"] == 7:
-                        countresult = con.execute(
-                            select([func.count(drcr.c.drcrid).label("dc")]).where(
-                                and_(
-                                    drcr.c.drcrdate >= yearStart,
-                                    drcr.c.drcrdate < startDate,
-                                    drcr.c.drcrid == finalRow["dcinvtnid"],
-                                )
-                            )
+                        totaloutward = float(totaloutward) + float(finalRow["qty"])
+            if finalRow["dcinvtnflag"] == 18:
+                # Rejection Note
+                if finalRow["inout"] == 9:
+                    gopeningStock = float(gopeningStock) + float(finalRow["qty"])
+                    totalinward = float(totalinward) + float(finalRow["qty"])
+                if finalRow["inout"] == 15:
+                    gopeningStock = float(gopeningStock) - float(finalRow["qty"])
+                    totaloutward = float(totaloutward) + float(finalRow["qty"])
+            if finalRow["dcinvtnflag"] == 7:
+                # Debite Credit Note
+                countresult = con.execute(
+                    select([func.count(drcr.c.drcrid).label("dc")]).where(
+                        and_(
+                            drcr.c.drcrdate >= yearStart,
+                            drcr.c.drcrdate <= endDate,
+                            drcr.c.drcrid == finalRow["dcinvtnid"],
                         )
-                        countrow = countresult.fetchone()
-                        if countrow["dc"] == 1:
-                            if finalRow["inout"] == 9:
-                                gopeningStock = float(gopeningStock) + float(
-                                    finalRow["qty"]
-                                )
-                                totalinward = float(totalinward) + float(
-                                    finalRow["qty"]
-                                )
-                            if finalRow["inout"] == 15:
-                                gopeningStock = float(gopeningStock) - float(
-                                    finalRow["qty"]
-                                )
-                                totaloutward = float(totaloutward) + float(
-                                    finalRow["qty"]
-                                )
-                stockReport.append(
-                    {
-                        "srno": srno,
-                        "productname": prodDesc["productdesc"],
-                        "godown": gn,
-                        "totalinwardqty": "%.2f" % float(totalinward),
-                        "totaloutwardqty": "%.2f" % float(totaloutward),
-                        "balance": "%.2f" % float(gopeningStock),
-                    }
+                    )
                 )
-                srno = srno + 1
-            return stockReport
+                countrow = countresult.fetchone()
+                if countrow["dc"] == 1:
+                    if finalRow["inout"] == 9:
+                        gopeningStock = float(gopeningStock) + float(
+                            finalRow["qty"]
+                        )
+                        totalinward = float(totalinward) + float(finalRow["qty"])
+                    if finalRow["inout"] == 15:
+                        gopeningStock = float(gopeningStock) - float(
+                            finalRow["qty"]
+                        )
+                        totaloutward = float(totaloutward) + float(finalRow["qty"])
+        product_value = calculateStockValue(
+                    con, orgcode, endDate, productCode, godownCode
+                )
+
+        return {
+            "totalinwardqty": float(totalinward),
+            "totaloutwardqty": float(totaloutward),
+            "balance": float(gopeningStock),
+            "value": float(product_value),
+        }
