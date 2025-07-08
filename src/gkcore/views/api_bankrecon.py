@@ -95,7 +95,7 @@ def get_bank_transactions(
             "reconcode": record["reconcode"],
             "date": datetime.strftime(record["voucherdate"], "%d-%m-%Y"),
             "particulars": account["accountname"],
-            "vno": record["vouchercode"],
+            "voucher_code": record["vouchercode"],
             "voucher_no": record["vouchernumber"],
             "narration": record["narration"],
         }
