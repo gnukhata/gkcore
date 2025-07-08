@@ -9,7 +9,6 @@ def reset_acc_defaults(con, orgcode):
         )
     ).fetchall()
     default_acc = {
-        "Bank A/C": 2,
         "Cash in hand": 3,
         "Purchase A/C": 16,
         "Sale A/C": 19,
