@@ -1473,11 +1473,14 @@ class api_rollclose(object):
                 oldGp = con.execute(
                     "select * from goprod where orgcode = %d" % (orgCode)
                 )
+                product_opening_balances = {}
                 for row in oldGp:
                     oldProdCode = row["productcode"]
                     newProdCode = None
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
+                    if newProdCode not in product_opening_balances:
+                        product_opening_balances[newProdCode] = 0.0
                     stockData = godownwise_stock_on_hand(
                         con,
                         orgCode,
@@ -1486,6 +1489,7 @@ class api_rollclose(object):
                         oldProdCode,
                         row["goid"],
                     )
+                    product_opening_balances[newProdCode] += stockData["balance"]
                     con.execute(
                         goprod.insert(),
                         {
@@ -1495,6 +1499,14 @@ class api_rollclose(object):
                             "openingstockvalue": stockData["value"],
                             "orgcode": newOrgCode,
                         },
+                    )
+
+                for product_code, balance in product_opening_balances.items():
+                    con.execute(
+                        product
+                        .update()
+                        .where(product.c.productcode == product_code)
+                        .values(openingstock = balance)
                     )
                 # User Godowns migration
                 oldUserGodowns = con.execute(
