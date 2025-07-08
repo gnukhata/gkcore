@@ -618,82 +618,87 @@ class api_godownregister(object):
         else:
             with eng.connect() as con:
                 orgcode = authDetails["orgcode"]
-                startDate = ""
+                start_date = self.request.params.get("startdate", "")
+                end_date = self.request.params.get("enddate", "")
+                stock_type = self.request.params["type"]
+                product_code = self.request.params.get("productcode")
 
-                if "startdate" in self.request.params:
-                    startDate = datetime.strptime(
-                        str(self.request.params["startdate"]), "%Y-%m-%d"
-                    )
-                endDate = datetime.strptime(
-                    str(self.request.params["enddate"]), "%Y-%m-%d"
-                )
-                stocktype = self.request.params["type"]
-                productCode = (
-                    self.request.params["productcode"]
-                    if "productcode" in self.request.params
-                    else ""
-                )
+                ## Gkapp sometimes send productcode "0" for all products.
+                if product_code and int(product_code) == 0:
+                    product_code = None
 
-                if stocktype in ["pg", "apg"]:
-                    godownCode = self.request.params["goid"]
+                if stock_type in ["pg", "apg"]:
+                    godown_codes = [self.request.params["goid"]]
                 else:
-                    godownCode = 0
+                    godown_codes = [godown["goid"] for godown in con.execute(
+                        select([godown.c.goid]).where(godown.c.orgcode == orgcode)
+                    ).fetchall()]
 
-                result = []
-                if stocktype == "apg":
-                    prows = con.execute(
-                        select([product.c.productcode, product.c.productdesc]).where(
-                            and_(
-                                product.c.orgcode == orgcode,
-                                product.c.gsflag == 7,
-                            )
-                        )
-                    )
-                    products = prows.fetchall()
-                    pmap = {}
-                    for prod in products:
-                        pmap[prod["productcode"]] = prod["productdesc"]
 
-                    # gpc - godown product code
-                    gpcrows = con.execute(
-                        select([goprod.c.productcode]).where(
-                            and_(
-                                goprod.c.goid == godownCode,
-                                goprod.c.orgcode == orgcode,
-                            )
-                        )
+                product_query = select([product.c.productcode, product.c.productdesc]).where(
+                    and_(
+                        product.c.orgcode == orgcode,
+                        product.c.gsflag == 7,
                     )
-                    gpcodes = gpcrows.fetchall()
-                    for gpcode in gpcodes:
-                        pcode = gpcode["productcode"]
-                        temp = godownwisestockonhandfun(
-                            con,
-                            orgcode,
-                            startDate,
-                            endDate,
-                            "pg",
-                            pcode,
-                            godownCode,
-                        )
-                        if len(temp):
-                            temp[0]["srno"] = len(result) + 1
-                            temp[0]["productcode"] = pcode
-                            temp[0]["productname"] = pmap[pcode]
-                            result.append(temp[0])
-                elif stocktype == 'pag':
-                    stock_on_hand = stockonhandfun(con, orgcode, productCode, endDate)
-                    result = stock_on_hand["gkresult"]
-                elif stocktype == 'apag':
-                    stock_on_hand = stockonhandfun(con, orgcode, "all", endDate)
-                    result = stock_on_hand["gkresult"]
-                else:
-                    result = godownwisestockonhandfun(
+                )
+
+                if product_code:
+                    product_query = product_query.where(product.c.productcode == product_code)
+                products = con.execute(product_query).fetchall()
+
+                pmap = {}
+                for prod in products:
+                    pmap[prod["productcode"]] = prod["productdesc"]
+
+                goprod_query = select([goprod.c.productcode, goprod.c.goid]).where(
+                    and_(
+                        goprod.c.goid.in_(godown_codes),
+                        goprod.c.orgcode == orgcode,
+                    )
+                )
+
+                if product_code:
+                    goprod_query = goprod_query.where(goprod.c.productcode == product_code)
+
+                godown_products = con.execute(goprod_query).fetchall()
+
+                stock_data = {}
+                srno = 1
+                for gpcode in godown_products:
+                    pcode = gpcode["productcode"]
+                    if not stock_data.get(pcode):
+                        stock_data[pcode] = {
+                            "srno": srno,
+                            "productcode": pcode,
+                            "productname": pmap[pcode],
+                            "totalinwardqty": 0.0,
+                            "totaloutwardqty": 0.0,
+                            "balance": 0.0,
+                            "value": 0.0,
+                        }
+                    godown_product_data = godownwise_stock_on_hand(
                         con,
                         orgcode,
-                        startDate,
-                        endDate,
-                        stocktype,
-                        productCode,
-                        godownCode,
+                        start_date,
+                        end_date,
+                        pcode,
+                        gpcode["goid"],
                     )
-                return {"gkstatus": enumdict["Success"], "gkresult": result}
+                    stock_data[pcode]["totalinwardqty"] = (
+                        stock_data[pcode]["totalinwardqty"] + godown_product_data["totalinwardqty"]
+                    )
+                    stock_data[pcode]["totaloutwardqty"] = (
+                        stock_data[pcode]["totaloutwardqty"] + godown_product_data["totaloutwardqty"]
+                    )
+                    stock_data[pcode]["balance"] = (
+                        stock_data[pcode]["balance"] + godown_product_data["balance"]
+                    )
+                    stock_data[pcode]["value"] = (
+                        stock_data[pcode]["value"] + godown_product_data["value"]
+                    )
+
+                stock_entries = list(stock_data.values())
+                for entry in stock_entries:
+                    for string in ["totalinwardqty", "totaloutwardqty", "balance", "value"]:
+                        entry[string] = "%.2f" % float(entry[string])
+                return {"gkstatus": enumdict["Success"], "gkresult": stock_entries}
