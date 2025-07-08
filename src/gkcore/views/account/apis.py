@@ -104,6 +104,19 @@ class api_account(object):
                     dataset = newdataset["gkdata"]
                 if "accountname" in newdataset:
                     dataset = newdataset
+                duplicate_accounts = con.execute(
+                    select([accounts.c.accountname]).where(
+                        and_(
+                            func.lower(accounts.c.accountname) == func.lower(dataset["accountname"]),
+                            accounts.c.orgcode == authDetails["orgcode"],
+                        )
+                    )
+                ).scalar()
+                if duplicate_accounts:
+                    return {
+                        "gkstatus": enumdict["DuplicateEntry"],
+                        "error": "Account name already exists",
+                    }
                 dataset["orgcode"] = authDetails["orgcode"]
                 dataset["openingbal"] = dataset.get("openingbal", 0.00) or 0.00
                 if "defaultflag" in dataset:
