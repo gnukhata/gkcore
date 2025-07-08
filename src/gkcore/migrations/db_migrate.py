@@ -392,7 +392,6 @@ def migrate():
                         "Swachh Bharat Cess",
                         "Electricity Expense",
                         "Professional Fees",
-                        "Bank A/C",
                         "Sale A/C",
                         "Purchase A/C",
                         "Discount Paid",
@@ -684,27 +683,6 @@ def migrate():
                                         }
                                     ],
                                 )
-                            elif acc == "Bank A/C":
-                                bank_acc = con.execute(
-                                    select([gkdb.groupsubgroups.c.groupcode]).where(
-                                        and_(
-                                            gkdb.groupsubgroups.c.groupname
-                                            == "Bank",
-                                            gkdb.groupsubgroups.c.orgcode
-                                            == orgcode["orgcode"],
-                                        )
-                                    )
-                                )
-                                bankgrp = bank_acc.fetchone()
-                                bankadd = con.execute(
-                                    gkdb.accounts.insert(),
-                                    {
-                                        "accountname": "Bank A/C",
-                                        "groupcode": bankgrp["groupcode"],
-                                        "orgcode": orgcode["orgcode"],
-                                        "defaultflag": 2,
-                                    },
-                                )
                             elif acc == "Discount Paid":
                                 disc = con.execute(
                                     select([gkdb.groupsubgroups.c.groupcode]).where(
@@ -927,11 +905,6 @@ def migrate():
                         elif acc == "Cash in hand":
                             con.execute(
                                 "update accounts set defaultflag = 3 where accountcode =%d"
-                                % int(acname["accountcode"])
-                            )
-                        elif acc == "Bank A/C":
-                            con.execute(
-                                "update accounts set defaultflag = 2 where accountcode =%d"
                                 % int(acname["accountcode"])
                             )
                         elif acc == "Sale A/C":
