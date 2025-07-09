@@ -29,7 +29,7 @@ from gkcore import eng, enumdict
 from gkcore.utils import authCheck, gk_log
 from gkcore.views.reports.helpers.stock import (
     stockonhandfun,
-    godownwisestockonhandfun,
+    godownwise_stock_on_hand,
     calculateStockValue,
 )
 from gkcore.views.reports.helpers.balance import calculateBalance
@@ -1478,28 +1478,21 @@ class api_rollclose(object):
                     newProdCode = None
                     if oldProdCode is not None and oldProdCode in oldToNewProdCodes:
                         newProdCode = oldToNewProdCodes[oldProdCode]
-                    stockData = godownwisestockonhandfun(
+                    stockData = godownwise_stock_on_hand(
                         con,
                         orgCode,
                         oldstartDate,
                         endDate,
-                        "pg",
                         oldProdCode,
                         row["goid"],
                     )
-                    stockValue = calculateStockValue(
-                        con, orgCode, endDate, oldProdCode, row["goid"]
-                    )
-                    stockBalance = 0
-                    if len(stockData) and "balance" in stockData[0]:
-                        stockBalance = float(stockData[0]["balance"])
                     con.execute(
                         goprod.insert(),
                         {
                             "goid": godownMap[row["goid"]],
                             "productcode": newProdCode,
-                            "goopeningstock": stockBalance,
-                            "openingstockvalue": stockValue,
+                            "goopeningstock": stockData["balance"],
+                            "openingstockvalue": stockData["value"],
                             "orgcode": newOrgCode,
                         },
                     )
