@@ -62,7 +62,7 @@ class api_log(object):
         if authDetails["auth"] == False:
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         dataset = AccountLog(**self.request.json_body).model_dump()
-        with eng.connect() as con:
+        with eng.begin() as con:
             dataset["orgcode"] = authDetails["orgcode"]
             dataset["userid"] = authDetails["userid"]
             dataset["time"] = datetime.today().strftime("%Y-%m-%d %H:%M:%S")
@@ -87,8 +87,8 @@ class api_log(object):
             try:
                 self.con = eng.connect()
                 dataset = self.request.json_body
-                result = self.con.execute(
-                    godown.update()
+                self.con.execute(
+                    log.update()
                     .where(log.c.logid == dataset["logid"])
                     .values(dataset)
                 )

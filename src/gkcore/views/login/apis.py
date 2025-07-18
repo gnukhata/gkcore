@@ -56,7 +56,7 @@ def userLogin(request):
     validated_data = UserLogin.model_validate(request.json_body)
     dataset = validated_data.model_dump()
 
-    with eng.connect() as con:
+    with eng.begin() as con:
         result = con.execute(
             select([gkdb.gkusers.c.userid, gkdb.gkusers.c.userpassword]).where(
                 and_(
@@ -145,7 +145,7 @@ def orgLogin(request):
     validated_data = OrgLogin.model_validate(request.json_body)
     dataset = validated_data.model_dump()
     userId = authDetails["userid"]
-    with eng.connect() as con:
+    with eng.begin() as con:
         user_org = con.execute(
             select([gkdb.gkusers.c.orgs[str(dataset["orgcode"])]])
             .where(
