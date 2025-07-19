@@ -345,6 +345,15 @@ def insert_row(
         if value == None:
             row.pop(field)
 
+    if table.name == "unitofmeasurement" and not row.get("orgcode"):
+        # UOM has organisation data.
+        uomid = con.execute(
+            select([table.c.uomid]).where(
+                table.c.unitname == row["unitname"]
+            )
+        ).scalar()
+        return {pk_value: uomid}
+
     for field_name in row.keys():
         if (field_name in foreign_keys) and row.get(field_name):
             fk_table_name = foreign_keys[field_name].constraint.referred_table.name
