@@ -119,17 +119,18 @@ class api_account(object):
                     }
                 dataset["orgcode"] = authDetails["orgcode"]
                 dataset["openingbal"] = dataset.get("openingbal", 0.00) or 0.00
-                if "defaultflag" in dataset:
-                    dflag = dataset["defaultflag"]
-                    grpnames = con.execute(
-                        select([gkdb.groupsubgroups.c.groupname]).where(
-                            and_(
-                                gkdb.groupsubgroups.c.groupcode == dataset["groupcode"],
-                                gkdb.groupsubgroups.c.orgcode == dataset["orgcode"],
-                            )
+                grpnames = con.execute(
+                    select([gkdb.groupsubgroups.c.groupname]).where(
+                        and_(
+                            gkdb.groupsubgroups.c.groupcode == dataset["groupcode"],
+                            gkdb.groupsubgroups.c.orgcode == dataset["orgcode"],
                         )
                     )
-                    grpname = grpnames.fetchone()
+                )
+                grpname = grpnames.fetchone()
+
+                if "defaultflag" in dataset:
+                    dflag = dataset["defaultflag"]
                     if grpname["groupname"] == "Bank" and dflag == 2:
                         setdflag = con.execute(
                             "update accounts set defaultflag=0 where defaultflag=2 and orgcode=%d"
@@ -160,7 +161,23 @@ class api_account(object):
                             "update accounts set defaultflag=0 where defaultflag=181 and orgcode=%d"
                             % int(authDetails["orgcode"])
                         )
-                result = con.execute(gkdb.accounts.insert(), [dataset])
+                result = con.execute(
+                    gkdb.accounts
+                    .insert()
+                    .returning(accounts.c.accountcode),
+                    [dataset]
+                ).fetchone()
+                if grpname["groupname"] == "Bank":
+                    bank_name = dataset["accountname"]
+                    con.execute(
+                        gkdb.bank.insert(
+                            {
+                                "orgcode":authDetails["orgcode"],
+                                "account_name": bank_name,
+                                "accountcode": result["accountcode"]
+                            }
+                        )
+                    )
                 if "moredata" in newdataset and len(newdataset["moredata"]) > 0:
                     moredata = newdataset["moredata"]
                     moredata["orgcode"] = authDetails["orgcode"]
