@@ -52,6 +52,13 @@ def get_table_array(con: Connection, table_name: str, orgcode: int) -> list:
                     gkdb.transaction.c.transaction_id.in_(org_transfer_notes),
                 )
             )
+        elif table_name == "unitofmeasurement":
+            statement = table.select().where(
+                or_(
+                    table.c.orgcode == orgcode,
+                    table.c.orgcode == None,
+                )
+            )
         else:
             statement = table.select().where(table.c.orgcode == orgcode)
 
