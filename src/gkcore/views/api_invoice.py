@@ -1393,6 +1393,28 @@ class api_invoice(object):
         else:
             with eng.begin() as con:
                 dtset = self.request.json_body
+                invdataset = dtset["payload"]["invoice"]
+                result_count = con.execute(
+                    select([invoice.c.invoiceno]).where(
+                        and_(
+                            invoice.c.orgcode == authDetails["orgcode"],
+                            func.lower(invoice.c.invoiceno) == func.lower(invdataset["invoiceno"]),
+                        )
+                    )
+                ).rowcount
+                result_count += con.execute(
+                    select([invoicebin.c.invoiceno]).where(
+                        and_(
+                            invoicebin.c.orgcode == authDetails["orgcode"],
+                            func.lower(invoicebin.c.invoiceno) == func.lower(invdataset["invoiceno"]),
+                        )
+                    )
+                ).rowcount
+
+                if result_count > 0:
+                    # Duplicate entry found, handle accordingly
+                    return {"gkstatus": enumdict["DuplicateEntry"]}
+
                 delivery_note_id = create_delivery_note(
                     con,
                     dtset,
@@ -1400,7 +1422,6 @@ class api_invoice(object):
                 )
 
                 dcinvdataset = {}
-                invdataset = dtset["payload"]["invoice"]
                 freeqty = invdataset["freeqty"]
                 discount = invdataset["discount"]
                 stockdataset = dtset["payload"]["stock"]
@@ -1422,18 +1443,6 @@ class api_invoice(object):
                     invdataset["paymentmode"] = 15
 
                 # Check for duplicate entry before insertion
-                result_duplicate_check = con.execute(
-                    select([invoice.c.invoiceno]).where(
-                        and_(
-                            invoice.c.orgcode == authDetails["orgcode"],
-                            func.lower(invoice.c.invoiceno) == func.lower(invdataset["invoiceno"]),
-                        )
-                    )
-                )
-
-                if result_duplicate_check.rowcount > 0:
-                    # Duplicate entry found, handle accordingly
-                    return {"gkstatus": enumdict["DuplicateEntry"]}
 
                 if "pricedetails" in invdataset:
                     pricedetails = invdataset["pricedetails"]
