@@ -11,7 +11,7 @@ def check_duplicate_contact_name(contact_name, orgcode, current_custid=None):
     with eng.connect() as conn:
         statement = select([customerandsupplier.c.custid]).where(
             and_(
-                customerandsupplier.c.custname == contact_name,
+                customerandsupplier.c.custname.ilike(contact_name),
                 customerandsupplier.c.orgcode == orgcode,
             )
         )
@@ -40,7 +40,7 @@ def check_duplicate_contact_account_name(account_name, orgcode, current_custid=N
                 return
         statement = select([accounts]).where(
             and_(
-                accounts.c.accountname == account_name,
+                accounts.c.accountname.ilike(account_name),
                 accounts.c.orgcode == orgcode,
             )
         )
