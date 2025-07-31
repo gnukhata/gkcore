@@ -30,7 +30,7 @@ Contributors:
 
 
 from gkcore import eng, enumdict
-from gkcore.models.gkdb import godown, usergodown, stock, goprod
+from gkcore.models.gkdb import godown, usergodown, stock, goprod, organisation, gkusers
 from gkcore.views.godown.schemas import GodownDetails, GodownDetailsUpdate
 from gkcore.views.godown.services import getusergodowns
 from sqlalchemy.sql import select
@@ -335,8 +335,10 @@ class api_godown(object):
             return {"gkstatus": enumdict["UnauthorisedAccess"]}
         with eng.begin() as con:
             dataset = self.request.json_body
+            orgcode = authDetails["orgcode"]
+            goid = dataset["goid"]
             is_godown_used = con.execute(
-                select([stock.c.goid]).where(stock.c.goid == dataset["goid"])
+                select([stock.c.goid]).where(stock.c.goid == goid)
             ).rowcount
             if is_godown_used:
                 return {
@@ -344,9 +346,30 @@ class api_godown(object):
                     "error": "Cannot delete godowns already referred in transactions",
                 }
 
+            godown_count = con.execute(
+                select([godown.c.goid]).where(godown.c.orgcode == orgcode)
+            ).rowcount
+            if godown_count == 1:
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                    "error": "No remaining godowns, create a new one before deleting.",
+                }
+
+            org_conf_godown = con.execute(
+                select([organisation.c.orgcode]).where(
+                    organisation.c.orgconf["0"]["0"]["transaction"]["default"]["godown"].astext == str(goid)
+                )
+            ).rowcount
+            if org_conf_godown == 1:
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                    "error": "Default godown, change default godown before deleting.",
+                }
+
             con.execute(
-                godown.delete().where(godown.c.goid == dataset["goid"])
+                godown.delete().where(godown.c.goid == goid)
             )
+
             return {"gkstatus": enumdict["Success"]}
 
 
