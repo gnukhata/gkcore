@@ -39,7 +39,7 @@ from gkcore.models.gkdb import organisation
 from sqlalchemy.sql import select
 from sqlalchemy import func, desc
 from sqlalchemy.engine.base import Connection
-from sqlalchemy import and_
+from sqlalchemy import and_, or_
 import jwt
 import gkcore
 import json
@@ -989,12 +989,25 @@ class api_organisation(object):
                 userRole = userRoleData["gkresult"]["userrole"]
                 validated_data = OrgUpdate.model_validate(self.request.json_body)
                 dataset = validated_data.model_dump(exclude_none=True)
+
+                org_data = con.execute(
+                    select([organisation.c.yearstart, organisation.c.yearend])
+                    .where(organisation.c.orgcode == orgcode)
+                ).fetchone()
                 # Check for duplicate entry before insertion
                 result_duplicate_check = con.execute(
-                    select([gkdb.organisation.c.orgname]).where(
+                    select([organisation.c.orgname]).where(
                         and_(
-                            func.lower(gkdb.organisation.c.orgname) == func.lower(dataset["orgname"]),
-                            gkdb.organisation.c.orgcode != orgcode,
+                            func.lower(organisation.c.orgname) == func.lower(dataset["orgname"]),
+                            organisation.c.orgcode != orgcode,
+                            or_(
+                                organisation.c.yearstart.between(
+                                    org_data["yearstart"], org_data["yearend"]
+                                ),
+                                organisation.c.yearend.between(
+                                    org_data["yearstart"], org_data["yearend"]
+                                ),
+                            )
                         )
                     )
                 )
