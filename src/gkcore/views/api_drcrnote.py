@@ -52,7 +52,7 @@ from gkcore.views.api_invoice import getStateCode, createAccount
 import traceback  # for printing detailed exception logs
 
 
-@view_defaults(route_name="drcrnote")
+@view_defaults(route_name="drcrnote", renderer="json")
 class api_drcr(object):
     def __init__(self, request):
         self.request = request
@@ -587,7 +587,7 @@ class api_drcr(object):
     if credit/debit note number is not used as reference then it can be deleted.
     """
 
-    @view_config(request_method="DELETE", renderer="json")
+    @view_config(request_method="DELETE")
     def deletedrcr(self):
         try:
             token = self.request.headers["gktoken"]
@@ -605,10 +605,14 @@ class api_drcr(object):
             )
             row = result.fetchone()
             if not row["reference"]:
-                result = con.execute(
+                con.execute(
+                    vouchers.delete().where(vouchers.c.drcrid == dataset["drcrid"])
+                )
+                con.execute(
                     drcr.delete().where(drcr.c.drcrid == dataset["drcrid"])
                 )
-            return {"gkstatus": enumdict["Success"]}
+                return {"gkstatus": enumdict["Success"]}
+            return {"gkstatus": enumdict["ActionDisallowed"]}
 
     @view_config(request_method="GET", request_param="attach=image", renderer="json")
     def getattachment(self):
