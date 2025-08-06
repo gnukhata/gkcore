@@ -546,10 +546,12 @@ def update_transaction_details(
     contact_details = transaction_details.get("contact")
     new_products_details = {}
 
-    if godown_details:
+    if godown_details and pk_map["godown"].get(int(godown_details["goid"])):
         godown_details["goid"] = pk_map["godown"][int(godown_details["goid"])]
         godown_details["orgcode"] = orgcode
-    if contact_details:
+    if contact_details and pk_map["customerandsupplier"].get(
+            int(contact_details["custid"])
+    ):
         contact_details["custid"] = pk_map["customerandsupplier"][
             int(contact_details["custid"])
         ]
