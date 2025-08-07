@@ -2895,6 +2895,17 @@ class api_invoice(object):
         with eng.begin() as con:
             invid = self.request.matchdict["invid"]
 
+            drcrnote = con.execute(
+                drcr.select().where(
+                    drcr.c.invid == invid
+                )
+            )
+
+            if drcrnote.rowcount:
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                    "error": "Cancel not allowed; Related debit/Credit note exists"
+                }
             # to fetch data of all data of cancel invoice.
             invoicedata = con.execute(
                 select([invoice]).where(invoice.c.invid == invid)
