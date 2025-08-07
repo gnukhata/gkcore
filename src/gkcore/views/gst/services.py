@@ -833,20 +833,22 @@ def hsn_r1(con, orgcode, start, end):
         return {"status": 3}
 
 
-def docs_issued(invoices=[], drcr_notes=[]):
+def docs_issued(invoices=[], cancelled_invoices=[], drcr_notes=[]):
     """Generates documents issued summary for GSTR1 report save API.
 
     :param invoices: Invoice database rows
     :param drcr_notes: Debit/Credit note database rows
     """
-    def format_doc_summary(rows, serial_no_field):
+    def format_doc_summary(
+            rows, serial_no_field, from_no=None, to_no=None, cancel_count=0
+    ):
         return {
             "num": 1,
-            "from": getattr(rows[0], serial_no_field),
-            "to": getattr(rows[-1], serial_no_field),
+            "from": from_no if from_no else getattr(rows[0], serial_no_field),
+            "to": to_no if to_no else getattr(rows[-1], serial_no_field),
             "totnum": len(rows),
-            "cancel": 0,
-            "net_issue": len(rows),
+            "cancel": cancel_count,
+            "net_issue": len(rows)+cancel_count,
         }
 
     party_invoice_docs = []
@@ -856,6 +858,35 @@ def docs_issued(invoices=[], drcr_notes=[]):
             party_invoice_docs.append(invoice)
         else:
             pos_invoice_docs.append(invoice)
+
+    cancelled_party_invoice_docs = []
+    cancelled_pos_invoice_docs = []
+    for cancelled_invoice in cancelled_invoices:
+        if cancelled_invoice.icflag == 9:
+            cancelled_party_invoice_docs.append(cancelled_invoice)
+        else:
+            cancelled_pos_invoice_docs.append(cancelled_invoice)
+
+    def get_first_last_entries(entries, cancelled_entries):
+        first_invoice_entry = entries[0]
+        last_invoice_entry = entries[-1]
+        first_cancelled_invoice_entry = cancelled_entries[0]
+        last_cancelled_invoice_entry = cancelled_entries[-1]
+        first_invoice_no = first_invoice_entry.invoiceno
+        last_invoice_no = last_invoice_entry.invoiceno
+
+        if first_invoice_entry.invoicedate > first_cancelled_invoice_entry.invoicedate:
+            first_invoice_no = first_cancelled_invoice_entry.invoiceno
+        if first_invoice_entry.invoicedate == first_cancelled_invoice_entry.invoicedate:
+            if first_invoice_entry.invid > first_cancelled_invoice_entry.invid:
+                first_invoice_no = first_cancelled_invoice_entry.invoiceno
+
+        if last_invoice_entry.invoicedate < last_cancelled_invoice_entry.invoicedate:
+            last_invoice_no = last_cancelled_invoice_entry.invoiceno
+        if last_invoice_entry.invoicedate == last_cancelled_invoice_entry.invoicedate:
+            if last_invoice_entry.invid < last_cancelled_invoice_entry.invid:
+                last_invoice_no = last_cancelled_invoice_entry.invoiceno
+        return first_invoice_no, last_invoice_no
 
     debit_note_docs = []
     credit_note_docs = []
@@ -867,10 +898,37 @@ def docs_issued(invoices=[], drcr_notes=[]):
 
     consolidated_invoices = []
     if party_invoice_docs:
-        party_invoices = format_doc_summary(party_invoice_docs, "invoiceno")
+        first_party_invoice_no = party_invoice_docs[0].invoiceno
+        last_party_invoice_no = party_invoice_docs[-1].invoiceno
+        if cancelled_party_invoice_docs:
+            first_party_invoice_no, last_party_invoice_no = get_first_last_entries(
+                party_invoice_docs, cancelled_party_invoice_docs
+            )
+        party_invoices = format_doc_summary(
+            party_invoice_docs,
+            "invoiceno",
+            first_party_invoice_no,
+            last_party_invoice_no,
+            len(cancelled_party_invoice_docs),
+        )
         consolidated_invoices.append(party_invoices)
     if pos_invoice_docs:
-        pos_invoices = {**format_doc_summary(pos_invoice_docs, "invoiceno"), "num": 2}
+        first_pos_invoice_no = pos_invoice_docs[0].invoiceno
+        last_pos_invoice_no = pos_invoice_docs[-1].invoiceno
+        if cancelled_pos_invoice_docs:
+            first_pos_invoice_no, last_pos_invoice_no = get_first_last_entries(
+                pos_invoice_docs, cancelled_pos_invoice_docs
+            )
+        pos_invoices = {
+            **format_doc_summary(
+                pos_invoice_docs,
+                "invoiceno",
+                first_pos_invoice_no,
+                last_pos_invoice_no,
+                len(cancelled_pos_invoice_docs),
+            ),
+            "num": 2
+        }
         consolidated_invoices.append(pos_invoices)
 
     doc_det = []

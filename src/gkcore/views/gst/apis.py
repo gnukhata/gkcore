@@ -44,6 +44,7 @@ from gkcore.utils import authCheck
 from gkcore import eng, enumdict
 from gkcore.models.gkdb import (
     invoice,
+    invoicebin,
     customerandsupplier,
     state,
     drcr,
@@ -132,6 +133,26 @@ class GstReturn(object):
                 .order_by(invoice.c.invid)
             ).fetchall()
 
+            cancelled_invoices = con.execute(
+                select([
+                    invoicebin.c.invid,
+                    invoicebin.c.invoiceno,
+                    invoicebin.c.invoicedate,
+                    invoicebin.c.icflag,
+                ]).where(
+                    and_(
+                        invoicebin.c.invoicedate.between(
+                            start_period.strftime("%Y-%m-%d"),
+                            end_period.strftime("%Y-%m-%d"),
+                        ),
+                        invoicebin.c.inoutflag == 15,
+                        invoicebin.c.taxflag == 7,
+                        invoicebin.c.orgcode == orgcode,
+                    )
+                )
+                .order_by(invoicebin.c.invoicedate)
+                .order_by(invoicebin.c.invid)
+            ).fetchall()
             # Debit/credit notes
             drcrs_all = con.execute(
                 select(
@@ -218,7 +239,7 @@ class GstReturn(object):
                 "cdnr": cdnr["json"],
                 "cdnur": cdnur["json"],
                 "hsn": hsn["json"],
-                "doc_issue": docs_issued(invoices, drcrs_all),
+                "doc_issue": docs_issued(invoices, cancelled_invoices, drcrs_all),
                 "nil": {
                     "inv": [
                         {
