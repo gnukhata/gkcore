@@ -2895,6 +2895,17 @@ class api_invoice(object):
         with eng.begin() as con:
             invid = self.request.matchdict["invid"]
 
+            drcrnote = con.execute(
+                drcr.select().where(
+                    drcr.c.invid == invid
+                )
+            )
+
+            if drcrnote.rowcount:
+                return {
+                    "gkstatus": enumdict["ActionDisallowed"],
+                    "error": "Cancel not allowed; Related debit/Credit note exists"
+                }
             # to fetch data of all data of cancel invoice.
             invoicedata = con.execute(
                 select([invoice]).where(invoice.c.invid == invid)
@@ -3541,25 +3552,34 @@ class api_invoice(object):
             return {"gkstatus": gkcore.enumdict["UnauthorisedAccess"]}
         else:
             with eng.connect() as con:
-                result = con.execute(
-                    select(
+                table = invoice
+                is_cancelled = False
+                if int(self.request.params.get("cancelled", 0)) == 1:
+                    table = invoicebin
+                    is_cancelled = True
+                inoutflag = self.request.params.get("inoutflag")
+
+                statement = select(
                         [
-                            invoice.c.invoiceno,
-                            invoice.c.invid,
-                            invoice.c.invoicedate,
-                            invoice.c.invoicetotal,
-                            invoice.c.immutable_data_id,
+                            table.c.invoiceno,
+                            table.c.invid,
+                            table.c.invoicedate,
+                            table.c.invoicetotal,
+                            table.c.immutable_data_id,
                         ]
-                    )
-                    .where(
+                    ).where(
                         and_(
-                            invoice.c.orgcode == authDetails["orgcode"],
-                            invoice.c.icflag == 3,
-                            invoice.c.inoutflag == self.request.params["inoutflag"],
+                            table.c.orgcode == authDetails["orgcode"],
+                            table.c.icflag == 3,
                         )
                     )
-                    .order_by(invoice.c.invoicedate)
-                )
+                if inoutflag:
+                    statement = statement.where(
+                        table.c.inoutflag == inoutflag
+                    )
+                result = con.execute(
+                    statement.order_by(table.c.invoicedate)
+                ).fetchall()
                 invoices = []
                 for row in result:
                     immutable_data = con.execute(
@@ -3568,6 +3588,7 @@ class api_invoice(object):
                     ).scalar()
                     invoices.append(
                         {
+                            "deletedFlag": is_cancelled,
                             "invoiceno": row["invoiceno"],
                             "invid": row["invid"],
                             "invoicedate": datetime.strftime(
