@@ -1,35 +1,41 @@
-# This dockerfile builds the gkcore
+# Using python:3.12-slim
+FROM python:3.12-slim
 
-# WARNING: Observed that gkcore fails to start in v3.12
-FROM python:3.11-slim
+# Set environment variables
+ENV POETRY_VERSION=1.8.4
+ENV POETRY_HOME="/.poetry"
+ENV PATH="$POETRY_HOME/bin:$PATH"
 
-LABEL Sai Karthik <kskarthik@disroot.org>
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+  build-essential libpq-dev curl && \
+  curl -sSL https://install.python-poetry.org | python3 - && \
+  apt-get clean && rm -rf /var/lib/apt/lists/*
 
-ARG VERSION="dev"
-ENV GKCORE_VERSION=${VERSION}
-# install the required dependencies
-RUN apt-get update && apt-get upgrade -y \
-		&& apt-get install -y \
-		build-essential libpq-dev curl
-# copy the contents of the repo to the image
-COPY . /gkcore/
-#switch to workdir gkcore
 WORKDIR /gkcore
-# create a non-root user to run gkcore
-RUN adduser --no-create-home --disabled-password gk && \
-		# install gkcore dependencies & run setup
-		pip install -r requirements.txt && python3 setup.py develop &&\
-		# clean the build environment
-		apt purge build-essential wget -y &&\
-		apt-get autoremove -y &&\
-		apt-get clean && \
-		rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-# switch to non-root user named gk, which we created above
-USER gk
-# initialize db & start gkcore
-ENTRYPOINT python3 initdb.py && python3 db_migrate.py && pserve production.ini
-# expose the gkcore port
+
+# Copy the entire project directory
+COPY . .
+
+# Build and install the project
+RUN poetry build && pip install dist/*.whl
+
+# Create non-root user
+RUN adduser --disabled-password --gecos '' gkuser
+
+# Set permissions
+RUN chown -R gkuser:gkuser /gkcore
+USER gkuser
+
+# Copy and configure entrypoint script
+RUN chmod +x /gkcore/entrypoint.sh
+
+# Expose Pyramid port (default: 6543)
 EXPOSE 6543
-# check the health of the container at regular intervals
-HEALTHCHECK --start-period=60s \
+
+# Define entrypoint
+ENTRYPOINT ["/gkcore/entrypoint.sh"]
+
+# Add a healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
   CMD curl -f http://localhost:6543 || exit 1

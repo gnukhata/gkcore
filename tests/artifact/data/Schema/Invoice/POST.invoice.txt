@@ -1,7 +1,0 @@
-{
-    "gkstatus": 0,
-    "gkresult": 359,
-    "vchData": {
-        "status": 1
-    }
-}
