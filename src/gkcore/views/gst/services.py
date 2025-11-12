@@ -17,6 +17,11 @@ import traceback  # for printing detailed exception logs
 
 
 
+
+def round_2_dec(value):
+    """Round to two decimal places."""
+    return round(float(value), 2)
+
 def taxable_value(con, inv, productcode, drcr=False):
     """
     Returns taxable value of product given invoice/drcr note and productcode
@@ -40,7 +45,7 @@ def taxable_value(con, inv, productcode, drcr=False):
         taxable_value = float(rate) * float(qty)
         if not drcr:
             taxable_value -= float(inv["discount"][productcode])
-        return taxable_value
+        return round_2_dec(taxable_value)
     except:
         print(traceback.format_exc())
         return 0
@@ -59,7 +64,7 @@ def cess_amount(con, inv, productcode, drcr=False):
             t_value = taxable_value(con, inv, productcode, drcr=drcr)
             cess_amount = t_value * cess_rate / 100
 
-            return float(cess_amount)
+            return round_2_dec(cess_amount)
     except:
         print(traceback.format_exc())
         return 0
@@ -151,7 +156,7 @@ def b2b_r1(con, invoices):
             row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
             row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
-            row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
+            row["invoice_value"] = round_2_dec(inv["invoicetotal"])
             row["place_of_supply"] = "%s-%s" % (str(ts_code), inv["taxstate"])
             row["applicable_tax_rate"] = ""
             row["invoice_type"] = "Regular"
@@ -164,7 +169,7 @@ def b2b_r1(con, invoices):
             b2b_json_inv = {
                 "inum": inv["invoiceno"],
                 "idt": inv["invoicedate"].strftime("%d-%m-%Y"),
-                "val": "%.2f" % float(inv["invoicetotal"]),
+                "val": round_2_dec(inv["invoicetotal"]),
                 "pos": "%02d" % int(ts_code),
                 "rchrg": row["reverse_charge"],
                 "inv_typ": "R",  # Need to handle other gst types
@@ -251,7 +256,7 @@ def b2cl_r1(con, invoices):
             row["invid"] = inv["invid"]
             row["invoice_number"] = inv["invoiceno"]
             row["invoice_date"] = inv["invoicedate"].strftime("%d-%b-%y")
-            row["invoice_value"] = "%.2f" % float(inv["invoicetotal"])
+            row["invoice_value"] = round_2_dec(inv["invoicetotal"])
             row["place_of_supply"] = "%02d-%s" % (ts_code, inv["taxstate"])
             row["applicable_tax_rate"] = ""
             row["ecommerce_gstin"] = ""
@@ -260,7 +265,7 @@ def b2cl_r1(con, invoices):
             b2cl_json_inv = {
                 "inum": inv["invoiceno"],
                 "idt": inv["invoicedate"].strftime("%d-%m-%Y"),
-                "val": "%.2f" % float(inv["invoicetotal"]),
+                "val": round_2_dec(inv["invoicetotal"]),
                 "itms": [],
             }
 
@@ -363,7 +368,7 @@ def b2cs_r1(con, invoices, drcr):
 
                 prod_row = {
                     "taxable_value": prod_taxable_value,
-                    "rate": "%.2f" % float(rate),
+                    "rate": round_2_dec(rate),
                     "cess": cess_amount(con, inv, prod, drcr) or 0,
                     **row
                 }
@@ -399,10 +404,10 @@ def b2cs_r1(con, invoices, drcr):
         def format_b2cs_values(b2cs_entry):
             b2cs_entry.update(
                 {
-                    "samt": "%.2f" % float(b2cs_entry["samt"]),
-                    "camt": "%.2f" % float(b2cs_entry["samt"]),
-                    "iamt": "%.2f" % float(b2cs_entry["iamt"]),
-                    "txval": "%.2f" % float(b2cs_entry["txval"]),
+                    "samt": round_2_dec(b2cs_entry["samt"]),
+                    "camt": round_2_dec(b2cs_entry["samt"]),
+                    "iamt": round_2_dec(b2cs_entry["iamt"]),
+                    "txval": round_2_dec(b2cs_entry["txval"]),
                 }
             )
             return b2cs_entry
@@ -460,7 +465,7 @@ def cdnr_r1(con, drcr_all):
             else:
                 row["document_type"] = "C"
             row["place_of_supply"] = "%s-%s" % (str(ts_code), note["taxstate"])
-            row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
+            row["refund_voucher_value"] = round_2_dec(note["totreduct"])
             row["applicable_tax_rate"] = ""
             if note["taxflag"] == 7:
                 row["pregst"] = "N"
@@ -470,7 +475,7 @@ def cdnr_r1(con, drcr_all):
             cdnr_json_inv = {
                 "nt_num": note["drcrno"],
                 "nt_dt": note["invoicedate"].strftime("%d-%m-%Y"),
-                "val": "%.2f" % float(note["totreduct"]),
+                "val": round_2_dec(note["totreduct"]),
                 "ntty": "D" if note["dctypeflag"] == 4 else "C",
                 "pos": "%02d" % (ts_code),
                 "rchrg": "N",
@@ -565,7 +570,7 @@ def cdnur_r1(con, drcr_all):
                 row["document_type"] = "C"
             row["place_of_supply"] = "%d-%s" % (ts_code, note["taxstate"])
             row["supply_type"] = "Inter State"
-            row["refund_voucher_value"] = "%.2f" % float(note["totreduct"])
+            row["refund_voucher_value"] = round_2_dec(note["totreduct"])
             row["applicable_tax_rate"] = ""
             if note["taxflag"] == 7:
                 row["pregst"] = "N"
@@ -575,7 +580,7 @@ def cdnur_r1(con, drcr_all):
             cdnur_json_inv = {
                 "nt_num": note["drcrno"],
                 "nt_dt": note["invoicedate"].strftime("%d-%m-%Y"),
-                "val": "%.2f" % float(note["totreduct"]),
+                "val": round_2_dec(note["totreduct"]),
                 "ntty": "D" if note["dctypeflag"] == 4 else "C",
                 "pos": "%02d" % (ts_code),
                 "typ": "B2CL",
@@ -762,17 +767,17 @@ def hsn_r1(con, orgcode, start, end):
                 if b2b_prod_counter:
                     products_hsn_data["b2b"].append(
                         {
-                            "qty": "%.2f" % float(quantity_b2b_total),
-                            "totalvalue": "%.2f" % float(
+                            "qty": round_2_dec(quantity_b2b_total),
+                            "totalvalue": round_2_dec(
                                 float(taxable_value_b2b_total)
                                 + (2 * cgst_value_b2b_total)
                                 + float(igst_value_b2b_total)
                                 + float(cess_value_b2b_total)
                             ),
-                            "taxableamt": "%.2f" % float(taxable_value_b2b_total),
-                            "SGSTamt": "%.2f" % float(cgst_value_b2b_total),
-                            "IGSTamt": "%.2f" % float(igst_value_b2b_total),
-                            "CESSamt": "%.2f" % float(cess_value_b2b_total),
+                            "taxableamt": round_2_dec(taxable_value_b2b_total),
+                            "SGSTamt": round_2_dec(cgst_value_b2b_total),
+                            "IGSTamt": round_2_dec(igst_value_b2b_total),
+                            "CESSamt": round_2_dec(cess_value_b2b_total),
                             "product_count": b2b_prod_counter,
                             **prodHSN,
                         }
@@ -783,29 +788,29 @@ def hsn_r1(con, orgcode, start, end):
                             "hsn_sc": str(hsn),
                             "desc": products["productdesc"],
                             "uqc": uqc,
-                            "qty":  "%.2f" % float(quantity_b2b_total),
+                            "qty":  round_2_dec(quantity_b2b_total),
                             "rt": gst_rate,
-                            "txval":  "%.2f" % float(taxable_value_b2b_total),
-                            "iamt":  "%.2f" % float(igst_value_b2b_total),
-                            "samt":  "%.2f" % float(cgst_value_b2b_total),
-                            "camt":  "%.2f" % float(cgst_value_b2b_total),
-                            "csamt":  "%.2f" % float(cess_value_b2b_total),
+                            "txval":  round_2_dec(taxable_value_b2b_total),
+                            "iamt":  round_2_dec(igst_value_b2b_total),
+                            "samt":  round_2_dec(cgst_value_b2b_total),
+                            "camt":  round_2_dec(cgst_value_b2b_total),
+                            "csamt":  round_2_dec(cess_value_b2b_total),
                         }
                     )
                 if b2c_prod_counter:
                     products_hsn_data["b2c"].append(
                         {
-                            "qty": "%.2f" % float(quantity_b2c_total),
-                            "totalvalue": "%.2f" % float(
+                            "qty": round_2_dec(quantity_b2c_total),
+                            "totalvalue": round_2_dec(
                                 float(taxable_value_b2c_total)
                                 + (2 * cgst_value_b2c_total)
                                 + float(igst_value_b2c_total)
                                 + float(cess_value_b2c_total)
                             ),
-                            "taxableamt": "%.2f" % float(taxable_value_b2c_total),
-                            "SGSTamt": "%.2f" % float(cgst_value_b2c_total),
-                            "IGSTamt": "%.2f" % float(igst_value_b2c_total),
-                            "CESSamt": "%.2f" % float(cess_value_b2c_total),
+                            "taxableamt": round_2_dec(taxable_value_b2c_total),
+                            "SGSTamt": round_2_dec(cgst_value_b2c_total),
+                            "IGSTamt": round_2_dec(igst_value_b2c_total),
+                            "CESSamt": round_2_dec(cess_value_b2c_total),
                             "product_count": b2c_prod_counter,
                             **prodHSN,
                         }
@@ -816,13 +821,13 @@ def hsn_r1(con, orgcode, start, end):
                             "hsn_sc": str(hsn),
                             "desc": products["productdesc"],
                             "uqc": uqc,
-                            "qty":  "%.2f" % float(quantity_b2c_total),
+                            "qty":  round_2_dec(quantity_b2c_total),
                             "rt": gst_rate,
-                            "txval":  "%.2f" % float(taxable_value_b2c_total),
-                            "iamt":  "%.2f" % float(igst_value_b2c_total),
-                            "samt":  "%.2f" % float(cgst_value_b2c_total),
-                            "camt":  "%.2f" % float(cgst_value_b2c_total),
-                            "csamt":  "%.2f" % float(cess_value_b2c_total),
+                            "txval":  round_2_dec(taxable_value_b2c_total),
+                            "iamt":  round_2_dec(igst_value_b2c_total),
+                            "samt":  round_2_dec(cgst_value_b2c_total),
+                            "camt":  round_2_dec(cgst_value_b2c_total),
+                            "csamt":  round_2_dec(cess_value_b2c_total),
                         }
                     )
 
